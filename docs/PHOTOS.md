@@ -42,3 +42,8 @@ amis [8381747](https://www.pexels.com/photo/group-of-people-running-together-838
 piste [5961848](https://www.pexels.com/photo/athletes-running-on-running-track-5961848/).
 
 > Les photos fournies par le propriétaire montrent de vraies personnes et des marques : vérifier les droits avant publication.
+
+## Mascottes 3D (cartes de séance)
+Les cartes de séance n'utilisent plus de photo : ce sont des personnages « argile 3D » en SVG
+(`src/components/ui/Mascot3D.tsx`), sur fond blanc ou vert. Pose et fond par catégorie dans `src/data/mascots.ts`
+(`pose` : pecs, legs, cardio, abs, hiit, fullbody ; `tone` : white ou lime). Les photos restent pour les bannières.
