@@ -12,7 +12,7 @@ interface AvatarStudioProps {
 
 // Les couleurs d'aura / fond sont des DONNÉES de configuration d'avatar (stockées), pas du style d'interface.
 const PRESET_AVATARS: { id: AvatarPresetId; label: string; tag: string; aura: string }[] = [
-  { id: 'manga-sprint', label: 'Kuro 5AM', tag: 'Manga', aura: '#C8FF00' },
+  { id: 'manga-sprint', label: 'Kuro 5h', tag: 'Manga', aura: '#C8FF00' },
   { id: 'manga-fighter', label: 'Akira KO', tag: 'Manga', aura: '#00E5FF' },
   { id: 'fantasy-paladin', label: 'Aegis', tag: 'Fantaisie', aura: '#C8FF00' },
   { id: 'fantasy-shadow', label: 'Shadow', tag: 'Fantaisie', aura: '#FF2E54' },

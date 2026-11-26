@@ -33,7 +33,7 @@ const REACTIONS: {
   { key: 'respect', Icon: HandsClapping, name: 'Respect', label: 'Réaction respect' },
 ];
 
-const POST_BADGES = ['DÉFI COMMUNAUTÉ', 'RECHERCHE PARTENAIRE', 'MOTIVATION 5AM'];
+const POST_BADGES = ['DÉFI COMMUNAUTÉ', 'RECHERCHE PARTENAIRE', 'MOTIVATION 5H'];
 
 /** « DÉFI COMMUNAUTÉ » → « Défi communauté » (affichage seulement). */
 function soft(label: string): string {

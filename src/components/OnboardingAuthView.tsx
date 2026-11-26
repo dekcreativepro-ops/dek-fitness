@@ -29,7 +29,7 @@ const FIELD = 'h-11 w-full border-b border-rim bg-transparent text-[15px] font-m
 const LABEL = 'block text-[12px] font-medium leading-4 text-mute';
 
 export function OnboardingAuthView({ onAuthComplete }: OnboardingAuthViewProps) {
-  const authPhoto = usePhoto('cardio', 'detail');
+  const authPhoto = usePhoto('auth', 'detail');
   const [provider, setProvider] = useState<AuthProvider>('gmail');
   const [gmailInput, setGmailInput] = useState('');
   const [countryCode, setCountryCode] = useState('+225');

@@ -46,7 +46,6 @@ export function HomeView({
   const adventure = getAdventurePlan(user.goals, user.category);
   const coach = INITIAL_COACHS.find((c) => c.id === adventure.recommendedCoachId) ?? INITIAL_COACHS[0];
   const heroPhoto = usePhoto('hero', 'card');
-  const thursdayPhoto = usePhoto('football', 'wide');
   const today = getRecommendedProgram(user.goals[0], getTierIndex(user.category));
   const todayPhoto = usePhoto(today.photoCat, 'detail');
   const plan = getNutritionPlan(user.goals, user.category, user.body);
@@ -74,7 +73,7 @@ export function HomeView({
   const universes = [
     { label: 'Outdoor', sub: '5 modes GPS', icon: <Compass className="h-5 w-5" />, onClick: () => onNavigate('missions') },
     { label: 'Défi House', sub: 'Caméra IA', icon: <Sword className="h-5 w-5" />, onClick: () => onOpenArena('house') },
-    { label: 'Terrains', sub: 'Jeudi & Tournoi', icon: <SoccerBall className="h-5 w-5" />, onClick: onOpenThursday },
+    { label: 'Terrains', sub: 'Matchs & Tournoi', icon: <SoccerBall className="h-5 w-5" />, onClick: onOpenThursday },
     { label: 'Gym Buddy', sub: 'Salle & Duo', icon: <Dumbbell className="h-5 w-5" />, onClick: () => onOpenArena('gym') },
     { label: 'Raids', sub: 'Badges & Pactes', icon: <Flag className="h-5 w-5" />, onClick: onOpenRaids },
     { label: 'Nutrition', sub: 'Repas & Eau', icon: <BowlFood className="h-5 w-5" />, onClick: () => onNavigate('nutrition') },
@@ -261,7 +260,7 @@ export function HomeView({
         </div>
       </motion.section>
 
-      {/* Terrain du Jeudi */}
+      {/* Terrain du jour */}
       <motion.button
         type="button"
         variants={fadeUpItem}
@@ -269,11 +268,9 @@ export function HomeView({
         onClick={onOpenThursday}
         className="relative flex w-full items-center gap-3 overflow-hidden rounded-[24px] bg-card p-4 text-left"
       >
-        <img src={thursdayPhoto} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-black/70" />
         <div className="relative min-w-0 flex-1">
           <div className="text-[12px] font-semibold text-lime">Rendez-vous hebdo · Check-in QR</div>
-          <div className="truncate text-[17px] font-bold text-white">Terrain du Jeudi · 19h00</div>
+          <div className="truncate text-[17px] font-bold text-white">Terrain du jour · 19h00</div>
           <div className="truncate text-[13px] text-white/75">Roi du Terrain · Caisse & vote MVP</div>
         </div>
       </motion.button>

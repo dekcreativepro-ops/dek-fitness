@@ -545,7 +545,6 @@ export default function App() {
     );
 
     pushFeedPost({
-      bannerImage: '/images/ph/marathon-wide.jpg',
       type: 'mission',
       badge: `${modeLabel.toUpperCase()} • ${tier.toUpperCase()}`,
       content: `Sortie ${modeLabel} validée ! Parcours de ${distanceKm} km terminé à la position #${rankPos}.`,
@@ -584,7 +583,6 @@ export default function App() {
       return;
     }
     pushFeedPost({
-      bannerImage: '/images/ph/runner-wide.jpg',
       type: 'mission',
       badge: 'TERRITOIRE CONQUIS',
       content: `Prise de contrôle de ${zoneName} pour DEK Warriors ! Badge « ${badgeName} » débloqué.`,
@@ -610,7 +608,6 @@ export default function App() {
       kcal: 60,
     });
     pushFeedPost({
-      bannerImage: '/images/ph/dunk-wide.jpg',
       type: 'house',
       badge: `DÉFI HOUSE • ${modeLabel.toUpperCase()}`,
       content: `Victoire en mode ${modeLabel} sur ${exercise} ! ${reps} validées devant l'IA DEK.`,
@@ -634,7 +631,6 @@ export default function App() {
       return false;
     }
     pushFeedPost({
-      bannerImage: '/images/ph/duo-wide.jpg',
       type: 'house',
       badge: 'GYM BUDDY • DUO LIVE',
       content: `Séance synchronisée « ${routineTitle} » bouclée en duo (${totalSets} séries validées).`,
@@ -678,16 +674,15 @@ export default function App() {
         xp: u.xp + 150,
         santePlayed: u.santePlayed + 1,
         disciplineScore: Math.min(100, u.disciplineScore + 2),
-        badges: addBadgeUnique(u.badges, 'Roi du Jeudi'),
+        badges: addBadgeUnique(u.badges, 'Roi du Terrain'),
       }),
-      { claimKey: `thursday:${weekKey()}`, session: true },
+      { claimKey: `match:${dayKey()}`, session: true },
     );
     if (!rewarded) {
-      showToast('Le bilan du Jeudi est déjà publié cette semaine.');
+      showToast('Le bilan du match est déjà publié aujourd’hui.');
       return false;
     }
     pushFeedPost({
-      bannerImage: '/images/ph/match-wide.jpg',
       type: 'sante',
       badge: 'TERRAIN DU JEUDI • OFFICIEL',
       content: `${summaryText} MVP élu : ${mvpName} (+50 XP).`,
@@ -698,7 +693,7 @@ export default function App() {
       ],
       reactions: { feu: 3, force: 2, respect: 2 },
     });
-    showToast(`Terrain du Jeudi clôturé ! MVP : ${mvpName} (+150 XP).`);
+    showToast(`Match clôturé ! MVP : ${mvpName} (+150 XP).`);
     return true;
   };
 
@@ -718,7 +713,6 @@ export default function App() {
       return;
     }
     pushFeedPost({
-      bannerImage: '/images/ph/feet-wide.jpg',
       type: 'mission',
       badge: `RAID WEEK-END • ${badgeName.toUpperCase()}`,
       content: `Check-in QR validé sur place pour « ${raidTitle} » ! Badge exclusif débloqué.`,
@@ -856,7 +850,6 @@ export default function App() {
     );
     if (rewarded) {
       pushFeedPost({
-        bannerImage: program.image,
         type: 'house',
         badge: `SÉANCE GUIDÉE • ${program.level.toUpperCase()}`,
         content: `« ${program.title} » bouclée en ${Math.round(result.durationSec / 60)} min : ${result.exercisesDone} exercices validés.`,
@@ -948,7 +941,7 @@ export default function App() {
     { id: 'outdoor', label: 'Mission Outdoor', sub: 'Carte 3D & GPS', icon: <Compass className="h-5 w-5" /> },
     { id: 'house', label: 'Défi House IA', sub: 'Duel caméra', icon: <Sword className="h-5 w-5" /> },
     { id: 'water', label: '+250 ml d’eau', sub: `${user.waterGlasses} verre(s) aujourd’hui`, icon: <DropWave className="h-5 w-5" /> },
-    { id: 'thursday', label: 'Terrain du Jeudi', sub: 'Check-in & live', icon: <SoccerBall className="h-5 w-5" /> },
+    { id: 'thursday', label: 'Terrains & matchs', sub: 'Check-in & live', icon: <SoccerBall className="h-5 w-5" /> },
     { id: 'ladder', label: 'Classement', sub: 'Podium de la semaine', icon: <TrophyShine className="h-5 w-5" /> },
     { id: 'post', label: 'Publier', sub: 'Actu ou défi', icon: <PaperPlaneRight className="h-5 w-5" /> },
   ];

@@ -24,7 +24,7 @@ interface Athlete {
 
 const ATHLETES: Athlete[] = [
   { id: 'a1', name: 'Koffi_Sprint', city: 'Abidjan', preset: 'manga-sprint', seasonXp: 7420, weekXp: 1340, trend: 0 },
-  { id: 'a2', name: 'Sarah_5AM', city: 'Paris', preset: 'manga-fighter', seasonXp: 6150, weekXp: 1180, trend: 2 },
+  { id: 'a2', name: 'Sarah_5h', city: 'Paris', preset: 'manga-fighter', seasonXp: 6150, weekXp: 1180, trend: 2 },
   { id: 'a3', name: 'Moussa_Iron', city: 'Dakar', preset: 'fantasy-paladin', seasonXp: 5480, weekXp: 990, trend: -1 },
   { id: 'a4', name: 'Titan_Exp', city: 'Abidjan', preset: 'fantasy-shadow', seasonXp: 4210, weekXp: 860, trend: 1 },
   { id: 'a5', name: 'Awa_Speed', city: 'Abidjan', preset: 'manga-fighter', seasonXp: 3380, weekXp: 720, trend: 3 },

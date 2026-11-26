@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { BookmarkSimple, Play } from '../DekIcons';
 import type { WorkoutProgram } from '../../data/workoutsData';
+import { LIGHT_PHOTO_CATEGORIES } from '../../data/photos';
 import { usePhoto } from '../../utils/usePhoto';
 
 /** Carte photo d'une séance guidée (PhotoCard : grille Browse, carrousel). */
@@ -22,6 +23,7 @@ export function WorkoutCard({
   tall?: boolean;
 }) {
   const photo = usePhoto(program.photoCat, 'card');
+  const light = LIGHT_PHOTO_CATEGORIES.includes(program.photoCat);
   return (
     <motion.div
       whileTap={{ scale: 0.97 }}
@@ -38,9 +40,9 @@ export function WorkoutCard({
         alt=""
         loading="lazy"
         decoding="async"
-        className="absolute inset-0 h-full w-full object-cover opacity-25"
+        className={`absolute inset-0 h-full w-full object-cover ${light ? 'opacity-70' : 'opacity-30'}`}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
+      <div className={`absolute inset-0 bg-gradient-to-t ${light ? 'from-ink via-ink/40' : 'from-ink/80 via-transparent'} to-transparent`} />
 
       {onToggleSave && (
         <button

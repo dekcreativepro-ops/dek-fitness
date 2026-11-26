@@ -56,7 +56,7 @@ function formatClock(totalSec: number) {
 
 /** Photo d'un match : basket ou football (le hook vit ici pour pouvoir servir dans une liste). */
 function SportPhoto({ basket }: { basket: boolean }) {
-  const src = usePhoto(basket ? 'basket' : 'football', 'wide');
+  const src = usePhoto(basket ? 'basket' : 'matchfoot', 'wide');
   return <img src={src} alt="" loading="lazy" draggable={false} className="h-full w-full select-none object-cover" />;
 }
 
@@ -104,6 +104,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
   const [sport, setSport] = useState<SanteMatch['sport']>('Football 7v7');
   const [location, setLocation] = useState('');
   const [time, setTime] = useState('19h00');
+  const [matchDay, setMatchDay] = useState('Ce soir');
   const [teamA, setTeamA] = useState('Mon Équipe DEK');
   const [teamB, setTeamB] = useState('Équipe Adverse (Ouvert)');
 
@@ -246,8 +247,8 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
     const mvpName = players.find((p) => p.id === mvpId)?.name ?? 'Koffi_Sprint';
     const headline =
       format === 'roi_du_terrain'
-        ? `Terrain du Jeudi (Roi du Terrain • ${roundNum} manches) : Équipe ${winStreak.team} domine (${winStreak.count} victoires de suite). Top buteur : ${topScorer?.name ?? 'Koffi_Sprint'} (${topScorer?.goals ?? 1} buts).`
-        : `Terrain du Jeudi (2×25 min) : Éq. ${pitchLeft} ${scoreLeft} - ${scoreRight} Éq. ${pitchRight}. Top buteur : ${topScorer?.name ?? 'Koffi_Sprint'}.`;
+        ? `Match (Roi du Terrain • ${roundNum} manches) : Équipe ${winStreak.team} domine (${winStreak.count} victoires de suite). Top buteur : ${topScorer?.name ?? 'Koffi_Sprint'} (${topScorer?.goals ?? 1} buts).`
+        : `Match (2×25 min) : Éq. ${pitchLeft} ${scoreLeft} - ${scoreRight} Éq. ${pitchRight}. Top buteur : ${topScorer?.name ?? 'Koffi_Sprint'}.`;
     setThursdayPublished(true);
     if (onCompleteThursday(headline, mvpName)) playVictory();
   };
@@ -288,7 +289,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
       sport,
       location: location.trim(),
       city: 'À proximité',
-      dateLabel: 'Jeudi prochain',
+      dateLabel: matchDay,
       time,
       teamA: teamA.trim() || 'Équipe A',
       teamB: teamB.trim() || 'Équipe B',
@@ -317,7 +318,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
         <input
           type="text"
           required
-          placeholder="Nom du match (ex: Terrain Jeudi 19h)"
+          placeholder="Nom du match (ex: Terrain du soir 19h)"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className={FIELD}
@@ -332,6 +333,13 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
             <option value="Football 7v7">Foot 7v7</option>
             <option value="Football 11v11">Foot 11v11</option>
             <option value="Basket 3v3">Basket 3v3</option>
+          </select>
+          <select value={matchDay} onChange={(e) => setMatchDay(e.target.value)} className={FIELD} aria-label="Jour du match">
+            {['Ce soir', 'Demain', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
           </select>
           <input
             type="text"
@@ -368,14 +376,14 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
       <div className="relative h-36 overflow-hidden rounded-[24px]">
         <img
           src={bannerPhoto}
-          alt="Terrain du Jeudi & La Santé DEK"
+          alt="Terrains collectifs & La Santé DEK"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
         <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3">
           <div>
-            <div className="text-[12px] font-medium text-white/80">Terrains du Jeudi</div>
-            <h2 className="text-[22px] font-bold leading-7 text-white">Jeudi Terrain &amp; Tournoi</h2>
+            <div className="text-[12px] font-medium text-white/80">Matchs & terrains</div>
+            <h2 className="text-[22px] font-bold leading-7 text-white">Terrains &amp; Tournoi</h2>
           </div>
           <Button size="md" onClick={() => setShowCreate(true)}>
             <span className="flex items-center gap-1.5">
@@ -387,7 +395,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
 
       <ChipTabs
         items={[
-          { id: 'jeudi', label: 'Jeudi live' },
+          { id: 'jeudi', label: 'Match live' },
           { id: 'matchs', label: `Matchs (${matches.length})` },
           { id: 'tournoi', label: 'Tournoi' },
         ]}
@@ -437,7 +445,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
             <div className="space-y-4">
               <Card>
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-[16px] font-bold leading-[22px] text-fg">Format · Jeudi 19h00</h3>
+                  <h3 className="text-[16px] font-bold leading-[22px] text-fg">Format · soirée 19h00</h3>
                   <button
                     onClick={handleAutoBalance}
                     className="flex h-8 items-center gap-1.5 rounded-full bg-tile px-3 text-[12px] font-semibold text-fg"
@@ -825,7 +833,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
               {/* Vote MVP */}
               <Card>
                 <div className="mb-3 flex items-baseline justify-between">
-                  <h3 className="text-[16px] font-bold leading-[22px] text-fg">Vote MVP du Jeudi</h3>
+                  <h3 className="text-[16px] font-bold leading-[22px] text-fg">Vote MVP du match</h3>
                   <span className="text-[12px] font-semibold text-lime">+50 XP bonus</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -868,7 +876,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
                 {thursdayPublished ? (
                   <div className="mt-5 flex items-center justify-center gap-2 rounded-full bg-tile py-3.5 text-[14px] font-bold text-lime">
                     <CheckCircle className="h-4 w-4" />
-                    Bilan du Jeudi publié sur le Réseau DEK
+                    Bilan du match publié sur le Réseau DEK
                   </div>
                 ) : (
                   <Button

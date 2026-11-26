@@ -20,7 +20,7 @@ export const INITIAL_TERRITORIES: TerritoryZone[] = [
   {
     id: 'z2',
     name: 'Zone Plateau',
-    ownerClub: 'Team 5AM',
+    ownerClub: 'Team 5h',
     points: 910,
     targetPoints: 1000,
     color: '#00E5FF',
@@ -62,14 +62,14 @@ export const INITIAL_THURSDAY_PLAYERS: ThursdayPlayer[] = [
 export const TOURNAMENT_GROUP_TABLE = [
   { team: 'DEK Warriors', played: 3, diff: '+5', pts: 9 },
   { team: 'FC Riviera', played: 3, diff: '+2', pts: 6 },
-  { team: 'Team 5AM', played: 3, diff: '-1', pts: 3 },
+  { team: 'Team 5h', played: 3, diff: '-1', pts: 3 },
   { team: 'Titan FC', played: 3, diff: '-6', pts: 0 },
 ];
 
 export const TOURNAMENT_TOP_SCORERS = [
   { name: 'Koffi_Sprint', team: 'DEK Warriors', goals: 6 },
   { name: 'Ibrahim_Cap', team: 'FC Riviera', goals: 5 },
-  { name: 'Drogba_Jr', team: 'Team 5AM', goals: 4 },
+  { name: 'Drogba_Jr', team: 'Team 5h', goals: 4 },
 ];
 
 export const INITIAL_GYM_CALLS: GymSpotCall[] = [
@@ -84,7 +84,7 @@ export const INITIAL_GYM_CALLS: GymSpotCall[] = [
   },
   {
     id: 'g2',
-    author: 'Sarah_5AM',
+    author: 'Sarah_5h',
     avatarPreset: 'manga-fighter',
     gymName: 'Parc Street Workout',
     focus: 'Tractions / Dips / Gainage',
@@ -169,13 +169,13 @@ export const INITIAL_PACTS: FriendPact[] = [
     members: [
       { id: 'm_me', name: 'Toi', done: 1, isMe: true },
       { id: 'm2', name: 'Koffi_Sprint', done: 3 },
-      { id: 'm3', name: 'Sarah_5AM', done: 2 },
+      { id: 'm3', name: 'Sarah_5h', done: 2 },
       { id: 'm4', name: 'Lucas_Pace', done: 0 },
     ],
   },
   {
     id: 'pact2',
-    title: '2 duels Défi House + 1 Terrain Jeudi',
+    title: '2 duels Défi House + 1 match',
     targetPerWeek: 3,
     members: [
       { id: 'm_me2', name: 'Toi', done: 2, isMe: true },

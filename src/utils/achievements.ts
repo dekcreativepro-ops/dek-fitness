@@ -62,7 +62,7 @@ export function getAchievementStats(user: UserProfile): AchievementStats {
     missions: user.missionsCompleted,
     guided,
     xp: user.xp,
-    thursdayKing: user.badges.includes('Roi du Jeudi'),
+    thursdayKing: user.badges.includes('Roi du Terrain'),
     discipline: user.disciplineScore,
   };
 }
@@ -79,7 +79,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'ko', group: 'speciaux', title: 'Premier K.O.', description: 'Gagne un duel Défi House IA.', mark: 'KO', color: '#FF2E54', target: 1, metric: (s) => s.houseWins },
   { id: 'gps', group: 'speciaux', title: 'Éclaireur GPS', description: '5 missions Outdoor réussies.', mark: 'GPS', color: '#00E5FF', target: 5, metric: (s) => s.missions },
   { id: 'guided', group: 'speciaux', title: 'Élève modèle', description: '3 séances guidées terminées.', mark: '×3', color: '#A855F7', target: 3, metric: (s) => s.guided },
-  { id: 'mvp', group: 'speciaux', title: 'Roi du Jeudi', description: 'Clôture un Terrain du Jeudi officiel.', mark: 'MVP', color: '#F5C542', target: 1, metric: (s) => (s.thursdayKing ? 1 : 0) },
+  { id: 'mvp', group: 'speciaux', title: 'Roi du Terrain', description: 'Clôture un match officiel.', mark: 'MVP', color: '#F5C542', target: 1, metric: (s) => (s.thursdayKing ? 1 : 0) },
   { id: 'elite', group: 'speciaux', title: 'Élite', description: 'Atteins le rang de saison Élite (3 500 XP).', mark: 'ÉL', color: '#FF8A00', target: 3500, metric: (s) => s.xp },
 ];
 

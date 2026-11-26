@@ -29,7 +29,7 @@ interface NetworkHubViewProps {
 }
 
 const SUB_TABS: { id: NetworkSubTab; label: string }[] = [
-  { id: 'sante', label: 'Jeudi & Santé' },
+  { id: 'sante', label: 'Terrains & Santé' },
   { id: 'raids', label: 'Raids & Pactes' },
   { id: 'coachs', label: 'Coachs' },
   { id: 'profil', label: 'Profil' },
@@ -72,7 +72,7 @@ const ACTIVE_STORIES: {
   },
   {
     id: 'st3',
-    label: 'Jeudi 19h',
+    label: 'Match 19h',
     tag: 'TERRAIN',
     target: 'sante',
     avatar: {

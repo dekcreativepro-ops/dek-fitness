@@ -12,7 +12,7 @@ interface RaidsPactsViewProps {
 }
 
 function TeamPhoto() {
-  const src = usePhoto('team', 'wide');
+  const src = usePhoto('raids', 'wide');
   return <img src={src} alt="" loading="lazy" draggable={false} className="absolute inset-0 h-full w-full select-none object-cover" />;
 }
 
@@ -97,7 +97,7 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
       members: [
         { id: `me-${stamp}`, name: 'Toi', done: 0, isMe: true },
         { id: `f1-${stamp}`, name: 'Koffi_Sprint', done: 1 },
-        { id: `f2-${stamp}`, name: 'Sarah_5AM', done: 0 },
+        { id: `f2-${stamp}`, name: 'Sarah_5h', done: 0 },
       ],
     };
     setPacts((prev) => [created, ...prev]);

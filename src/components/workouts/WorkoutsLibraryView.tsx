@@ -60,6 +60,7 @@ export function WorkoutsLibraryView({
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '');
     return WORKOUT_PROGRAMS.filter((p) => {
+      if (p.id === recommended.id && category === 'all' && level === 'all' && !q) return false;
       if (category === 'saved' && !user.savedWorkouts.includes(p.id)) return false;
       if (category !== 'all' && category !== 'saved' && p.category !== category) return false;
       if (level !== 'all' && p.level !== level) return false;
@@ -74,7 +75,7 @@ export function WorkoutsLibraryView({
     }).sort((a, b) =>
       sort === 'duree' ? a.durationMin - b.durationMin : sort === 'kcal' ? b.kcal - a.kcal : sort === 'note' ? b.rating - a.rating : 0,
     );
-  }, [category, level, query, sort, user.savedWorkouts]);
+  }, [category, level, query, sort, user.savedWorkouts, recommended.id]);
 
   const cycleSort = () => setSort((cur) => SORTS[(SORTS.findIndex((x) => x.id === cur) + 1) % SORTS.length].id);
   const sortLabel = SORTS.find((x) => x.id === sort)?.label ?? 'Tri';
