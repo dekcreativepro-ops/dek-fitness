@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import {
   BatteryCharging,
   Maximize2,
@@ -10,7 +10,7 @@ import {
   Wifi,
   X,
 } from 'lucide-react';
-import { isSoundEnabled, setSoundEnabled } from '../utils/soundFx';
+import { isSoundEnabled, setSoundEnabled, subscribeSound } from '../utils/soundFx';
 
 interface PhoneSimulatorFrameProps {
   children: ReactNode;
@@ -36,7 +36,7 @@ export function PhoneSimulatorFrame({ children }: PhoneSimulatorFrameProps) {
   );
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [presetId, setPresetId] = useState<string>('std');
-  const [soundOn, setSoundOn] = useState<boolean>(() => isSoundEnabled());
+  const soundOn = useSyncExternalStore(subscribeSound, isSoundEnabled);
   const [showScrcpyHelp, setShowScrcpyHelp] = useState(false);
   const [clock, setClock] = useState<string>(() => {
     const d = new Date();
@@ -65,11 +65,7 @@ export function PhoneSimulatorFrame({ children }: PhoneSimulatorFrameProps) {
     return () => clearInterval(id);
   }, []);
 
-  const toggleSound = () => {
-    const next = !soundOn;
-    setSoundOn(next);
-    setSoundEnabled(next);
-  };
+  const toggleSound = () => setSoundEnabled(!soundOn);
 
   // Sur téléphone réel (< 768px) ou en mode plein écran mobile : rendu natif sans châssis
   if (isMobileScreen || fullScreenMode) {
@@ -187,7 +183,8 @@ export function PhoneSimulatorFrame({ children }: PhoneSimulatorFrameProps) {
           </div>
           <p className="mt-1.5 text-[11px] text-slate-400">
             Puis ouvre <span className="font-semibold text-white">http://localhost:5173</span> sur
-            Chrome mobile (ou en Wi-Fi via <span className="text-white">http://192.168.100.10:5173</span>).
+            Chrome mobile (ou en Wi-Fi via <span className="text-white">http://&lt;IP-de-ton-PC&gt;:5173</span>,
+            l’adresse « Network » affichée par <span className="text-white">npm run dev -- --host</span>).
           </p>
         </div>
       )}

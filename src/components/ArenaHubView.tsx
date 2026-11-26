@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Dumbbell, Sword } from './DekIcons';
 import type { MissionDifficulty, UserAvatarConfig } from '../types/dek';
@@ -16,7 +16,7 @@ interface ArenaHubViewProps {
     reps: number,
     modeLabel?: string,
   ) => void;
-  onDuoComplete: (routineTitle: string, totalSets: number) => void;
+  onDuoComplete: (routineTitle: string, totalSets: number) => boolean;
   onSpotJoin?: (author: string, gymName: string) => void;
 }
 
@@ -29,11 +29,8 @@ export function ArenaHubView({
   onDuoComplete,
   onSpotJoin,
 }: ArenaHubViewProps) {
+  // App remonte ce composant (clé) quand on demande un sous-onglet précis depuis l'accueil.
   const [subTab, setSubTab] = useState<'house' | 'gym'>(initialSubTab);
-
-  useEffect(() => {
-    setSubTab(initialSubTab);
-  }, [initialSubTab]);
 
   return (
     <div className="space-y-3">

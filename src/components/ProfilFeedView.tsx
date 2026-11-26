@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
+import { useDekNav } from '../context/DekNav';
+import { ACHIEVEMENTS, getEarnedAchievementIds } from '../utils/achievements';
+import { RankEmblem } from './ui/RankEmblem';
+import { TrophyShine } from './ui/AnimatedIcons';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -11,12 +15,16 @@ import {
   ShieldCheck,
   SignOut,
   Sparkle,
+  SpeakerHigh,
+  SpeakerSlash,
   Trophy,
   X,
 } from './DekIcons';
-import type { FeedPost, UserAvatarConfig, UserProfile } from '../types/dek';
+import type { FeedPost, FeedReaction, UserAvatarConfig, UserProfile } from '../types/dek';
 import { CARDIO_LABELS, TIER_COLORS } from '../utils/categorization';
 import { FITNESS_GOALS, MUSCLE_LABELS } from '../utils/programsAndNutrition';
+import { formatTimeAgo, getRankInfo } from '../utils/progression';
+import { isSoundEnabled, setSoundEnabled, subscribeSound } from '../utils/soundFx';
 import { AvatarStudio } from './AvatarStudio';
 import { UserAvatar } from './UserAvatar';
 
@@ -26,8 +34,20 @@ interface ProfilFeedViewProps {
   onRetakeInitiation: () => void;
   onUpdateAvatar: (avatar: UserAvatarConfig) => void;
   onCreatePost: (content: string, badge: string) => void;
+  onReact: (postId: string, key: FeedReaction) => void;
   onLogout: () => void;
 }
+
+const REACTIONS: {
+  key: FeedReaction;
+  Icon: typeof Fire;
+  color: string;
+  label: string;
+}[] = [
+  { key: 'feu', Icon: Fire, color: 'text-orange-400', label: 'Réaction feu' },
+  { key: 'force', Icon: Lightning, color: 'text-[#C8FF00]', label: 'Réaction force' },
+  { key: 'respect', Icon: HandsClapping, color: 'text-[#00E5FF]', label: 'Réaction respect' },
+];
 
 export function ProfilFeedView({
   user,
@@ -35,26 +55,16 @@ export function ProfilFeedView({
   onRetakeInitiation,
   onUpdateAvatar,
   onCreatePost,
+  onReact,
   onLogout,
 }: ProfilFeedViewProps) {
-  const [posts, setPosts] = useState<FeedPost[]>(feed);
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [newPostText, setNewPostText] = useState('');
   const [newPostBadge, setNewPostBadge] = useState('DÉFI COMMUNAUTÉ');
-
-  if (feed.length !== posts.length) {
-    setPosts(feed);
-  }
-
-  const handleReact = (id: string, key: 'feu' | 'force' | 'respect') => {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, reactions: { ...p.reactions, [key]: p.reactions[key] + 1 } }
-          : p,
-      ),
-    );
-  };
+  const soundOn = useSyncExternalStore(subscribeSound, isSoundEnabled);
+  const nav = useDekNav();
+  const earnedCount = getEarnedAchievementIds(user).length;
 
   const handlePublish = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +74,7 @@ export function ProfilFeedView({
     setNewPostText('');
   };
 
-  const xpPct = Math.min(100, Math.round((user.xp / user.nextRankXp) * 100));
+  const rankInfo = getRankInfo(user.xp);
   const radius = 24;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference - (user.disciplineScore / 100) * circumference;
@@ -194,19 +204,73 @@ export function ProfilFeedView({
         {/* Barre XP */}
         <div className="mt-3">
           <div className="flex justify-between text-[10px] font-semibold">
-            <span className="text-slate-300">SAISON 1 • PROGRESSION</span>
+            <span className="text-slate-300">
+              SAISON 1 • <span className="font-hud text-white">{rankInfo.rank.toUpperCase()}</span>
+            </span>
             <span className="font-hud text-[#C8FF00]">
-              {user.xp} / {user.nextRankXp} XP
+              {rankInfo.nextRank
+                ? `${user.xp} / ${rankInfo.nextRankXp} XP`
+                : `${user.xp} XP • RANG MAX`}
             </span>
           </div>
           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/60">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${xpPct}%` }}
+              animate={{ width: `${rankInfo.pct}%` }}
               transition={{ duration: 0.7, ease: 'easeOut' }}
               className="h-full rounded-full bg-gradient-to-r from-[#00E5FF] to-[#C8FF00]"
             />
           </div>
+          {rankInfo.nextRank && (
+            <div className="mt-1 text-[9px] text-slate-400">
+              Encore {rankInfo.nextRankXp - user.xp} XP pour passer{' '}
+              <strong className="text-slate-200">{rankInfo.nextRank}</strong> • Série{' '}
+              <strong className="text-[#00E5FF]">{user.streakDays} j</strong>
+            </div>
+          )}
+        </div>
+
+        {/* Profil physique */}
+        <button
+          onClick={nav.editBodyProfile}
+          className="mt-3 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#0B0E14]/90 px-3 py-2 text-left"
+        >
+          <span className="text-[11px] text-slate-300">
+            <span className="font-hud font-bold text-white">Profil physique</span>
+            {' • '}
+            {user.body
+              ? `${user.body.age} ans • ${user.body.weightKg} kg • ${user.body.heightCm} cm`
+              : 'À compléter pour calibrer tes calories'}
+          </span>
+          <span className="text-[10px] font-bold text-[#C8FF00]">Modifier</span>
+        </button>
+
+        {/* Raccourcis Trophées & Classement */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={nav.openTrophies}
+            className="flex items-center gap-2 rounded-2xl border border-[#F5C542]/30 bg-[#F5C542]/10 px-3 py-2.5 text-left"
+          >
+            <TrophyShine className="h-6 w-6" />
+            <span>
+              <span className="font-hud block text-[11px] font-bold text-white">Trophées</span>
+              <span className="block text-[10px] text-[#F5C542]">
+                {earnedCount}/{ACHIEVEMENTS.length} débloqués
+              </span>
+            </span>
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={nav.openLeaderboard}
+            className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left"
+          >
+            <RankEmblem rank={rankInfo.rank} size={26} animated={false} />
+            <span>
+              <span className="font-hud block text-[11px] font-bold text-white">Classement</span>
+              <span className="block text-[10px] text-slate-400">{rankInfo.rank}</span>
+            </span>
+          </motion.button>
         </div>
 
         {/* Badges débloqués (Territoires, Raids, Jeudi) */}
@@ -281,12 +345,59 @@ export function ProfilFeedView({
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={onLogout}
+              onClick={() => setSoundEnabled(!soundOn)}
+              aria-pressed={soundOn}
+              title={soundOn ? 'Couper sons & vibrations' : 'Activer sons & vibrations'}
+              className={`flex items-center justify-center rounded-xl border px-2.5 py-2 ${
+                soundOn
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                  : 'border-white/10 bg-white/5 text-slate-400'
+              }`}
+            >
+              {soundOn ? (
+                <SpeakerHigh weight="duotone" className="h-3.5 w-3.5" />
+              ) : (
+                <SpeakerSlash weight="duotone" className="h-3.5 w-3.5" />
+              )}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setConfirmLogout(true)}
               className="font-hud flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-slate-300 hover:text-[#FF2E54]"
             >
               <SignOut weight="duotone" className="h-3.5 w-3.5" /> Compte
             </motion.button>
           </div>
+
+          <AnimatePresence>
+            {confirmLogout && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2.5 rounded-xl border border-[#FF2E54]/40 bg-[#FF2E54]/10 p-2.5 text-[11px] text-slate-200">
+                  <strong className="text-[#FF2E54]">Se déconnecter ?</strong> Ton XP, tes badges et
+                  ton fil seront effacés de ce téléphone.
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={() => setConfirmLogout(false)}
+                      className="font-hud flex-1 rounded-lg border border-white/15 bg-white/5 py-1.5 text-[11px] font-bold text-slate-200"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={onLogout}
+                      className="font-hud flex-1 rounded-lg bg-[#FF2E54] py-1.5 text-[11px] font-bold text-white"
+                    >
+                      Oui, effacer
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -344,7 +455,7 @@ export function ProfilFeedView({
         </div>
 
         <div className="space-y-2.5">
-          {posts.map((post) => {
+          {feed.map((post) => {
             const postAvatar: UserAvatarConfig = post.avatarPreset
               ? {
                   mode: 'preset',
@@ -381,7 +492,9 @@ export function ProfilFeedView({
                       <UserAvatar avatar={postAvatar} size="sm" />
                       <div>
                         <div className="text-xs font-bold text-white">{post.author}</div>
-                        <div className="text-[10px] text-slate-400">{post.timeAgo}</div>
+                        <div className="text-[10px] text-slate-400">
+                          {post.createdAt ? formatTimeAgo(post.createdAt) : post.timeAgo}
+                        </div>
                       </div>
                     </div>
                     {!post.bannerImage && (
@@ -405,30 +518,26 @@ export function ProfilFeedView({
                   )}
 
                   <div className="mt-2.5 flex items-center gap-2">
-                    <motion.button
-                      whileTap={{ scale: 1.25 }}
-                      onClick={() => handleReact(post.id, 'feu')}
-                      className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-200"
-                    >
-                      <Fire weight="duotone" className="h-4 w-4 text-orange-400" />{' '}
-                      {post.reactions.feu}
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 1.25 }}
-                      onClick={() => handleReact(post.id, 'force')}
-                      className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-200"
-                    >
-                      <Lightning weight="duotone" className="h-4 w-4 text-[#C8FF00]" />{' '}
-                      {post.reactions.force}
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 1.25 }}
-                      onClick={() => handleReact(post.id, 'respect')}
-                      className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-200"
-                    >
-                      <HandsClapping weight="duotone" className="h-4 w-4 text-[#00E5FF]" />{' '}
-                      {post.reactions.respect}
-                    </motion.button>
+                    {REACTIONS.map(({ key, Icon, color, label }) => {
+                      const mine = post.myReaction === key;
+                      return (
+                        <motion.button
+                          key={key}
+                          whileTap={{ scale: 1.25 }}
+                          onClick={() => onReact(post.id, key)}
+                          aria-pressed={mine}
+                          aria-label={label}
+                          className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] ${
+                            mine
+                              ? 'border-[#C8FF00]/50 bg-[#C8FF00]/12 text-white'
+                              : 'border-white/10 bg-white/5 text-slate-200'
+                          }`}
+                        >
+                          <Icon weight="duotone" className={`h-4 w-4 ${color}`} />{' '}
+                          {post.reactions[key]}
+                        </motion.button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

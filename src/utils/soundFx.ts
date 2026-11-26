@@ -1,7 +1,29 @@
 // Synthétiseur d'effets sonores Web Audio API (aucun fichier audio externe requis)
 
 let audioCtx: AudioContext | null = null;
-let soundEnabled = true;
+
+const SOUND_STORAGE_KEY = 'dek_fitness_sound_v1';
+const listeners = new Set<() => void>();
+
+function readSavedPreference(): boolean {
+  try {
+    return typeof window === 'undefined' || window.localStorage.getItem(SOUND_STORAGE_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+let soundEnabled = readSavedPreference();
+
+/** Vibration courte (Android) en complément du son — ignorée si non supportée. */
+function vibrate(pattern: number | number[]) {
+  if (!soundEnabled || typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
+  try {
+    navigator.vibrate(pattern);
+  } catch {
+    // Ignore
+  }
+}
 
 function getContext(): AudioContext | null {
   if (!soundEnabled || typeof window === 'undefined') return null;
@@ -24,6 +46,20 @@ function getContext(): AudioContext | null {
 
 export function setSoundEnabled(enabled: boolean) {
   soundEnabled = enabled;
+  try {
+    window.localStorage.setItem(SOUND_STORAGE_KEY, enabled ? 'on' : 'off');
+  } catch {
+    // Ignore
+  }
+  listeners.forEach((l) => l());
+}
+
+/** Abonnement pour `useSyncExternalStore` (garde le bouton Son synchronisé partout). */
+export function subscribeSound(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function isSoundEnabled(): boolean {
@@ -54,6 +90,7 @@ export function playTick() {
 
 /** Double bip énergique pour le Top Départ / Début de duel */
 export function playGo() {
+  vibrate(40);
   const ctx = getContext();
   if (!ctx) return;
   try {
@@ -78,6 +115,7 @@ export function playGo() {
 
 /** Impact percussif léger quand une répétition valide des dégâts (-5 HP) */
 export function playHit() {
+  vibrate(15);
   const ctx = getContext();
   if (!ctx) return;
   try {
@@ -100,6 +138,7 @@ export function playHit() {
 
 /** Accord ascendant court en cas de Mission réussie ou K.O. */
 export function playVictory() {
+  vibrate([40, 50, 80]);
   const ctx = getContext();
   if (!ctx) return;
   try {
@@ -120,5 +159,31 @@ export function playVictory() {
     });
   } catch {
     // Silencieux
+  }
+}
+
+/** Voix du coach (synthèse vocale du téléphone, en français). Respecte le réglage Son. */
+export function speak(text: string) {
+  if (!soundEnabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  try {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'fr-FR';
+    utter.rate = 1.05;
+    utter.pitch = 1;
+    const frVoice = synth.getVoices().find((v) => v.lang.toLowerCase().startsWith('fr'));
+    if (frVoice) utter.voice = frVoice;
+    synth.speak(utter);
+  } catch {
+    // Synthèse vocale indisponible
+  }
+}
+
+export function stopSpeaking() {
+  try {
+    window.speechSynthesis?.cancel();
+  } catch {
+    // Ignore
   }
 }

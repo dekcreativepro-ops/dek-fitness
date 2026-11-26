@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as maplibregl from 'maplibre-gl';
+// MapLibre v6 cherche son worker à côté de son propre fichier : introuvable une fois
+// l'app bundlée par Vite (dev : 504, build : fichier absent) → carte vide.
+// On fait bundler le worker par Vite et on donne son URL à MapLibre.
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bike,
@@ -38,6 +42,7 @@ import type {
 import { getTierIndex, TIER_COLORS, TIER_REQUIREMENTS } from '../utils/categorization';
 import { generateLoopRoute, type GeneratedRoute } from '../utils/routeGenerator';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
+import { HeartBeat } from './ui/AnimatedIcons';
 
 interface MissionsViewProps {
   userCategory: MissionDifficulty;
@@ -76,6 +81,11 @@ const OUTDOOR_MODES: { id: OutdoorGameMode; label: string; short: string }[] = [
   { id: 'conquete_territoire', label: 'Conquête Territoire', short: 'Territoire' },
   { id: 'fantome', label: 'Duel Fantôme', short: 'Fantôme' },
 ];
+
+/** Fenêtre de temps (s) pour atteindre chaque checkpoint en mode Survie. */
+const CP_WINDOW_SEC = 11;
+
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
 type MissionPhase =
   | 'lobby'
@@ -144,15 +154,23 @@ export function MissionsView({
 
   // État Survie Checkpoint (4 CPs : 25%, 50%, 75%, 100%)
   const [checkpointIdx, setCheckpointIdx] = useState(1); // 1..4
-  const [cpTimer, setCpTimer] = useState(11);
+  const [cpTimer, setCpTimer] = useState(CP_WINDOW_SEC);
+  const [mapNotice, setMapNotice] = useState<string | null>(null);
+  // Résultat figé au moment de l'arrivée (le palier peut changer juste après une promotion)
+  const [lastResult, setLastResult] = useState<{ rank: number; km: number; xp: number } | null>(
+    null,
+  );
 
   // État Relais Escouade (4 équipiers)
   const [relayLeg, setRelayLeg] = useState(1); // 1: Koffi, 2: Toi, 3: Sarah, 4: Moussa
   const [relayTeammatePct, setRelayTeammatePct] = useState(0);
 
-  useEffect(() => {
+  // Après une promotion de palier, on présélectionne automatiquement le nouveau palier
+  const [prevCategory, setPrevCategory] = useState(userCategory);
+  if (prevCategory !== userCategory) {
+    setPrevCategory(userCategory);
     setSelectedTier(userCategory);
-  }, [userCategory]);
+  }
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -163,6 +181,35 @@ export function MissionsView({
   const is3DRef = useRef(is3D);
   const myProgressRef = useRef(myProgressKm);
   const cpIdxRef = useRef(checkpointIdx);
+  const cpTimerRef = useRef(CP_WINDOW_SEC);
+  const runnersRef = useRef(runners);
+  // Verrou : une mission ne peut se terminer (succès OU échec) qu'une seule fois.
+  // Avant, la fin pouvait être déclenchée 2× (sprint + timer, ou StrictMode) → XP doublée.
+  const finishedRef = useRef(false);
+  const routeReqRef = useRef(0);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Toujours appeler les callbacks parents les plus récents depuis les timers
+  const callbacksRef = useRef({ onMissionComplete, onMissionFail, onTerritoryCapture });
+  useEffect(() => {
+    callbacksRef.current = { onMissionComplete, onMissionFail, onTerritoryCapture };
+  });
+
+  useEffect(() => {
+    runnersRef.current = runners;
+  }, [runners]);
+
+  useEffect(
+    () => () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    },
+    [],
+  );
+
+  const flashNotice = (msg: string) => {
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    setMapNotice(msg);
+    noticeTimerRef.current = setTimeout(() => setMapNotice(null), 3500);
+  };
 
   useEffect(() => {
     is3DRef.current = is3D;
@@ -225,6 +272,8 @@ export function MissionsView({
     const container = mapContainerRef.current;
     if (!container || mapRef.current) return;
 
+    // Initialisation unique de la carte : les changements de coordonnées passent ensuite
+    // par loadNewRoute → applyRouteToMap (easeTo), pas par une recréation de la carte.
     const map = new maplibregl.Map({
       container,
       style: 'https://tiles.openfreemap.org/styles/dark',
@@ -377,6 +426,7 @@ export function MissionsView({
       map.remove();
       mapRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Afficher / cacher le marqueur Fantôme selon le mode
@@ -387,8 +437,11 @@ export function MissionsView({
   }, [gameMode]);
 
   const loadNewRoute = async (lat: number, lng: number, distKm: number) => {
+    // Ignore les réponses d'anciennes requêtes (changement rapide de ville / de palier)
+    const reqId = ++routeReqRef.current;
     setIsLoadingRoute(true);
     const res = await generateLoopRoute(lat, lng, distKm);
+    if (reqId !== routeReqRef.current) return;
     routeRef.current = res;
     setRoute(res);
     setIsLoadingRoute(false);
@@ -397,9 +450,12 @@ export function MissionsView({
     }
   };
 
+  // Le tracé suit la distance réelle du mode (x3 à vélo, /2 en relais)
   useEffect(() => {
-    void loadNewRoute(coords[0], coords[1], tierObj.distanceKm);
-  }, [coords, tierObj.distanceKm]);
+    // Chargement réseau (OSRM) : la mise à jour d'état asynchrone est voulue ici
+    // eslint-disable-next-line react/set-state-in-effect
+    void loadNewRoute(coords[0], coords[1], effectiveDistanceKm);
+  }, [coords, effectiveDistanceKm]);
 
   // Suivi 3D dynamique de la flèche & du fantôme pendant la course
   useEffect(() => {
@@ -445,78 +501,128 @@ export function MissionsView({
   };
 
   const finishMissionSuccess = () => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
     playVictory();
     setPhase('completed');
     const modeLabel = OUTDOOR_MODES.find((m) => m.id === gameMode)?.label ?? 'Mission 05h';
-    const myRank = runners.filter((r) => r.progressKm >= effectiveDistanceKm).length + 1;
+    // runnersRef : classement réel (avant, la closure figée renvoyait toujours #1)
+    const myRank =
+      runnersRef.current.filter((r) => r.progressKm >= effectiveDistanceKm).length + 1;
+    const xpEarned = tierObj.xpReward + (gameMode === 'survie_checkpoint' ? 100 : 0);
+    setLastResult({ rank: myRank, km: effectiveDistanceKm, xp: xpEarned });
 
-    if (gameMode === 'conquete_territoire') {
-      setTerritories((prev) =>
-        prev.map((z) => {
-          if (z.id !== selectedZoneId) return z;
-          const nextPts = Math.min(z.targetPoints, z.points + 150);
-          const conquered = nextPts >= z.targetPoints && z.ownerClub !== 'DEK Warriors';
-          if (conquered) onTerritoryCapture(z.name);
-          return {
-            ...z,
-            points: nextPts,
-            ownerClub: nextPts >= z.targetPoints ? 'DEK Warriors' : z.ownerClub,
-            color: nextPts >= z.targetPoints ? '#C8FF00' : z.color,
-          };
-        }),
-      );
-    }
-
-    onMissionComplete(
-      tierObj.xpReward + (gameMode === 'survie_checkpoint' ? 100 : 0),
+    callbacksRef.current.onMissionComplete(
+      xpEarned,
       effectiveDistanceKm,
       myRank,
       selectedTier,
       `${modeLabel} (${discObj.label})`,
     );
+
+    if (gameMode === 'conquete_territoire') {
+      const zone = territories.find((z) => z.id === selectedZoneId);
+      if (zone) {
+        const nextPts = Math.min(zone.targetPoints, zone.points + 150);
+        const conquered = nextPts >= zone.targetPoints && zone.ownerClub !== 'DEK Warriors';
+        setTerritories((prev) =>
+          prev.map((z) =>
+            z.id !== zone.id
+              ? z
+              : {
+                  ...z,
+                  points: nextPts,
+                  ownerClub: nextPts >= z.targetPoints ? 'DEK Warriors' : z.ownerClub,
+                  color: nextPts >= z.targetPoints ? '#C8FF00' : z.color,
+                },
+          ),
+        );
+        if (conquered) callbacksRef.current.onTerritoryCapture(zone.name);
+      }
+    }
   };
+
+  const failMission = (msg: string) => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    setFailReason(msg);
+    setPhase('failed');
+    callbacksRef.current.onMissionFail(msg);
+  };
+
+  /** Fait avancer l'athlète (hors updater React : aucun effet de bord dupliqué). */
+  const advanceMyProgress = (deltaKm: number) => {
+    if (finishedRef.current) return;
+    const next = Math.min(
+      effectiveDistanceKm,
+      Number((myProgressRef.current + deltaKm).toFixed(2)),
+    );
+    myProgressRef.current = next;
+    setMyProgressKm(next);
+
+    if (gameMode === 'survie_checkpoint') {
+      let cp = cpIdxRef.current;
+      while (cp < 4 && next >= (cp / 4) * effectiveDistanceKm) cp += 1;
+      if (cp !== cpIdxRef.current) {
+        playHit();
+        cpIdxRef.current = cp;
+        cpTimerRef.current = CP_WINDOW_SEC;
+        setCheckpointIdx(cp);
+        setCpTimer(CP_WINDOW_SEC);
+      }
+    }
+
+    if (next >= effectiveDistanceKm) {
+      if (gameMode === 'relais_escouade') setRelayLeg(4);
+      finishMissionSuccess();
+    }
+  };
+
+  const actionsRef = useRef({ advanceMyProgress, failMission });
+  useEffect(() => {
+    actionsRef.current = { advanceMyProgress, failMission };
+  });
 
   // Timers selon les phases & modes
   useEffect(() => {
     // Phase spéciale Relais : le Joueur 1 (Koffi) court avant de nous passer le témoin
     if (phase === 'relay_wait') {
+      let pct = 0;
       const t = setInterval(() => {
-        setRelayTeammatePct((p) => {
-          if (p >= 100) {
-            clearInterval(t);
-            playGo();
-            setRelayLeg(2);
-            setPhase('gate');
-            setGateTimer(8);
-            return 100;
-          }
-          return p + 20;
-        });
+        pct = Math.min(100, pct + 20);
+        setRelayTeammatePct(pct);
+        if (pct >= 100) {
+          clearInterval(t);
+          playGo();
+          setRelayLeg(2);
+          setGateTimer(8);
+          setPhase('gate');
+        }
       }, 550);
       return () => clearInterval(t);
     }
 
     if (phase === 'countdown') {
-      if (countdown <= 0) {
-        playGo();
-        setPhase('gate');
-        setGateTimer(8);
-        return;
-      }
       playTick();
-      const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+      const t = setTimeout(() => {
+        if (countdown <= 1) {
+          playGo();
+          setGateTimer(8);
+          setPhase('gate');
+        } else {
+          setCountdown((c) => c - 1);
+        }
+      }, 1000);
       return () => clearTimeout(t);
     }
 
     if (phase === 'gate') {
       if (gateTimer <= 0) {
-        const msg =
+        actionsRef.current.failMission(
           gameMode === 'relais_escouade'
             ? 'Relais manqué : toute l’escouade a échoué !'
-            : `Timing ${selectedSlot} manqué (-2% discipline).`;
-        setFailReason(msg);
-        setPhase('failed');
-        onMissionFail(msg);
+            : `Timing ${selectedSlot} manqué (-2% discipline).`,
+        );
         return;
       }
       const t = setTimeout(() => setGateTimer((g) => g - 1), 1000);
@@ -527,28 +633,9 @@ export function MissionsView({
       const interval = setInterval(() => {
         setElapsedSec((s) => s + 1);
 
-        const baseStep = (effectiveDistanceKm / 18) * (gameMode === 'survie_checkpoint' ? 0.85 : 1);
-        setMyProgressKm((prev) => {
-          const next = Number((prev + baseStep).toFixed(2));
-
-          // Vérification Checkpoint (Mode Survie)
-          if (gameMode === 'survie_checkpoint') {
-            const targetCpDist = (cpIdxRef.current / 4) * effectiveDistanceKm;
-            if (next >= targetCpDist && cpIdxRef.current < 4) {
-              playHit();
-              setCheckpointIdx((c) => c + 1);
-              setCpTimer(11);
-            }
-          }
-
-          if (next >= effectiveDistanceKm) {
-            clearInterval(interval);
-            if (gameMode === 'relais_escouade') setRelayLeg(4);
-            finishMissionSuccess();
-            return effectiveDistanceKm;
-          }
-          return next;
-        });
+        const baseStep =
+          (effectiveDistanceKm / 18) * (gameMode === 'survie_checkpoint' ? 0.85 : 1);
+        actionsRef.current.advanceMyProgress(baseStep);
 
         // Avancée du Fantôme
         if (gameMode === 'fantome') {
@@ -561,7 +648,10 @@ export function MissionsView({
         setRunners((prev) =>
           prev.map((r) => {
             const step = (effectiveDistanceKm / 19) * (5 / r.paceMinKm);
-            const nextDist = Math.min(effectiveDistanceKm, Number((r.progressKm + step).toFixed(2)));
+            const nextDist = Math.min(
+              effectiveDistanceKm,
+              Number((r.progressKm + step).toFixed(2)),
+            );
             return {
               ...r,
               progressKm: nextDist,
@@ -575,20 +665,20 @@ export function MissionsView({
       let cpInterval: ReturnType<typeof setInterval> | null = null;
       if (gameMode === 'survie_checkpoint') {
         cpInterval = setInterval(() => {
-          setCpTimer((t) => {
-            if (t <= 1) {
-              const targetDist = (cpIdxRef.current / 4) * effectiveDistanceKm;
-              if (myProgressRef.current < targetDist) {
-                const msg = `Éliminé au Checkpoint #${cpIdxRef.current} (distance non atteinte à temps) !`;
-                setFailReason(msg);
-                setPhase('failed');
-                onMissionFail(msg);
-                return 0;
-              }
-              return 11;
+          if (finishedRef.current) return;
+          cpTimerRef.current -= 1;
+          if (cpTimerRef.current <= 0) {
+            const targetDist = (cpIdxRef.current / 4) * effectiveDistanceKm;
+            if (myProgressRef.current < targetDist) {
+              setCpTimer(0);
+              actionsRef.current.failMission(
+                `Éliminé au Checkpoint #${cpIdxRef.current} (distance non atteinte à temps) !`,
+              );
+              return;
             }
-            return t - 1;
-          });
+            cpTimerRef.current = CP_WINDOW_SEC;
+          }
+          setCpTimer(cpTimerRef.current);
         }, 1000);
       }
 
@@ -597,41 +687,51 @@ export function MissionsView({
         if (cpInterval) clearInterval(cpInterval);
       };
     }
-  }, [phase, countdown, gateTimer, effectiveDistanceKm, gameMode]);
+  }, [phase, countdown, gateTimer, effectiveDistanceKm, gameMode, selectedSlot]);
 
   const handleSprintBoost = () => {
     if (phase !== 'running') return;
     playHit();
-    setMyProgressKm((prev) => {
-      const next = Math.min(effectiveDistanceKm, Number((prev + effectiveDistanceKm * 0.08).toFixed(2)));
-      if (gameMode === 'survie_checkpoint') {
-        const targetCpDist = (cpIdxRef.current / 4) * effectiveDistanceKm;
-        if (next >= targetCpDist && cpIdxRef.current < 4) {
-          setCheckpointIdx((c) => c + 1);
-          setCpTimer(11);
-        }
-      }
-      if (next >= effectiveDistanceKm) {
-        finishMissionSuccess();
-      }
-      return next;
-    });
+    advanceMyProgress(effectiveDistanceKm * 0.08);
   };
 
   const handleUseGPS = () => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition((pos) => {
-      setCoords([pos.coords.latitude, pos.coords.longitude]);
-    });
+    if (!navigator.geolocation) {
+      flashNotice('GPS indisponible sur cet appareil');
+      return;
+    }
+    flashNotice('Recherche de ta position GPS…');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords([pos.coords.latitude, pos.coords.longitude]);
+        flashNotice('Position GPS trouvée ✓ Nouveau tracé autour de toi');
+      },
+      (err) => {
+        flashNotice(
+          err.code === err.PERMISSION_DENIED
+            ? 'Autorise la localisation pour utiliser le GPS'
+            : 'Position GPS introuvable, réessaie dehors',
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  };
+
+  const resetRunRefs = () => {
+    finishedRef.current = false;
+    myProgressRef.current = 0;
+    cpIdxRef.current = 1;
+    cpTimerRef.current = CP_WINDOW_SEC;
   };
 
   const handleJoinMission = () => {
+    resetRunRefs();
     setCountdown(5);
     setElapsedSec(0);
     setMyProgressKm(0);
     setGhostProgressKm(0);
     setCheckpointIdx(1);
-    setCpTimer(11);
+    setCpTimer(CP_WINDOW_SEC);
     setRelayLeg(1);
     setRelayTeammatePct(0);
     setRunners(INITIAL_RUNNERS.map((r) => ({ ...r, progressKm: 0, status: 'pret' })));
@@ -644,12 +744,16 @@ export function MissionsView({
   };
 
   const handleReset = () => {
+    resetRunRefs();
     setPhase('lobby');
     setMyProgressKm(0);
     setGhostProgressKm(0);
     setElapsedSec(0);
     setCheckpointIdx(1);
-    setCpTimer(11);
+    setCpTimer(CP_WINDOW_SEC);
+    setRelayLeg(1);
+    setRelayTeammatePct(0);
+    setRunners(INITIAL_RUNNERS.map((r) => ({ ...r, progressKm: 0, status: 'pret' })));
   };
 
   const leaderboard = [
@@ -668,6 +772,15 @@ export function MissionsView({
 
   const myPosition = leaderboard.findIndex((r) => r.id === 'me') + 1;
   const progressRatio = Math.min(1, myProgressKm / Math.max(0.1, effectiveDistanceKm));
+  // Panneau « Run Tracker » en verre dépoli pendant la course (métriques simulées en attendant le GPS réel)
+  const liveKcal = Math.round(myProgressKm * (discipline === 'velo' ? 25 : discipline === 'marche' ? 45 : 60));
+  const liveBpm = phase === 'running' ? 138 + Math.round(progressRatio * 28) + ((elapsedSec * 7) % 5) : 0;
+  const liveSpeedKmh = (10.8 + (elapsedSec % 3) * 0.4) * discObj.speedMult;
+  const paceSecPerKm = phase === 'running' ? Math.round(3600 / liveSpeedKmh) : 0;
+  const paceLabel = paceSecPerKm
+    ? `${Math.floor(paceSecPerKm / 60)}'${String(paceSecPerKm % 60).padStart(2, '0')}"`
+    : '—';
+
   const simulatedSpeed =
     phase === 'running'
       ? ((10.8 + (elapsedSec % 3) * 0.4) * discObj.speedMult).toFixed(1)
@@ -678,8 +791,9 @@ export function MissionsView({
   const arcLength = 157;
   const arcFill = phase === 'running' ? arcLength * progressRatio : arcLength * 0.68;
 
-  const guidanceLabel =
-    phase === 'running'
+  const guidanceLabel = mapNotice
+    ? mapNotice
+    : phase === 'running'
       ? gameMode === 'survie_checkpoint'
         ? `Checkpoint #${checkpointIdx}/4 • ${cpTimer}s restantes`
         : gameMode === 'fantome'
@@ -1054,7 +1168,7 @@ export function MissionsView({
               </button>
               <button
                 disabled={isLoadingRoute || phase !== 'lobby'}
-                onClick={() => void loadNewRoute(coords[0], coords[1], tierObj.distanceKm)}
+                onClick={() => void loadNewRoute(coords[0], coords[1], effectiveDistanceKm)}
                 className="font-hud rounded-xl border border-white/15 bg-[#080A0E]/88 px-2 py-1.5 text-[10px] font-bold text-[#C8FF00] backdrop-blur"
               >
                 {isLoadingRoute ? '...' : 'Tracé'}
@@ -1089,6 +1203,49 @@ export function MissionsView({
               </button>
             </div>
           )}
+
+          {/* Panneau Run Tracker en verre (pendant la course) */}
+          <AnimatePresence>
+            {phase === 'running' && (
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 24 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                className="pointer-events-none absolute inset-x-2.5 bottom-2.5 z-20 rounded-[22px] border border-white/15 bg-[#0B0E14]/55 p-3 shadow-2xl backdrop-blur-xl"
+              >
+                <div className="flex items-end gap-1.5">
+                  <span className="font-hud text-4xl font-bold leading-none text-white">{myProgressKm.toFixed(2)}</span>
+                  <span className="mb-0.5 text-[11px] font-semibold text-slate-300">km sur {effectiveDistanceKm} km</span>
+                  <span className="font-hud mb-0.5 ml-auto rounded-full bg-[#C8FF00] px-2 py-0.5 text-[10px] font-black text-black">
+                    #{myPosition}
+                  </span>
+                </div>
+                <div className="mt-2 grid grid-cols-4 gap-1 text-center">
+                  <div>
+                    <div className="text-[9px] text-slate-400">Temps</div>
+                    <div className="font-hud text-xs font-bold text-white">
+                      {Math.floor(elapsedSec / 60)}:{String(elapsedSec % 60).padStart(2, '0')}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-slate-400">Calories</div>
+                    <div className="font-hud text-xs font-bold text-orange-300">{liveKcal}</div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400">
+                      <HeartBeat className="h-2.5 w-2.5" /> Cardio
+                    </div>
+                    <div className="font-hud text-xs font-bold text-[#FF2E54]">{liveBpm}</div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-slate-400">Allure</div>
+                    <div className="font-hud text-xs font-bold text-white">{paceLabel}</div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Overlay Attente Relais Escouade */}
           <AnimatePresence>
@@ -1218,10 +1375,8 @@ export function MissionsView({
                       : 'MISSION RÉUSSIE !'}
                 </h3>
                 <p className="mt-0.5 text-xs text-white">
-                  #{myPosition} • {effectiveDistanceKm} km •{' '}
-                  <strong className="text-[#C8FF00]">
-                    +{tierObj.xpReward + (gameMode === 'survie_checkpoint' ? 100 : 0)} XP
-                  </strong>
+                  #{lastResult?.rank ?? myPosition} • {lastResult?.km ?? effectiveDistanceKm} km •{' '}
+                  <strong className="text-[#C8FF00]">+{lastResult?.xp ?? tierObj.xpReward} XP</strong>
                 </p>
                 <button
                   onClick={handleReset}
@@ -1355,11 +1510,7 @@ export function MissionsView({
                   <Lightning weight="duotone" className="h-4 w-4" /> Accélérer (Sprint)
                 </motion.button>
                 <button
-                  onClick={() => {
-                    setFailReason('Abandon en cours de mission.');
-                    setPhase('failed');
-                    onMissionFail('Abandon');
-                  }}
+                  onClick={() => failMission('Abandon en cours de mission.')}
                   className="font-hud rounded-full bg-[#FF2E54]/20 px-4 py-3 text-xs font-bold text-[#FF2E54]"
                 >
                   Stop

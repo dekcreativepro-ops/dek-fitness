@@ -1,4 +1,5 @@
-export type TabId = 'home' | 'missions' | 'house' | 'nutrition' | 'network';
+/** Onglets de la barre du bas + pages secondaires (nutrition, séances) ouvertes depuis l'accueil ou le bouton ＋. */
+export type TabId = 'home' | 'missions' | 'house' | 'nutrition' | 'network' | 'workouts';
 
 export type MissionDifficulty = 'Amateur' | 'Standard' | 'Pro' | 'Expert';
 
@@ -164,6 +165,15 @@ export interface TournamentMatch {
   status: 'termine' | 'en_cours' | 'a_venir';
 }
 
+export interface CoachReview {
+  id: string;
+  author: string;
+  avatarPreset: AvatarPresetId;
+  rating: number;
+  timeAgo: string;
+  text: string;
+}
+
 export interface CoachProfile {
   id: string;
   name: string;
@@ -177,6 +187,13 @@ export interface CoachProfile {
   tags: string[];
   avatarInitials: string;
   accent: string;
+  avatarPreset?: AvatarPresetId;
+  bio?: string;
+  experienceYears?: number;
+  completedSessions?: number;
+  /** Répartition des notes [5★, 4★, 3★, 2★, 1★] */
+  ratingBreakdown?: [number, number, number, number, number];
+  reviews?: CoachReview[];
 }
 
 export type AvatarPresetId =
@@ -209,10 +226,24 @@ export interface FeedPost {
   content: string;
   stats: { label: string; value: string }[];
   reactions: { feu: number; force: number; respect: number };
-  reactedByMe?: boolean;
+  /** Réaction posée par l'utilisateur (une seule par publication, re-taper l'annule). */
+  myReaction?: FeedReaction;
+  /** Horodatage de création (ms) pour afficher un temps relatif juste après rechargement. */
+  createdAt?: number;
 }
 
+export type FeedReaction = 'feu' | 'force' | 'respect';
+
 export type AuthProvider = 'gmail' | 'whatsapp' | 'email';
+
+export type Sex = 'homme' | 'femme';
+
+export interface BodyProfile {
+  sex: Sex;
+  age: number;
+  weightKg: number;
+  heightCm: number;
+}
 
 export type CardioLevel = 'marche' | '3km' | '5km' | '10km_plus';
 
@@ -253,4 +284,22 @@ export interface UserProfile {
   badges: string[];
   avatar: UserAvatarConfig;
   initiationResult?: InitiationResult;
+  /** Journal d'activité : jour (AAAA-MM-JJ) → nombre de séances validées. */
+  activityLog: Record<string, number>;
+  /** Récompenses déjà encaissées (clés uniques par jour/semaine) pour éviter le farm d'XP. */
+  claimedRewards: string[];
+  /** Dernier jour d'ouverture de l'app : sert à remettre à zéro eau & repas chaque jour. */
+  lastActiveDay: string;
+  /** Profil physique (sexe, âge, poids, taille) pour calibrer calories & séances. */
+  body?: BodyProfile;
+  /** true une fois l'écran profil physique proposé (rempli ou passé). */
+  bodyAsked: boolean;
+  /** Séances guidées enregistrées en favori. */
+  savedWorkouts: string[];
+  /** Séance guidée → nombre de fois terminée. */
+  workoutsDone: Record<string, number>;
+  /** XP gagnée par jour (classement hebdo). */
+  xpLog: Record<string, number>;
+  /** Calories estimées brûlées par jour (anneaux d'activité). */
+  kcalLog: Record<string, number>;
 }

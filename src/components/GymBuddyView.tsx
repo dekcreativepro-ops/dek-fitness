@@ -31,7 +31,7 @@ import { UserAvatar } from './UserAvatar';
 interface GymBuddyViewProps {
   userCategory: MissionDifficulty;
   userName: string;
-  onDuoComplete: (routineTitle: string, totalSets: number) => void;
+  onDuoComplete: (routineTitle: string, totalSets: number) => boolean;
   onSpotJoin?: (author: string, gymName: string) => void;
 }
 
@@ -127,16 +127,16 @@ export function GymBuddyView({
   };
 
   const completeSet = (exId: string) => {
+    const target = exercises.find((ex) => ex.id === exId);
+    if (!target || target.completedSets >= target.sets) return;
     playHit();
-    let nextRest = 60;
     setExercises((prev) =>
-      prev.map((ex) => {
-        if (ex.id !== exId) return ex;
-        nextRest = ex.restSec;
-        return { ...ex, completedSets: Math.min(ex.sets, ex.completedSets + 1) };
-      }),
+      prev.map((ex) =>
+        ex.id === exId ? { ...ex, completedSets: Math.min(ex.sets, ex.completedSets + 1) } : ex,
+      ),
     );
-    startRest(nextRest);
+    // Repos propre à l'exercice (avant : toujours 60 s, la valeur était lue trop tard)
+    startRest(target.restSec);
     // Partner catches up smoothly
     setTimeout(() => {
       setExercises((prev) =>
@@ -150,17 +150,13 @@ export function GymBuddyView({
   };
 
   const toggleJoinCall = (id: string) => {
-    setCalls((prev) =>
-      prev.map((c) => {
-        if (c.id !== id) return c;
-        const nextJoined = !c.joined;
-        if (nextJoined) {
-          playGo();
-          onSpotJoin?.(c.author, c.gymName);
-        }
-        return { ...c, joined: nextJoined };
-      }),
-    );
+    const call = calls.find((c) => c.id === id);
+    if (!call) return;
+    if (!call.joined) {
+      playGo();
+      onSpotJoin?.(call.author, call.gymName);
+    }
+    setCalls((prev) => prev.map((c) => (c.id === id ? { ...c, joined: !c.joined } : c)));
   };
 
   const publishCall = () => {
@@ -208,6 +204,18 @@ export function GymBuddyView({
 
   const totalSetsDone = exercises.reduce((acc, e) => acc + e.completedSets, 0);
   const totalSetsPlanned = exercises.reduce((acc, e) => acc + e.sets, 0);
+  // Il faut au moins la moitié des séries pour clôturer (avant : +120 XP même à 0 série)
+  const minSetsToClose = Math.ceil(totalSetsPlanned / 2);
+  const canCloseDuo = totalSetsDone >= minSetsToClose;
+
+  const handleCloseDuo = () => {
+    if (!canCloseDuo) return;
+    if (onDuoComplete(DUO_ROUTINES[routineKey].title, totalSetsDone)) playVictory();
+    setExercises(DUO_ROUTINES[routineKey].exercises.map((e) => ({ ...e })));
+    setRestRunning(false);
+    setRestRemaining(0);
+    setDuoBanner('Séance clôturée ✓ Nouvelle séance prête');
+  };
 
   return (
     <div className="space-y-3 pb-2">
@@ -503,17 +511,18 @@ export function GymBuddyView({
           </div>
 
           <button
-            onClick={() => {
-              playVictory();
-              onDuoComplete(
-                DUO_ROUTINES[routineKey].title,
-                Math.max(1, totalSetsDone),
-              );
-            }}
-            className="font-hud flex w-full items-center justify-center gap-2 rounded-full bg-[#C8FF00] py-3.5 text-xs font-bold text-black"
+            onClick={handleCloseDuo}
+            disabled={!canCloseDuo}
+            className={`font-hud flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-bold ${
+              canCloseDuo
+                ? 'bg-[#C8FF00] text-black'
+                : 'cursor-not-allowed bg-white/10 text-slate-400'
+            }`}
           >
-            <CheckCircle weight="duotone" className="h-4 w-4" /> Clôturer séance Duo (
-            {totalSetsDone}/{totalSetsPlanned} séries) • +120 XP
+            <CheckCircle weight="duotone" className="h-4 w-4" />
+            {canCloseDuo
+              ? `Clôturer séance Duo (${totalSetsDone}/${totalSetsPlanned} séries) • +120 XP`
+              : `Valide au moins ${minSetsToClose} séries (${totalSetsDone}/${totalSetsPlanned})`}
           </button>
         </div>
       )}

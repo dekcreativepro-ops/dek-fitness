@@ -20,7 +20,7 @@ import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 
 interface RaidsPactsViewProps {
   onRaidCheckin: (raidTitle: string, badgeName: string) => void;
-  onPactAction: (kind: 'checkin' | 'nudge' | 'create', label: string) => void;
+  onPactAction: (kind: 'checkin' | 'nudge' | 'create', label: string) => boolean;
 }
 
 export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewProps) {
@@ -66,6 +66,9 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
     const me = targetPact.members.find((m) => m.isMe);
     if (!me || me.done >= targetPact.targetPerWeek) return;
 
+    // Une séance validée par jour et par pacte (sinon on pouvait remplir la semaine en 3 taps)
+    if (!onPactAction('checkin', targetPact.title)) return;
+
     const reachedGoal = me.done + 1 >= targetPact.targetPerWeek;
     if (reachedGoal) playVictory();
     else playHit();
@@ -82,7 +85,6 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
           : p,
       ),
     );
-    onPactAction('checkin', targetPact.title);
   };
 
   const handleNudgeFriend = (memberKey: string, memberName: string, pactName: string) => {
@@ -94,14 +96,15 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
   const handleCreatePact = (e: React.FormEvent) => {
     e.preventDefault();
     if (!pactTitle.trim()) return;
+    const stamp = Date.now();
     const created: FriendPact = {
-      id: `pact-${Date.now()}`,
+      id: `pact-${stamp}`,
       title: pactTitle.trim(),
       targetPerWeek: pactTarget,
       members: [
-        { id: `me-${Date.now()}`, name: 'Toi', done: 0, isMe: true },
-        { id: `f1-${Date.now()}`, name: 'Koffi_Sprint', done: 1 },
-        { id: `f2-${Date.now()}`, name: 'Sarah_5AM', done: 0 },
+        { id: `me-${stamp}`, name: 'Toi', done: 0, isMe: true },
+        { id: `f1-${stamp}`, name: 'Koffi_Sprint', done: 1 },
+        { id: `f2-${stamp}`, name: 'Sarah_5AM', done: 0 },
       ],
     };
     setPacts((prev) => [created, ...prev]);

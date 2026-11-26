@@ -1,9 +1,5 @@
-import { useMemo } from 'react';
-import { createAvatar } from '@dicebear/core';
-import * as adventurer from '@dicebear/adventurer';
-import * as bottts from '@dicebear/bottts';
-import * as lorelei from '@dicebear/lorelei';
-import type { DiceBearStyleId, UserAvatarConfig } from '../types/dek';
+import { useEffect, useState } from 'react';
+import type { UserAvatarConfig } from '../types/dek';
 
 interface UserAvatarProps {
   avatar: UserAvatarConfig;
@@ -20,22 +16,33 @@ const SIZE_CLASSES: Record<NonNullable<UserAvatarProps['size']>, string> = {
   xl: 'h-20 w-20',
 };
 
-function buildDiceBearDataUri(
-  diceStyle: DiceBearStyleId,
-  seed: string,
-  bgColor: string,
-): string {
-  const opts = {
-    seed: seed.trim() || 'DEK_Hero',
-    backgroundColor: [bgColor.replace('#', '')],
-  };
-  if (diceStyle === 'adventurer') {
-    return createAvatar(adventurer, opts).toDataUri();
-  }
-  if (diceStyle === 'bottts') {
-    return createAvatar(bottts, opts).toDataUri();
-  }
-  return createAvatar(lorelei, opts).toDataUri();
+// Cache partagé des avatars DiceBear déjà générés (clé : style|graine|fond)
+const diceBearCache = new Map<string, string>();
+let diceBearModule: Promise<typeof import('../utils/diceBearAvatar')> | null = null;
+const loadDiceBear = () => (diceBearModule ??= import('../utils/diceBearAvatar'));
+
+function useDiceBearUri(avatar: UserAvatarConfig): string | undefined {
+  const key =
+    avatar.mode === 'custom' ? `${avatar.diceStyle}|${avatar.seed}|${avatar.bgColor}` : null;
+  const [, setVersion] = useState(0);
+
+  useEffect(() => {
+    if (!key || diceBearCache.has(key)) return;
+    let alive = true;
+    loadDiceBear()
+      .then((m) => {
+        diceBearCache.set(key, m.buildDiceBearDataUri(avatar.diceStyle, avatar.seed, avatar.bgColor));
+        if (alive) setVersion((v) => v + 1);
+      })
+      .catch(() => {
+        // Hors-ligne : on garde le fond neutre
+      });
+    return () => {
+      alive = false;
+    };
+  }, [key, avatar.diceStyle, avatar.seed, avatar.bgColor]);
+
+  return key ? diceBearCache.get(key) : undefined;
 }
 
 export function UserAvatar({
@@ -44,12 +51,8 @@ export function UserAvatar({
   ring = true,
   className = '',
 }: UserAvatarProps) {
-  const src = useMemo(() => {
-    if (avatar.mode === 'preset') {
-      return `/avatars/${avatar.presetId}.jpg`;
-    }
-    return buildDiceBearDataUri(avatar.diceStyle, avatar.seed, avatar.bgColor);
-  }, [avatar.mode, avatar.presetId, avatar.diceStyle, avatar.seed, avatar.bgColor]);
+  const diceUri = useDiceBearUri(avatar);
+  const src = avatar.mode === 'preset' ? `/avatars/${avatar.presetId}.jpg` : diceUri;
 
   return (
     <div
@@ -62,11 +65,17 @@ export function UserAvatar({
           : undefined
       }
     >
-      <img
-        src={src}
-        alt="Avatar Athlète DEK"
-        className="h-full w-full object-cover"
-      />
+      {src ? (
+        <img
+          src={src}
+          alt="Avatar Athlète DEK"
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="h-full w-full animate-pulse" style={{ backgroundColor: `#${avatar.bgColor.replace('#', '')}` }} />
+      )}
     </div>
   );
 }

@@ -51,9 +51,29 @@ import {
   Users as LucideUsers,
   Utensils,
   Video,
+  Volume2,
+  VolumeX,
   Wallet as LucideWallet,
   X as LucideX,
   Zap,
+  Activity,
+  ArrowRight as LucideArrowRight,
+  Bookmark as LucideBookmark,
+  ChevronLeft,
+  ChevronRight,
+  ListOrdered,
+  Mars,
+  Pause as LucidePause,
+  Repeat,
+  Ruler as LucideRuler,
+  Scale as LucideScale,
+  Search,
+  SkipBack,
+  SkipForward as LucideSkipForward,
+  Target as LucideTarget,
+  TrendingDown,
+  TrendingUp,
+  Venus,
   type LucideProps,
 } from 'lucide-react';
 
@@ -135,3 +155,23 @@ export const Bike = makeDuotone(LucideBike);
 export const Footprints = makeDuotone(LucideFootprints);
 export const Wallet = makeDuotone(LucideWallet);
 export const Crown = makeDuotone(LucideCrown);
+export const SpeakerHigh = makeDuotone(Volume2);
+export const SpeakerSlash = makeDuotone(VolumeX);
+export const CaretLeft = makeDuotone(ChevronLeft);
+export const CaretRight = makeDuotone(ChevronRight);
+export const BookmarkSimple = makeDuotone(LucideBookmark);
+export const MagnifyingGlass = makeDuotone(Search);
+export const Pause = makeDuotone(LucidePause);
+export const SkipForward = makeDuotone(LucideSkipForward);
+export const SkipBackward = makeDuotone(SkipBack);
+export const ArrowRight = makeDuotone(LucideArrowRight);
+export const GenderMale = makeDuotone(Mars);
+export const GenderFemale = makeDuotone(Venus);
+export const TrendUp = makeDuotone(TrendingUp);
+export const TrendDown = makeDuotone(TrendingDown);
+export const Target = makeDuotone(LucideTarget);
+export const RulerIcon = makeDuotone(LucideRuler);
+export const ScaleIcon = makeDuotone(LucideScale);
+export const ListNumbers = makeDuotone(ListOrdered);
+export const Pulse = makeDuotone(Activity);
+export const Rounds = makeDuotone(Repeat);

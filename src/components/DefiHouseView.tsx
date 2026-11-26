@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
+// Type seulement : la librairie MediaPipe (lourde) est chargée à la demande
+// quand l'athlète active la caméra, pas au démarrage de l'app.
+import type { PoseLandmarker } from '@mediapipe/tasks-vision';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowsClockwise,
@@ -125,6 +127,12 @@ function computeAngle(
   return deg;
 }
 
+/** Doit rester aligné avec la version de @mediapipe/tasks-vision du package.json. */
+const MEDIAPIPE_VERSION = '1.2.3';
+const MEDIAPIPE_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
+const POSE_MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+
 const SURVIVAL_MAX_MS = 4500;
 const FIRST_TO_TARGET = 20;
 const SQUAD_TARGET_REPS = 80;
@@ -177,6 +185,10 @@ export function DefiHouseView({
   const mySquadRef = useRef(mySquadReps);
   const oppSquadRef = useRef(oppSquadReps);
   const comboTimerRef = useRef<number | null>(null);
+  // Jeton de session caméra : s'incrémente à chaque arrêt pour annuler un démarrage en cours
+  const cameraSessionRef = useRef(0);
+  const lastDepthRef = useRef(-1);
+  const lastCueRef = useRef('');
 
   useEffect(() => {
     matchStateRef.current = matchState;
@@ -224,6 +236,18 @@ export function DefiHouseView({
     }, 620);
   };
 
+  /** Limite les re-rendus : on ne met à jour la jauge / le conseil que s'ils changent. */
+  const updateDepth = (pct: number) => {
+    if (Math.abs(pct - lastDepthRef.current) < 3) return;
+    lastDepthRef.current = pct;
+    setDepthPct(pct);
+  };
+  const updateCue = (cue: string) => {
+    if (cue === lastCueRef.current) return;
+    lastCueRef.current = cue;
+    setLiveCue(cue);
+  };
+
   const registerMyRep = () => {
     if (matchStateRef.current !== 'fighting') return;
     playHit();
@@ -239,15 +263,15 @@ export function DefiHouseView({
       return next;
     });
 
-    setDepthPct(88);
-    setLiveCue(
+    updateDepth(88);
+    updateCue(
       mode === 'survie_maison'
         ? 'Jauge rechargée ! Tiens la cadence'
         : exerciseRef.current === 'gainage'
           ? 'Gainage validé (+2s) !'
           : 'Rep validée ! Continue',
     );
-    setTimeout(() => setDepthPct(22), 200);
+    setTimeout(() => updateDepth(22), 200);
 
     setCombo((c) => {
       const next = c + 1;
@@ -296,13 +320,19 @@ export function DefiHouseView({
     }
   };
 
+  // Dernières valeurs lues au moment de la victoire (l'effet ne doit réagir qu'au passage en 'win')
+  const winInfoRef = useRef({ exercise, gameMode, onWinDuel });
   useEffect(() => {
-    if (matchState === 'win') {
-      playVictory();
-      const exLabel = EXERCISES.find((e) => e.id === exercise)?.label ?? 'Pompes';
-      const modeObj = HOUSE_MODES.find((m) => m.id === gameMode) ?? HOUSE_MODES[0];
-      onWinDuel(modeObj.xpReward, exLabel, myRepsRef.current, modeObj.label);
-    }
+    winInfoRef.current = { exercise, gameMode, onWinDuel };
+  });
+
+  useEffect(() => {
+    if (matchState !== 'win') return;
+    const info = winInfoRef.current;
+    playVictory();
+    const exLabel = EXERCISES.find((e) => e.id === info.exercise)?.label ?? 'Pompes';
+    const modeObj = HOUSE_MODES.find((m) => m.id === info.gameMode) ?? HOUSE_MODES[0];
+    info.onWinDuel(modeObj.xpReward, exLabel, myRepsRef.current, modeObj.label);
   }, [matchState]);
 
   useEffect(() => {
@@ -431,33 +461,61 @@ export function DefiHouseView({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  const startCameraAI = async () => {
+  const stopStream = (stream: MediaStream | null | undefined) => {
+    stream?.getTracks().forEach((t) => t.stop());
+  };
+
+  const createLandmarker = async (): Promise<PoseLandmarker> => {
+    const { FilesetResolver, PoseLandmarker: Landmarker } = await import('@mediapipe/tasks-vision');
+    const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
     try {
-      setAiStatus('Chargement IA...');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 },
-        audio: false,
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setCameraActive(true);
-
-      const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm',
-      );
-      const landmarker = await PoseLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath:
-            'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
-          delegate: 'GPU',
-        },
+      return await Landmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: POSE_MODEL_URL, delegate: 'GPU' },
         runningMode: 'VIDEO',
         numPoses: 1,
       });
-      landmarkerRef.current = landmarker;
+    } catch {
+      // Certains téléphones Android n'ont pas de WebGL2 compatible : repli sur le CPU
+      return Landmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: POSE_MODEL_URL, delegate: 'CPU' },
+        runningMode: 'VIDEO',
+        numPoses: 1,
+      });
+    }
+  };
+
+  const startCameraAI = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setAiStatus('Caméra non supportée • Mode tactile');
+      return;
+    }
+    const session = ++cameraSessionRef.current;
+    let stream: MediaStream | null = null;
+    try {
+      setAiStatus('Accès caméra...');
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 640, height: 480 },
+        audio: false,
+      });
+      if (session !== cameraSessionRef.current || !videoRef.current) {
+        // L'utilisateur a quitté l'écran ou coupé la caméra pendant la demande
+        stopStream(stream);
+        return;
+      }
+
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+      setCameraActive(true);
+
+      if (!landmarkerRef.current) {
+        setAiStatus('Chargement IA...');
+        const landmarker = await createLandmarker();
+        if (session !== cameraSessionRef.current) {
+          landmarker.close();
+          return;
+        }
+        landmarkerRef.current = landmarker;
+      }
       setAiStatus('IA Active');
 
       let lastVideoTime = -1;
@@ -509,32 +567,32 @@ export function DefiHouseView({
               if (ex === 'pompes') {
                 const angle = computeAngle(lm[11], lm[13], lm[15]);
                 const ratio = Math.max(0, Math.min(100, Math.round(((170 - angle) / 85) * 100)));
-                setDepthPct(ratio);
+                updateDepth(ratio);
                 if (angle < 95 && stageRef.current === 'up') {
                   stageRef.current = 'down';
-                  setLiveCue('Pousse vers le haut !');
+                  updateCue('Pousse vers le haut !');
                 } else if (angle > 155 && stageRef.current === 'down') {
                   stageRef.current = 'up';
                   registerMyRep();
                 } else if (stageRef.current === 'up') {
-                  setLiveCue('Descends plus bas...');
+                  updateCue('Descends plus bas...');
                 }
               } else if (ex === 'squats') {
                 const angle = computeAngle(lm[23], lm[25], lm[27]);
                 const ratio = Math.max(0, Math.min(100, Math.round(((170 - angle) / 75) * 100)));
-                setDepthPct(ratio);
+                updateDepth(ratio);
                 if (angle < 105 && stageRef.current === 'up') {
                   stageRef.current = 'down';
-                  setLiveCue('Remonte fort !');
+                  updateCue('Remonte fort !');
                 } else if (angle > 160 && stageRef.current === 'down') {
                   stageRef.current = 'up';
                   registerMyRep();
                 } else if (stageRef.current === 'up') {
-                  setLiveCue('Fléchis les genoux...');
+                  updateCue('Fléchis les genoux...');
                 }
               } else if (ex === 'gainage') {
                 const aligned = Math.abs(lm[11].y - lm[23].y) < 0.16;
-                setDepthPct(aligned ? 85 : 30);
+                updateDepth(aligned ? 85 : 30);
                 if (aligned && matchStateRef.current === 'fighting') {
                   const now = performance.now();
                   if (now - lastPlankTickRef.current >= 1600) {
@@ -542,15 +600,15 @@ export function DefiHouseView({
                     registerMyRep();
                   }
                 } else {
-                  setLiveCue('Aligne épaules & hanches...');
+                  updateCue('Aligne épaules & hanches...');
                 }
               } else if (ex === 'burpees') {
                 const hipsLow = lm[23].y > 0.68;
                 const handsUp = lm[15].y < lm[11].y - 0.06 && lm[16].y < lm[12].y - 0.06;
-                setDepthPct(hipsLow ? 92 : handsUp ? 12 : 48);
+                updateDepth(hipsLow ? 92 : handsUp ? 12 : 48);
                 if (hipsLow && stageRef.current === 'up') {
                   stageRef.current = 'down';
-                  setLiveCue('Saute bras en l’air !');
+                  updateCue('Saute bras en l’air !');
                 } else if (handsUp && stageRef.current === 'down') {
                   stageRef.current = 'up';
                   registerMyRep();
@@ -558,10 +616,10 @@ export function DefiHouseView({
               } else {
                 const wristsHigh = lm[15].y < lm[11].y - 0.05 && lm[16].y < lm[12].y - 0.05;
                 const wristsLow = lm[15].y > lm[11].y + 0.08 && lm[16].y > lm[12].y + 0.08;
-                setDepthPct(wristsHigh ? 90 : 20);
+                updateDepth(wristsHigh ? 90 : 20);
                 if (wristsHigh && stageRef.current === 'up') {
                   stageRef.current = 'down';
-                  setLiveCue('Redescends !');
+                  updateCue('Redescends !');
                 } else if (wristsLow && stageRef.current === 'down') {
                   stageRef.current = 'up';
                   registerMyRep();
@@ -573,17 +631,23 @@ export function DefiHouseView({
         rafRef.current = requestAnimationFrame(detectLoop);
       };
       rafRef.current = requestAnimationFrame(detectLoop);
-    } catch {
-      setAiStatus('Mode tactile actif');
+    } catch (err) {
+      if (session !== cameraSessionRef.current) return;
+      // Toujours libérer la caméra si l'IA n'a pas pu démarrer
+      stopStream(stream);
+      if (videoRef.current) videoRef.current.srcObject = null;
       setCameraActive(false);
+      const denied = err instanceof DOMException && err.name === 'NotAllowedError';
+      setAiStatus(denied ? 'Caméra refusée • Mode tactile' : 'IA indisponible • Mode tactile');
     }
   };
 
   const stopCameraAI = () => {
+    cameraSessionRef.current += 1;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
     if (videoRef.current?.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach((t) => t.stop());
+      stopStream(videoRef.current.srcObject as MediaStream);
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
@@ -591,7 +655,19 @@ export function DefiHouseView({
   };
 
   useEffect(() => {
-    return () => stopCameraAI();
+    const video = videoRef.current;
+    return () => {
+      // Démontage : coupe la caméra, la boucle IA et libère le modèle MediaPipe
+      cameraSessionRef.current += 1;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (video?.srcObject) {
+        (video.srcObject as MediaStream).getTracks().forEach((t) => t.stop());
+        video.srcObject = null;
+      }
+      landmarkerRef.current?.close();
+      landmarkerRef.current = null;
+      if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+    };
   }, []);
 
   const startDuel = () => {
@@ -608,7 +684,7 @@ export function DefiHouseView({
     setStaminaMs(SURVIVAL_MAX_MS);
     setCombo(0);
     setTimeLeft(gameMode === 'survie_maison' ? 45 : 60);
-    setLiveCue('C’est parti !');
+    updateCue('C’est parti !');
     setMatchState('fighting');
   };
 

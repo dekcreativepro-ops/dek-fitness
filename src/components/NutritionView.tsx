@@ -14,7 +14,7 @@ export function NutritionView({
   onUpdateWater,
   onToggleMeal,
 }: NutritionViewProps) {
-  const plan = getNutritionPlan(user.goals, user.category);
+  const plan = getNutritionPlan(user.goals, user.category, user.body);
 
   const consumedKcal = plan.meals
     .filter((m) => user.mealsChecked.includes(m.id))

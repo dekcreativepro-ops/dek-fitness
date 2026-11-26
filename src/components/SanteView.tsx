@@ -28,12 +28,12 @@ import {
 } from '../data/gamesData';
 import { INITIAL_SANTE_MATCHES, INITIAL_TOURNAMENT } from '../data/mockData';
 import type { SanteMatch, ThursdayFormat, ThursdayPlayer } from '../types/dek';
-import { TIER_COLORS } from '../utils/categorization';
+import { getTierIndex, TIER_COLORS } from '../utils/categorization';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 
 interface SanteViewProps {
   onJoinSante: (matchTitle: string) => void;
-  onCompleteThursday: (summaryText: string, mvpName: string) => void;
+  onCompleteThursday: (summaryText: string, mvpName: string) => boolean;
 }
 
 type SanteMainTab = 'jeudi' | 'matchs' | 'tournoi';
@@ -127,10 +127,13 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
     return () => clearInterval(t);
   }, [clockRunning]);
 
-  const activeTeams: PitchTeam[] = format === 'roi_du_terrain' ? ['A', 'B', 'C'] : ['A', 'B'];
+  const activeTeams: PitchTeam[] = useMemo(
+    () => (format === 'roi_du_terrain' ? ['A', 'B', 'C'] : ['A', 'B']),
+    [format],
+  );
   const activeRoster = useMemo(
     () => players.filter((p) => p.team !== 'waitlist' && activeTeams.includes(p.team)),
-    [players, format],
+    [players, activeTeams],
   );
   const waitlistPlayers = useMemo(
     () => players.filter((p) => p.team === 'waitlist'),
@@ -149,15 +152,15 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
   };
 
   const toggleCheckIn = (id: string, markAbsent = false) => {
-    setPlayers((prev) => {
-      const target = prev.find((p) => p.id === id);
-      if (target && markAbsent && target.team !== 'waitlist') {
-        setAbsentAlert({ playerName: target.name, team: target.team });
-      }
-      return prev.map((p) =>
+    const target = players.find((p) => p.id === id);
+    if (target && markAbsent && target.team !== 'waitlist') {
+      setAbsentAlert({ playerName: target.name, team: target.team });
+    }
+    setPlayers((prev) =>
+      prev.map((p) =>
         p.id === id ? { ...p, checkedIn: markAbsent ? false : !p.checkedIn } : p,
-      );
-    });
+      ),
+    );
     playHit();
   };
 
@@ -176,11 +179,17 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
     setPlayers((prev) => {
       const playing = prev.filter((p) => p.team !== 'waitlist');
       const waiting = prev.filter((p) => p.team === 'waitlist');
-      const sorted = [...playing].sort((a, b) => a.category.localeCompare(b.category));
-      const rebalanced = sorted.map((p, idx) => ({
-        ...p,
-        team: activeTeams[idx % activeTeams.length],
-      }));
+      // Tri du plus fort au plus faible (ordre des paliers, pas alphabétique),
+      // puis répartition en « serpent » A-B-C-C-B-A pour des équipes équilibrées.
+      const sorted = [...playing].sort(
+        (a, b) => getTierIndex(b.category) - getTierIndex(a.category),
+      );
+      const n = activeTeams.length;
+      const rebalanced = sorted.map((p, idx) => {
+        const round = Math.floor(idx / n);
+        const pos = idx % n;
+        return { ...p, team: activeTeams[round % 2 === 0 ? pos : n - 1 - pos] };
+      });
       return [...rebalanced, ...waiting];
     });
   };
@@ -233,17 +242,19 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
         ? `Terrain du Jeudi (Roi du Terrain • ${roundNum} manches) : Équipe ${winStreak.team} domine (${winStreak.count} victoires de suite). Top buteur : ${topScorer?.name ?? 'Koffi_Sprint'} (${topScorer?.goals ?? 1} buts).`
         : `Terrain du Jeudi (2×25 min) : Éq. ${pitchLeft} ${scoreLeft} - ${scoreRight} Éq. ${pitchRight}. Top buteur : ${topScorer?.name ?? 'Koffi_Sprint'}.`;
     setThursdayPublished(true);
-    playVictory();
-    onCompleteThursday(headline, mvpName);
+    if (onCompleteThursday(headline, mvpName)) playVictory();
   };
 
   // --- Matchs handlers ---
   const handleToggleJoin = (id: string) => {
+    const match = matches.find((m) => m.id === id);
+    if (!match) return;
+    // Effet de bord hors de l'updater (sinon double XP en mode StrictMode)
+    if (!match.isJoined) onJoinSante(match.title);
     setMatches((prev) =>
       prev.map((m) => {
         if (m.id !== id) return m;
         const joining = !m.isJoined;
-        if (joining) onJoinSante(m.title);
         return {
           ...m,
           isJoined: joining,

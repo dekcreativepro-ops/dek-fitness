@@ -60,6 +60,8 @@ adb reverse tcp:5173 tcp:5173
    - Ne pas annoter avec `GeoJSON.Feature` (le namespace global n'est pas installé sans `@types/geojson`) : utiliser des littéraux typés `as const`.
    - Style de carte gratuit vérifié : `'https://tiles.openfreemap.org/styles/dark'`.
    - Conserver un `ResizeObserver` appelant `map.resize()`.
+   - **Worker obligatoire** : garder `import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'` + `maplibregl.setWorkerUrl(maplibreWorkerUrl)`. Sans ça, Vite ne fournit pas le worker de MapLibre v6 (dev : erreur 504, build : fichier absent) et la carte reste noire.
+   - Dans les timers de mission, ne jamais appeler les callbacks parents (`onMissionComplete`, XP…) depuis un updater `setState((prev) => …)` : passer par `advanceMyProgress` / `failMission` (verrou `finishedRef`), sinon l'XP est comptée deux fois.
 
 3. **Dépendances interdites sous Windows (piège `npm install`)** :
    - **NE PAS installer `@phosphor-icons/react` ni `@dicebear/collection`** : ils contiennent des dizaines de milliers de petits fichiers qui bloquent `npm install` sous Windows Defender.
@@ -72,10 +74,33 @@ adb reverse tcp:5173 tcp:5173
    - Démos exercices HD animées : `public/demos/{pompes,squats,gainage,jumping_jacks,corde,burpees}.gif` (**extension `.gif`**).
 
 5. **Persistance `localStorage`** :
-   - Clé actuelle : `dek_fitness_user_v3` dans `src/App.tsx`.
+   - Clés : `dek_fitness_user_v3` (profil), `dek_fitness_feed_v1` (fil social, 40 posts max), `dek_fitness_sound_v1` (sons & vibrations on/off).
    - Si tu ajoutes un nouveau champ à `UserProfile` (`src/types/dek.ts`), pense à mettre une valeur par défaut dans `INITIAL_USER` (`src/data/mockData.ts`) ET dans `loadSavedUser()` (`src/App.tsx`) pour ne pas casser les comptes existants.
+   - Remise à zéro quotidienne automatique (eau & repas) via `normalizeUser()` + champ `lastActiveDay`.
 
-6. **Règles métier Santé & Équité** :
+6. **XP, rangs & anti-farm (`src/App.tsx` + `src/utils/progression.ts`)** :
+   - Toute modification de progression passe par `commitProgress(update, { claimKey?, session? })`.
+   - `claimKey` = récompense unique (ex. `meal:2026-11-26:m1`, `thursday:<lundi>`, `raid:<titre>`) stockée dans `claimedRewards` : empêche de regagner l'XP en cochant/décochant ou en rouvrant un onglet.
+   - `session: true` = compte comme séance du jour → alimente `activityLog` (graphique hebdo de l'accueil + série de jours).
+   - Les rangs de saison (Recrue → Challenger → Pro → Élite → Légende DEK) sont **calculés depuis l'XP** par `getRankInfo()` ; ne pas stocker de rang « en dur ».
+
+7. **Chargement différé (performance)** :
+   - `MissionsView`, `ArenaHubView`, `NetworkHubView`, `NutritionView` et `InitiationTestView` sont chargés via `React.lazy` dans `App.tsx` (préchargés en tâche de fond après l'accueil), avec `ViewBoundary` comme filet de sécurité.
+   - MediaPipe est importé dynamiquement au clic sur « Activer Caméra IA » (`DefiHouseView.tsx`) ; la version des fichiers WASM est fixée par `MEDIAPIPE_VERSION` (à garder alignée avec `package.json`).
+   - DiceBear est chargé à la demande (`src/utils/diceBearAvatar.ts`), seulement pour les avatars « custom ».
+   - Images de `public/` recompressées (bannières 960 px, avatars & repas 320 px) : garder ces tailles pour les nouveaux visuels.
+
+8. **Design System v2 (`src/components/ui/`)** — à réutiliser pour tout nouvel écran :
+   - `kit.tsx` : `BottomSheet` (portail `#dek-overlay-root`, glisser pour fermer), `ChipTabs`, `SectionHeader`, `ScreenHeader`, `CountUp`, `ActivityRings`, `TimerRing`, `CinematicImage` (photo « vidéo » : zoom Ken Burns + teinte duotone + grain + reflet), `StarRow`.
+   - `AnimatedIcons.tsx` : icônes animées SVG (flamme, cœur, éclair, goutte, haltère, trophée, ＋→×, point LIVE, confettis, coche dessinée).
+   - `RankEmblem.tsx` (insignes de rang), `TrophyBadge.tsx` (écussons de trophées), `MuscleMap.tsx` (carte musculaire face/dos), `Pickers.tsx` (roue d'âge, règle poids/taille), `motion.ts` (ressorts & cascades), `hooks.ts` (`useWakeLock`).
+   - Style : rayons 22–30 px, fond `#080A0E`, cartes `#11151D`, accent lime `#C8FF00`, titres `font-hud` ; animations désactivées automatiquement si l'utilisateur préfère « réduire les animations ».
+
+9. **Navigation (`App.tsx` + `src/context/DekNav.tsx`)** :
+   - Barre du bas : Accueil · Outdoor · **＋ central** (menu d'actions rapides) · Arène · Réseau. `nutrition` et `workouts` sont des pages secondaires (bouton retour).
+   - Écrans plein cadre empilés via `useDekNav()` : `openWorkout`, `startWorkout`, `openCoach`, `openLeaderboard`, `openTrophies`, `editBodyProfile`. La pile est synchronisée avec `history` → **le bouton retour Android ferme l'écran du dessus**. Ne pas utiliser `history.pushState` ailleurs.
+
+10. **Règles métier Santé & Équité** :
    - Le **Test d'Initiation** est obligatoire à la première connexion et **sans quota minimum** (sécurité santé).
    - Catégories officielles : `Amateur` → `Standard` → `Pro` → `Expert` (avec plafond cardio-vasculaire).
    - Les paliers supérieurs sont verrouillés jusqu'à **2 missions réussies** dans le palier courant ou un nouveau test.
@@ -127,6 +152,13 @@ adb reverse tcp:5173 tcp:5173
   - `Raids Week-end` (inscription + Check-in QR sur place débloquant badges & `+120 XP`).
   - `Pactes Amis` (barres hebdo collectives, validation `+1`, bouton `Réveiller` les retardataires, création via Bottom Sheet).
 
+### Séances guidées, Coachs, Classement & Trophées (v2)
+- `src/data/workoutsData.ts` : 6 programmes, 8 exercices (démo GIF, muscles, erreurs ✗/✓), `expandProgram`, `getRecommendedProgram`, `MIN_VALIDATED_RATIO` (60 % d'exercices validés requis pour l'XP).
+- `src/components/workouts/` : `WorkoutsLibraryView` (recherche, filtres, favoris), `WorkoutDetailScreen` (héro, zones ciblées, coach, avis, fiche exercice), `WorkoutPlayer` (« Prépare-toi » → exercices reps/chrono → repos → félicitations ; voix coach FR, écran maintenu allumé, Préc./Fait/Suiv.), `ResumeCard` + `src/utils/workoutResume.ts` (reprise 24 h).
+- `src/components/coach/CoachProfileScreen.tsx` : profil, stats, programmes, avis + réservation (jour/créneau/visio) avec confirmation animée.
+- `src/components/LeaderboardScreen.tsx` (podium semaine/saison, monde/ville) et `TrophiesScreen.tsx` + `src/utils/achievements.ts` (13 trophées calculés depuis les stats).
+- `src/components/OnboardingIntro.tsx` (carrousel 3 écrans) et `BodyProfileView.tsx` (sexe, âge, poids, taille → calories, protéines & eau via `getNutritionPlan(goals, category, body)`).
+
 ### Nutrition, Réseau, Coachs & Données
 - `src/components/NutritionView.tsx` & `src/utils/programsAndNutrition.ts` : Programmes sur mesure selon objectifs, repas illustrés cochables (`+15 XP`), compteur d'hydratation.
 - `src/components/NetworkHubView.tsx` : Hub 4 sous-onglets (`Jeudi & Santé`, `Raids & Pactes`, `Coachs`, `Profil`) + barre Stories actives.
@@ -145,6 +177,9 @@ adb reverse tcp:5173 tcp:5173
 - [x] Prototype complet mobile-first des **5 univers de jeux** + Onboarding + Test d'Initiation + Avatars + Nutrition + Coachs + Réseau Social.
 - [x] Compilation TypeScript + build production Vite vérifiés sans erreur (`npm run build` → exit `0`).
 - [x] Tous les médias locaux (`public/avatars/`, `public/images/`, `public/demos/`) présents et chargés en local.
+- [x] Revue complète & corrections (nov. 2026) : carte Outdoor réparée (worker MapLibre), XP comptée une seule fois, classement réel en fin de mission, toast de palier, rangs XP réels, fil social & réactions sauvegardés, anti-farm d'XP, caméra IA toujours libérée, repos Gym Buddy par exercice, équilibrage d'équipes par palier, confirmation avant déconnexion.
+- [x] Code-splitting + images allégées : démarrage ~456 kB au lieu de 2,3 Mo de JS, médias 0,5 Mo au lieu de 9,8 Mo.
+- [x] Refonte « Pro » v2 (nov. 2026, inspirations Pinterest/Dribbble) : onboarding carrousel, profil physique, accueil (anneaux d'activité, séance du jour cinématique), bouton ＋, séances guidées avec lecteur, profils coachs & réservation, classement à podium, mur de trophées, panneau « Run Tracker » en course, icônes animées.
 
 ### À faire pour la suite (ordre recommandé)
 1. **Tests terrain & UX sur vrai smartphone** :
@@ -156,8 +191,8 @@ adb reverse tcp:5173 tcp:5173
 3. **Packaging APK Android (Capacitor)** :
    - Ajouter `@capacitor/core`, `@capacitor/cli`, `@capacitor/android` + plugins natifs (`@capacitor/geolocation`, `@capacitor/camera`, `@capacitor/push-notifications`, `@capacitor/haptics`).
    - Configurer les permissions `AndroidManifest.xml` (caméra, localisation précise, notifications), générer et tester l'APK sur téléphone.
-4. **Optimisation Performance** :
-   - Mettre en place le code-splitting (`React.lazy` / `vite.config.ts`) pour séparer les gros chunks (`maplibre-gl` et `@mediapipe/tasks-vision`) et accélérer le chargement initial.
+4. **Optimisation Performance (suite)** :
+   - Code-splitting fait. Reste possible : héberger localement les fichiers WASM + le modèle MediaPipe (fonctionnement hors-ligne dans l'APK) et ajouter un service worker (PWA hors-ligne).
 
 ---
 

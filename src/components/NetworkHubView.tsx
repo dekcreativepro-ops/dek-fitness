@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import type { FeedPost, TabId, UserAvatarConfig, UserProfile } from '../types/dek';
+import type { FeedPost, FeedReaction, TabId, UserAvatarConfig, UserProfile } from '../types/dek';
 import { getAdventurePlan } from '../utils/programsAndNutrition';
 import { CoachsView } from './CoachsView';
 import { ProfilFeedView } from './ProfilFeedView';
@@ -15,13 +15,14 @@ interface NetworkHubViewProps {
   feed: FeedPost[];
   initialSubTab?: NetworkSubTab;
   onJoinSante: (matchTitle: string) => void;
-  onCompleteThursday: (summaryText: string, mvpName: string) => void;
+  onCompleteThursday: (summaryText: string, mvpName: string) => boolean;
   onRaidCheckin: (raidTitle: string, badgeName: string) => void;
-  onPactAction: (kind: 'checkin' | 'nudge' | 'create', label: string) => void;
+  onPactAction: (kind: 'checkin' | 'nudge' | 'create', label: string) => boolean;
   onBookSession: (coachName: string) => void;
   onRetakeInitiation: () => void;
   onUpdateAvatar: (avatar: UserAvatarConfig) => void;
   onCreatePost: (content: string, badge: string) => void;
+  onReact: (postId: string, key: FeedReaction) => void;
   onNavigateTab: (tab: TabId) => void;
   onLogout: () => void;
 }
@@ -124,14 +125,12 @@ export function NetworkHubView({
   onRetakeInitiation,
   onUpdateAvatar,
   onCreatePost,
+  onReact,
   onNavigateTab,
   onLogout,
 }: NetworkHubViewProps) {
+  // App remonte ce composant (clé) quand on demande un sous-onglet précis.
   const [subTab, setSubTab] = useState<NetworkSubTab>(initialSubTab);
-
-  useEffect(() => {
-    setSubTab(initialSubTab);
-  }, [initialSubTab]);
 
   const adventure = getAdventurePlan(user.goals, user.category);
 
@@ -163,7 +162,7 @@ export function NetworkHubView({
               <div className="relative">
                 <UserAvatar avatar={st.avatar} size="md" />
                 <span
-                  className="font-hud absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-0.2 text-[8px] font-black text-black"
+                  className="font-hud absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-px text-[8px] font-black text-black"
                   style={{ backgroundColor: st.avatar.auraColor }}
                 >
                   {st.tag}
@@ -227,6 +226,7 @@ export function NetworkHubView({
           onRetakeInitiation={onRetakeInitiation}
           onUpdateAvatar={onUpdateAvatar}
           onCreatePost={onCreatePost}
+          onReact={onReact}
           onLogout={onLogout}
         />
       )}

@@ -8,7 +8,9 @@ import {
   Users,
   VideoCamera,
 } from './DekIcons';
+import { useDekNav } from '../context/DekNav';
 import { INITIAL_COACHS } from '../data/mockData';
+import { UserAvatar } from './UserAvatar';
 
 interface CoachsViewProps {
   recommendedCoachId?: string;
@@ -21,6 +23,7 @@ type CoachFilter = (typeof FILTERS)[number];
 export function CoachsView({ recommendedCoachId, onBookSession }: CoachsViewProps) {
   const [bookedIds, setBookedIds] = useState<string[]>([]);
   const [filter, setFilter] = useState<CoachFilter>('Tous');
+  const nav = useDekNav();
 
   const handleBook = (id: string, name: string) => {
     if (bookedIds.includes(id)) return;
@@ -110,12 +113,21 @@ export function CoachsView({ recommendedCoachId, onBookSession }: CoachsViewProp
                 </div>
               )}
               <div className="flex items-start gap-3">
-                <div
-                  className="font-hud flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-black"
-                  style={{ backgroundColor: coach.accent }}
-                >
-                  {coach.avatarInitials}
-                </div>
+                <button onClick={() => nav.openCoach(coach.id)} aria-label={`Profil de ${coach.name}`} className="shrink-0">
+                  {coach.avatarPreset ? (
+                    <UserAvatar
+                      avatar={{ mode: 'preset', presetId: coach.avatarPreset, diceStyle: 'lorelei', seed: coach.name, bgColor: '0f172a', auraColor: coach.accent }}
+                      size="md"
+                    />
+                  ) : (
+                    <span
+                      className="font-hud flex h-11 w-11 items-center justify-center rounded-2xl text-sm font-bold text-black"
+                      style={{ backgroundColor: coach.accent }}
+                    >
+                      {coach.avatarInitials}
+                    </span>
+                  )}
+                </button>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
@@ -155,9 +167,12 @@ export function CoachsView({ recommendedCoachId, onBookSession }: CoachsViewProp
               </div>
 
               <div className="mt-2.5 flex items-center justify-between gap-2">
-                <span className="font-hud text-xs font-bold text-slate-300">
-                  {coach.priceMonth}
-                </span>
+                <button
+                  onClick={() => nav.openCoach(coach.id)}
+                  className="font-hud rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-[11px] font-bold text-white"
+                >
+                  Voir le profil • {coach.priceMonth}
+                </button>
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   onClick={() => handleBook(coach.id, coach.name)}

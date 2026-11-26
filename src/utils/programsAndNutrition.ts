@@ -1,4 +1,4 @@
-import type { FitnessGoal, MissionDifficulty, MuscleGroup } from '../types/dek';
+import type { FitnessGoal, MissionDifficulty, MuscleGroup, BodyProfile } from '../types/dek';
 
 export interface FitnessGoalMeta {
   id: FitnessGoal;
@@ -155,7 +155,35 @@ export interface NutritionPlan {
   meals: NutritionMeal[];
 }
 
+/**
+ * Plan nutrition : base par objectif + calibrage personnel si le profil physique est connu
+ * (métabolisme de base Mifflin-St Jeor × activité, protéines et eau selon le poids).
+ */
 export function getNutritionPlan(
+  goals: FitnessGoal[],
+  category: MissionDifficulty,
+  body?: BodyProfile,
+): NutritionPlan {
+  const base = baseNutritionPlan(goals, category);
+  if (!body) return base;
+  const primary: FitnessGoal = goals[0] ?? 'remise_forme';
+  const bmr =
+    10 * body.weightKg + 6.25 * body.heightCm - 5 * body.age + (body.sex === 'homme' ? 5 : -161);
+  const activity = category === 'Expert' ? 1.7 : category === 'Pro' ? 1.6 : category === 'Standard' ? 1.5 : 1.4;
+  const goalAdjust = primary === 'perte_poids' ? -400 : primary === 'prise_muscle' ? 300 : 0;
+  const targetCalories = Math.round((bmr * activity + goalAdjust) / 10) * 10;
+  const proteinPerKg = primary === 'prise_muscle' ? 2 : primary === 'perte_poids' ? 1.8 : 1.5;
+  return {
+    ...base,
+    targetCalories,
+    proteinG: Math.round(body.weightKg * proteinPerKg),
+    carbsG: Math.round((targetCalories * 0.45) / 4),
+    // ~33 ml/kg, verres de 250 ml
+    waterTargetGlasses: Math.min(14, Math.max(6, Math.round((body.weightKg * 0.033) / 0.25))),
+  };
+}
+
+function baseNutritionPlan(
   goals: FitnessGoal[],
   category: MissionDifficulty,
 ): NutritionPlan {
