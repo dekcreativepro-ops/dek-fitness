@@ -544,7 +544,7 @@ export default function App() {
     );
 
     pushFeedPost({
-      bannerImage: '/images/banner-home.jpg',
+      bannerImage: '/images/w-cardio.jpg',
       type: 'mission',
       badge: `${modeLabel.toUpperCase()} • ${tier.toUpperCase()}`,
       content: `Sortie ${modeLabel} validée ! Parcours de ${distanceKm} km terminé à la position #${rankPos}.`,
@@ -583,7 +583,7 @@ export default function App() {
       return;
     }
     pushFeedPost({
-      bannerImage: '/images/banner-home.jpg',
+      bannerImage: '/images/w-cardio.jpg',
       type: 'mission',
       badge: 'TERRITOIRE CONQUIS',
       content: `Prise de contrôle de ${zoneName} pour DEK Warriors ! Badge « ${badgeName} » débloqué.`,
@@ -609,7 +609,7 @@ export default function App() {
       kcal: 60,
     });
     pushFeedPost({
-      bannerImage: '/images/banner-house.jpg',
+      bannerImage: '/images/w-legs.jpg',
       type: 'house',
       badge: `DÉFI HOUSE • ${modeLabel.toUpperCase()}`,
       content: `Victoire en mode ${modeLabel} sur ${exercise} ! ${reps} validées devant l'IA DEK.`,
@@ -633,7 +633,7 @@ export default function App() {
       return false;
     }
     pushFeedPost({
-      bannerImage: '/images/banner-house.jpg',
+      bannerImage: '/images/duo.jpg',
       type: 'house',
       badge: 'GYM BUDDY • DUO LIVE',
       content: `Séance synchronisée « ${routineTitle} » bouclée en duo (${totalSets} séries validées).`,
@@ -686,7 +686,7 @@ export default function App() {
       return false;
     }
     pushFeedPost({
-      bannerImage: '/images/banner-sante.jpg',
+      bannerImage: '/images/match.jpg',
       type: 'sante',
       badge: 'TERRAIN DU JEUDI • OFFICIEL',
       content: `${summaryText} MVP élu : ${mvpName} (+50 XP).`,
@@ -717,7 +717,7 @@ export default function App() {
       return;
     }
     pushFeedPost({
-      bannerImage: '/images/banner-home.jpg',
+      bannerImage: '/images/team.jpg',
       type: 'mission',
       badge: `RAID WEEK-END • ${badgeName.toUpperCase()}`,
       content: `Check-in QR validé sur place pour « ${raidTitle} » ! Badge exclusif débloqué.`,

@@ -7,22 +7,22 @@ import { CinematicImage, Button } from './ui/kit';
 
 const SLIDES = [
   {
-    image: '/images/photo-runner-track.jpg',
+    image: '/images/ob-coach-bw.jpg',
     position: '50% 40%',
     line1: 'Rencontre ton coach,',
     line2: 'commence ton aventure',
     text: 'Un test d’initiation sans quota calibre ton niveau pour progresser sans te blesser.',
   },
   {
-    image: '/images/photo-night-match.jpg',
-    position: '50% 60%',
+    image: '/images/ob-team.jpg',
+    position: '50% 55%',
     line1: 'Défis IA, terrains,',
     line2: 'une vraie équipe',
     text: 'Missions GPS à 05h00, duels caméra IA, Terrain du Jeudi, raids & pactes entre amis.',
   },
   {
-    image: '/images/photo-dunk.jpg',
-    position: '45% 45%',
+    image: '/images/ob-action.jpg',
+    position: '50% 45%',
     line1: 'L’action est la',
     line2: 'clé du succès',
     text: 'Séances guidées, rangs de saison et classement : chaque effort compte.',

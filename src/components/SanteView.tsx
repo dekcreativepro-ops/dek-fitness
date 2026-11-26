@@ -359,7 +359,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
       {/* Bandeau photo sobre */}
       <div className="relative h-36 overflow-hidden rounded-[24px]">
         <img
-          src="/images/photo-night-match.jpg"
+          src="/images/match.jpg"
           alt="Terrain du Jeudi & La Santé DEK"
           className="absolute inset-0 h-full w-full object-cover"
         />

@@ -336,6 +336,15 @@ export function GymBuddyView({
       {/* SOUS-ONGLET 2 : DUO LIVE */}
       {subTab === 'duo' && (
         <div className="space-y-4">
+          {/* Photo du duo : deux partenaires, même rythme */}
+          <div className="relative h-40 overflow-hidden rounded-[24px] bg-card">
+            <img src="/images/duo.jpg" alt="" draggable={false} className="absolute inset-0 h-full w-full select-none object-cover" style={{ objectPosition: '50% 30%' }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+            <div className="absolute inset-x-4 bottom-3">
+              <div className="text-[20px] font-bold leading-6 text-white">Séance en duo</div>
+              <div className="text-[13px] font-medium text-white/80">{duoBanner}</div>
+            </div>
+          </div>
           <ChipTabs
             items={[
               { id: 'salle', label: 'Push Salle (Pecs/Épaules)' },
