@@ -25,7 +25,7 @@ export function ResumeCard() {
       onClick={() => nav.startWorkout(program.id)}
       className="flex w-full items-center gap-3 rounded-[24px] bg-card p-3 text-left"
     >
-      <div className={`h-14 w-14 shrink-0 overflow-hidden rounded-[18px] ${tone === 'lime' ? 'bg-lime' : 'bg-white'}`}>
+      <div className={`h-14 w-14 shrink-0 overflow-hidden rounded-[18px] ${tone === 'lime' ? 'bg-lime' : 'bg-tile'}`}>
         <Mascot3D pose={pose} tone={tone} className="h-full w-full scale-125" />
       </div>
       <div className="min-w-0 flex-1">

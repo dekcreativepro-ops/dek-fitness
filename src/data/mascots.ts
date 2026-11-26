@@ -5,16 +5,16 @@
 import type { PhotoCategory } from './photos';
 
 export type MascotPose = 'pecs' | 'legs' | 'cardio' | 'abs' | 'hiit' | 'fullbody';
-/** white = fond blanc, tenue lime ; lime = fond vert de l'app, tenue blanche */
-export type MascotTone = 'white' | 'lime';
+/** dark = fond sombre de l'app, tenue lime ; lime = fond vert de l'app, tenue blanche */
+export type MascotTone = 'dark' | 'lime';
 
 export const PROGRAM_MASCOT: Partial<Record<PhotoCategory, { pose: MascotPose; tone: MascotTone }>> = {
-  pecs: { pose: 'pecs', tone: 'white' },
+  pecs: { pose: 'pecs', tone: 'dark' },
   legs: { pose: 'legs', tone: 'lime' },
-  cardio: { pose: 'cardio', tone: 'white' },
+  cardio: { pose: 'cardio', tone: 'dark' },
   abs: { pose: 'abs', tone: 'lime' },
-  hiit: { pose: 'hiit', tone: 'white' },
+  hiit: { pose: 'hiit', tone: 'dark' },
   fullbody: { pose: 'fullbody', tone: 'lime' },
 };
 
-export const MASCOT_FALLBACK = { pose: 'fullbody', tone: 'white' } as const;
+export const MASCOT_FALLBACK = { pose: 'fullbody', tone: 'dark' } as const;

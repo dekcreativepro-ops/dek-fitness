@@ -33,7 +33,7 @@ export function WorkoutCard({
       onKeyDown={(e) => {
         if (e.key === 'Enter') onOpen();
       }}
-      className={`relative cursor-pointer overflow-hidden rounded-[24px] ${lime ? 'bg-lime' : 'bg-white'} ${tall ? 'h-60' : 'h-52'} ${className}`}
+      className={`relative cursor-pointer overflow-hidden rounded-[24px] ${lime ? 'bg-lime' : 'bg-card'} ${tall ? 'h-60' : 'h-52'} ${className}`}
     >
       <Mascot3D pose={pose} tone={tone} className="absolute inset-x-0 top-2 h-[62%] w-full" />
 
@@ -47,7 +47,7 @@ export function WorkoutCard({
           aria-pressed={saved}
           aria-label={saved ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           className={`absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full transition active:scale-90 ${
-            saved ? 'bg-ink text-lime' : lime ? 'bg-black/15 text-ink' : 'bg-black/10 text-ink'
+            saved ? 'bg-ink text-lime' : lime ? 'bg-black/15 text-ink' : 'bg-white/10 text-fg'
           }`}
         >
           <BookmarkSimple className="h-4 w-4" />
@@ -61,8 +61,8 @@ export function WorkoutCard({
       )}
 
       <div className="absolute inset-x-0 bottom-0 p-3">
-        <div className="line-clamp-2 text-[15px] font-bold leading-5 text-[#0B0F00]">{program.title}</div>
-        <div className={`mt-1 flex items-center gap-1 text-[12px] font-medium ${lime ? 'text-[#2B3300]' : 'text-[#5A6275]'}`}>
+        <div className={`line-clamp-2 text-[15px] font-bold leading-5 ${lime ? 'text-[#0B0F00]' : 'text-fg'}`}>{program.title}</div>
+        <div className={`mt-1 flex items-center gap-1 text-[12px] font-medium ${lime ? 'text-[#2B3300]' : 'text-mute'}`}>
           <Play className="h-3 w-3 shrink-0" />
           <span className="truncate">
             {program.durationMin} min · {program.level}

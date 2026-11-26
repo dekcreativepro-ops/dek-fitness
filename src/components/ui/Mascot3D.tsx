@@ -76,7 +76,7 @@ function Sweat({ x, y }: { x: number; y: number }) {
 }
 
 function Poses({ pose, uid, tone }: { pose: MascotPose; uid: string; tone: MascotTone }) {
-  const shirt = tone === 'white' ? LIME : SNOW;
+  const shirt = tone === 'dark' ? LIME : SNOW;
   const shoeAt = (cx: number, cy: number) => <Blob uid={uid} c="shoe" cx={cx} cy={cy} rx={12} ry={7} />;
 
   switch (pose) {
@@ -123,7 +123,7 @@ function Poses({ pose, uid, tone }: { pose: MascotPose; uid: string; tone: Masco
       return (
         <g>
           <ellipse cx={92} cy={175} rx={40} ry={5} fill="#000" opacity={0.08} />
-          <g stroke={tone === 'white' ? '#C8FF00' : '#fff'} strokeWidth={4} strokeLinecap="round" opacity={0.9}>
+          <g stroke={tone === 'dark' ? '#C8FF00' : '#fff'} strokeWidth={4} strokeLinecap="round" opacity={0.9}>
             <path d="M14 78 L46 78M8 98 L38 98M20 118 L44 118" />
           </g>
           <Limb pts={[[104, 78], [88, 92], [76, 108]]} w={11} c={SKIN} back />
@@ -173,7 +173,7 @@ function Poses({ pose, uid, tone }: { pose: MascotPose; uid: string; tone: Masco
           <Limb pts={[[112, 70], [134, 52], [145, 30]]} w={11} c={SKIN} />
           <Blob uid={uid} c="skin" cx={146} cy={26} rx={8} ry={7} />
           <Head uid={uid} cx={100} cy={44} front />
-          <g stroke={tone === 'white' ? '#C8FF00' : '#fff'} strokeWidth={4} strokeLinecap="round" fill="none">
+          <g stroke={tone === 'dark' ? '#C8FF00' : '#fff'} strokeWidth={4} strokeLinecap="round" fill="none">
             <path d="M30 60 Q22 44 32 30M170 60 Q178 44 168 30" />
           </g>
         </g>
@@ -208,13 +208,13 @@ function Poses({ pose, uid, tone }: { pose: MascotPose; uid: string; tone: Masco
 }
 
 /** Mascotte 3D. Le fond est transparent : poser sur une carte blanche ou verte (`tone` adapte la tenue). */
-export function Mascot3D({ pose, tone = 'white', className = '' }: { pose: MascotPose; tone?: MascotTone; className?: string }) {
+export function Mascot3D({ pose, tone = 'dark', className = '' }: { pose: MascotPose; tone?: MascotTone; className?: string }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const grads: [string, Shade][] = [
     ['skin', SKIN],
     ['hair', HAIR],
-    ['shoe', tone === 'white' ? INK : SNOW],
-    ['mat', tone === 'white' ? LIME : INK],
+    ['shoe', tone === 'dark' ? INK : SNOW],
+    ['mat', tone === 'dark' ? LIME : INK],
   ];
   return (
     <svg viewBox="0 0 200 200" className={className} role="img" aria-hidden="true" preserveAspectRatio="xMidYMin meet">
@@ -227,8 +227,8 @@ export function Mascot3D({ pose, tone = 'white', className = '' }: { pose: Masco
           </radialGradient>
         ))}
       </defs>
-      <circle cx={100} cy={104} r={78} fill={tone === 'white' ? '#EEF8D2' : '#DCFF4F'} />
-      <circle cx={100} cy={104} r={58} fill={tone === 'white' ? '#E2F3B3' : '#D2F72A'} opacity={0.7} />
+      <circle cx={100} cy={104} r={78} fill={tone === 'dark' ? '#C8FF00' : '#DCFF4F'} fillOpacity={tone === 'dark' ? 0.12 : 1} />
+      <circle cx={100} cy={104} r={58} fill={tone === 'dark' ? '#C8FF00' : '#D2F72A'} opacity={tone === 'dark' ? 0.16 : 0.7} />
       <Poses pose={pose} uid={uid} tone={tone} />
     </svg>
   );
