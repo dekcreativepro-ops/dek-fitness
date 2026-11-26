@@ -9,7 +9,6 @@ import { getAdventurePlan, getNutritionPlan } from '../utils/programsAndNutritio
 import { currentWeekDays, dayKey, getRankInfo } from '../utils/progression';
 import { ActivityRings, Card, CinematicImage, CountUp, IconBadge, IconButton, ListRow, ProgressBar, SectionHeader, StatTiles } from './ui/kit';
 import { BoltPulse, DropWave, FlameAnimated } from './ui/AnimatedIcons';
-import { FloatingHero } from './ui/FloatingHero';
 import { fadeUpItem, staggerContainer } from './ui/motion';
 import { UserAvatar } from './UserAvatar';
 import { ResumeCard } from './workouts/ResumeCard';
@@ -94,28 +93,43 @@ export function HomeView({
       </motion.div>
 
       {/* Statut de saison */}
-      <motion.div variants={fadeUpItem} className="relative pt-44">
-        <FloatingHero className="top-0 right-[-10px] z-0 h-[236px] w-[236px]" />
-        <Card glass onClick={() => nav.openLeaderboard()} className="relative z-10">
+      <motion.div variants={fadeUpItem} className="relative h-[360px] overflow-hidden rounded-[28px] bg-card">
+        {/* Photo d'athlète plein cadre (fixe), comme dans les maquettes */}
+        <img
+          src="/images/banner-home.jpg"
+          alt=""
+          draggable={false}
+          className="absolute inset-0 h-full w-full select-none object-cover"
+          style={{ objectPosition: '72% 30%' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-transparent to-transparent" />
+        <div className="absolute left-5 top-5">
+          <div className="text-[13px] font-medium text-white/80">Rang de saison</div>
+          <div className="text-[34px] font-extrabold leading-9 text-white">{rankInfo.rank}</div>
+        </div>
+        {/* Panneau en verre sur la photo */}
+        <button
+          type="button"
+          onClick={() => nav.openLeaderboard()}
+          className="glass absolute inset-x-3 bottom-3 rounded-[24px] p-4 text-left transition active:scale-[0.99]"
+        >
           <div className="flex items-end justify-between gap-3">
-            <div>
-              <div className="text-[13px] font-medium text-mute">Rang de saison</div>
-              <div className="text-[20px] font-bold leading-6 text-fg">{rankInfo.rank}</div>
-            </div>
+            <div className="text-[13px] font-medium text-fg">XP de la saison</div>
             <div className="text-right text-[12px] font-medium text-mute">
               {rankInfo.nextRank ? `${rankInfo.nextRankXp - user.xp} XP avant ${rankInfo.nextRank}` : 'Rang maximum'}
             </div>
           </div>
-          <ProgressBar value={rankInfo.pct} knob className="mt-3" />
+          <ProgressBar value={rankInfo.pct} knob className="mt-2.5" />
           <StatTiles
-            className="mt-4 border-t border-rim pt-4"
+            className="mt-3.5 border-t border-white/10 pt-3.5"
             items={[
               { label: 'XP', value: <CountUp value={user.xp} /> },
               { label: 'Discipline', value: user.disciplineScore, unit: '%' },
               { label: 'Série', value: user.streakDays, unit: 'j' },
             ]}
           />
-        </Card>
+        </button>
       </motion.div>
 
       {/* Séances cette semaine */}
