@@ -1,20 +1,9 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  BookmarkSimple,
-  CaretLeft,
-  CaretRight,
-  CheckCircle,
-  Clock,
-  Fire,
-  Play,
-  Rounds,
-  Warning,
-} from '../DekIcons';
+import { ArrowLeft, BookmarkSimple, Clock, Fire } from '../DekIcons';
 import { INITIAL_COACHS } from '../../data/mockData';
 import {
   EXERCISES,
-  LEVEL_COLORS,
   type ExerciseDef,
   type WorkoutProgram,
   type WorkoutStep,
@@ -22,7 +11,7 @@ import {
 import type { MuscleGroup } from '../../types/dek';
 import { MUSCLE_LABELS } from '../../utils/programsAndNutrition';
 import { UserAvatar } from '../UserAvatar';
-import { BottomSheet, CinematicImage, SectionHeader, StarRow } from '../ui/kit';
+import { BottomSheet, Button, Card, CinematicImage, IconButton, ListRow, SectionHeader, StarRow, StatTiles } from '../ui/kit';
 import { MuscleMap } from '../ui/MuscleMap';
 import { fadeUpItem, staggerContainer } from '../ui/motion';
 
@@ -30,31 +19,31 @@ function stepLabel(step: WorkoutStep) {
   return step.mode === 'reps' ? `${step.target} reps` : `${step.target} s`;
 }
 
-/** Détail d'un exercice : démo HD, carte musculaire, erreurs à éviter ✗ / bonne forme ✓. */
+/** Détail d'un exercice : démo HD, carte musculaire, erreurs à éviter / bonne forme. */
 export function ExerciseSheetContent({ exercise, step }: { exercise: ExerciseDef; step?: WorkoutStep }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="relative overflow-hidden rounded-[24px] bg-white">
         <img src={`/demos/${exercise.demo}.gif`} alt={exercise.name} className="mx-auto h-48 object-contain" />
         {step && (
-          <span className="font-hud absolute left-3 top-3 rounded-lg bg-black/80 px-2 py-0.5 text-[10px] font-bold text-[#C8FF00]">
+          <span className="num absolute left-3 top-3 rounded-full bg-ink px-3 py-1 text-[12px] font-bold text-lime">
             {stepLabel(step)}
           </span>
         )}
       </div>
-      <p className="text-[12px] leading-relaxed text-slate-200">{exercise.cue}</p>
+      <p className="text-[14px] font-medium leading-5 text-mute">{exercise.cue}</p>
 
-      <div className="rounded-[22px] border border-white/10 bg-[#0B0E14] p-3">
-        <div className="font-hud mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Muscles sollicités</div>
+      <div className="rounded-[24px] bg-tile p-4">
+        <div className="mb-2 text-[13px] font-semibold text-mute">Muscles sollicités</div>
         <MuscleMap primary={exercise.primary} secondary={exercise.secondary} className="mx-auto h-40" />
-        <div className="mt-1 flex flex-wrap justify-center gap-1">
+        <div className="mt-2 flex flex-wrap justify-center gap-1.5">
           {exercise.primary.map((m) => (
-            <span key={m} className="rounded-full bg-[#C8FF00] px-2 py-0.5 text-[9px] font-bold text-black">
+            <span key={m} className="rounded-full bg-lime px-2.5 py-1 text-[12px] font-bold text-on-lime">
               {MUSCLE_LABELS[m]}
             </span>
           ))}
           {exercise.secondary.map((m) => (
-            <span key={m} className="rounded-full bg-[#C8FF00]/15 px-2 py-0.5 text-[9px] font-semibold text-[#C8FF00]">
+            <span key={m} className="rounded-full bg-rim px-2.5 py-1 text-[12px] font-semibold text-mute">
               {MUSCLE_LABELS[m]}
             </span>
           ))}
@@ -62,26 +51,22 @@ export function ExerciseSheetContent({ exercise, step }: { exercise: ExerciseDef
       </div>
 
       <div className="space-y-2">
-        <div className="font-hud text-[11px] font-bold uppercase tracking-wider text-white">Erreurs à éviter</div>
+        <h3 className="text-[16px] font-bold text-fg">Erreurs à éviter</h3>
         {exercise.tips.map((t, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.08 * i }}
-            className="grid grid-cols-2 gap-1.5"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.06 * i }}
+            className="grid grid-cols-2 gap-2"
           >
-            <div className="rounded-2xl border border-[#FF2E54]/40 bg-[#FF2E54]/10 p-2.5 shadow-[0_0_18px_-8px_#FF2E54]">
-              <div className="flex items-center gap-1 text-[10px] font-black text-[#FF2E54]">
-                <Warning weight="duotone" className="h-3.5 w-3.5" /> ÉVITE
-              </div>
-              <p className="mt-1 text-[11px] leading-snug text-slate-200">{t.bad}</p>
+            <div className="rounded-[20px] border border-danger bg-card p-3">
+              <div className="text-[12px] font-bold text-danger">Évite</div>
+              <p className="mt-1 text-[13px] leading-[18px] text-fg">{t.bad}</p>
             </div>
-            <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-2.5 shadow-[0_0_18px_-8px_#34D399]">
-              <div className="flex items-center gap-1 text-[10px] font-black text-emerald-400">
-                <CheckCircle weight="duotone" className="h-3.5 w-3.5" /> FAIS
-              </div>
-              <p className="mt-1 text-[11px] leading-snug text-slate-200">{t.good}</p>
+            <div className="rounded-[20px] border border-lime bg-card p-3">
+              <div className="text-[12px] font-bold text-lime">Fais</div>
+              <p className="mt-1 text-[13px] leading-[18px] text-fg">{t.good}</p>
             </div>
           </motion.div>
         ))}
@@ -110,8 +95,10 @@ export function WorkoutDetailScreen({
   const [openStep, setOpenStep] = useState<WorkoutStep | null>(null);
   const coach = INITIAL_COACHS.find((c) => c.id === program.coachId) ?? INITIAL_COACHS[0];
   const review = coach.reviews?.[0];
+  const breakdown = coach.ratingBreakdown ?? [1, 0, 0, 0, 0];
+  const breakdownTotal = breakdown.reduce((x, y) => x + y, 0);
 
-  // Score par muscle (principal = 2, secondaire = 1) : seuls les plus sollicités brillent fort
+  // Score par muscle (principal = 2, secondaire = 1) : seuls les plus sollicités ressortent en plein
   const muscles = useMemo(() => {
     const score = new Map<MuscleGroup, number>();
     program.steps.forEach((s) => {
@@ -129,198 +116,168 @@ export function WorkoutDetailScreen({
   const openExercise = openStep ? EXERCISES[openStep.exerciseId] : null;
 
   return (
-    <div className="flex h-full flex-col bg-[#080A0E]">
+    <div className="flex h-full flex-col bg-ink">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
-        {/* Héro cinématique */}
-        <CinematicImage src={program.image} position={program.imagePosition} tint={program.tint} className="h-[300px]">
-          <div className="absolute inset-0 bg-gradient-to-t from-[#080A0E] via-[#080A0E]/40 to-black/30" />
-          <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3">
+        {/* Photo + retour / signet */}
+        <CinematicImage src={program.image} position={program.imagePosition} className="h-[320px]" intensity={0.6}>
+          <div className="absolute inset-0 bg-gradient-to-t from-ink via-black/10 to-black/30" />
+          <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
+            <IconButton label="Retour" variant="glass" onClick={onBack}>
+              <ArrowLeft className="h-5 w-5" />
+            </IconButton>
             <button
-              onClick={onBack}
-              aria-label="Retour"
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black/45 text-white backdrop-blur-md active:scale-90"
-            >
-              <CaretLeft weight="bold" className="h-5 w-5" />
-            </button>
-            <motion.button
-              whileTap={{ scale: 0.8 }}
+              type="button"
               onClick={onToggleSave}
               aria-pressed={saved}
               aria-label={saved ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-              className={`flex h-10 w-10 items-center justify-center rounded-2xl backdrop-blur-md ${
-                saved ? 'bg-[#C8FF00] text-black' : 'bg-black/45 text-white'
+              className={`flex h-11 w-11 items-center justify-center rounded-full transition active:scale-90 ${
+                saved ? 'bg-lime text-on-lime' : 'bg-black/40 text-white'
               }`}
             >
-              <BookmarkSimple weight={saved ? 'duotone' : 'regular'} className="h-5 w-5" />
-            </motion.button>
+              <BookmarkSimple className="h-5 w-5" />
+            </button>
           </div>
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            className="absolute inset-x-0 bottom-0 p-4"
-          >
-            <motion.span
-              variants={fadeUpItem}
-              className="font-hud inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black text-black"
-              style={{ backgroundColor: LEVEL_COLORS[program.level] }}
-            >
-              {program.level.toUpperCase()}
-            </motion.span>
-            <motion.h1
-              variants={fadeUpItem}
-              className="font-hud mt-1.5 text-[32px] font-bold uppercase leading-[0.92] tracking-tight text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
-            >
-              {program.title}
-            </motion.h1>
-            <motion.p variants={fadeUpItem} className="text-xs text-slate-300">
-              {program.subtitle}
-            </motion.p>
-            <motion.div variants={fadeUpItem} className="mt-2.5 flex flex-wrap gap-1.5 text-[11px] font-semibold text-white">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/12 px-2.5 py-1 backdrop-blur">
-                <Clock weight="duotone" className="h-3.5 w-3.5" /> {program.durationMin} min
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/12 px-2.5 py-1 backdrop-blur">
-                <Fire weight="duotone" className="h-3.5 w-3.5 text-orange-400" /> {program.kcal} kcal
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/12 px-2.5 py-1 backdrop-blur">
-                <Rounds weight="duotone" className="h-3.5 w-3.5" /> {program.rounds} tours
-              </span>
-            </motion.div>
-          </motion.div>
         </CinematicImage>
 
-        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3 px-3.5 pb-28">
-          {/* À propos + stats */}
-          <motion.section variants={fadeUpItem} className="rounded-[26px] border border-white/10 bg-[#11151D] p-4">
-            <h2 className="font-hud text-sm font-bold text-white">À propos</h2>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-slate-300">{program.about}</p>
-            <div className="mt-3 grid grid-cols-3 divide-x divide-white/10 rounded-2xl bg-[#0B0E14] py-2.5 text-center">
-              <div>
-                <div className="text-[9px] text-slate-400">Niveau</div>
-                <div className="font-hud text-xs font-bold" style={{ color: LEVEL_COLORS[program.level] }}>
-                  {program.level}
-                </div>
-              </div>
-              <div>
-                <div className="text-[9px] text-slate-400">Terminée</div>
-                <div className="font-hud text-xs font-bold text-white">{doneCount}×</div>
-              </div>
-              <div>
-                <div className="text-[9px] text-slate-400">Matériel</div>
-                <div className="font-hud truncate px-1 text-xs font-bold text-white">{program.equipment}</div>
-              </div>
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-4 px-5 pb-8">
+          <motion.div variants={fadeUpItem} className="relative -mt-14">
+            <h1 className="text-[26px] font-bold leading-8 text-fg">{program.title}</h1>
+            <p className="text-[14px] font-medium text-mute">{program.subtitle}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-tile px-3 py-1.5 text-[13px] font-semibold text-fg">
+                <Clock className="h-3.5 w-3.5" /> {program.durationMin} min
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-tile px-3 py-1.5 text-[13px] font-semibold text-fg">
+                <Fire className="h-3.5 w-3.5" /> {program.kcal} kcal
+              </span>
             </div>
-          </motion.section>
+          </motion.div>
+
+          {/* À propos */}
+          <motion.div variants={fadeUpItem}>
+            <Card>
+              <h2 className="text-[16px] font-bold text-fg">À propos</h2>
+              <p className="mt-2 text-[14px] leading-5 text-mute">{program.about}</p>
+              <StatTiles
+                className="mt-4 border-t border-rim pt-4"
+                items={[
+                  { label: 'Niveau', value: <span className="text-[16px]">{program.level}</span> },
+                  { label: 'Progression', value: `${doneCount}×` },
+                  {
+                    label: 'Zone',
+                    value: <span className="text-[16px]">{muscles.primary[0] ? MUSCLE_LABELS[muscles.primary[0]] : program.equipment}</span>,
+                  },
+                ]}
+              />
+            </Card>
+          </motion.div>
 
           {/* Zones ciblées */}
-          <motion.section variants={fadeUpItem} className="rounded-[26px] border border-white/10 bg-[#11151D] p-4">
-            <SectionHeader title="Zones ciblées" />
-            <MuscleMap primary={muscles.primary} secondary={muscles.secondary} className="mx-auto h-52" />
-            <div className="mt-1 flex flex-wrap justify-center gap-1">
-              {muscles.primary.map((m) => (
-                <span key={m} className="rounded-full bg-[#C8FF00] px-2 py-0.5 text-[9px] font-bold text-black">
-                  {MUSCLE_LABELS[m]}
-                </span>
-              ))}
-              {muscles.secondary.map((m) => (
-                <span key={m} className="rounded-full bg-[#C8FF00]/15 px-2 py-0.5 text-[9px] font-semibold text-[#C8FF00]">
-                  {MUSCLE_LABELS[m]}
-                </span>
-              ))}
-            </div>
-          </motion.section>
+          <motion.div variants={fadeUpItem}>
+            <Card>
+              <h2 className="text-[16px] font-bold text-fg">Zones ciblées</h2>
+              <MuscleMap primary={muscles.primary} secondary={muscles.secondary} className="mx-auto mt-2 h-52" />
+              <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+                {muscles.primary.map((m) => (
+                  <span key={m} className="rounded-full bg-lime px-2.5 py-1 text-[12px] font-bold text-on-lime">
+                    {MUSCLE_LABELS[m]}
+                  </span>
+                ))}
+                {muscles.secondary.map((m) => (
+                  <span key={m} className="rounded-full bg-tile px-2.5 py-1 text-[12px] font-semibold text-mute">
+                    {MUSCLE_LABELS[m]}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-3 text-center text-[12px] text-mute">Matériel : {program.equipment}</div>
+            </Card>
+          </motion.div>
 
           {/* Coach */}
-          <motion.section variants={fadeUpItem}>
+          <motion.div variants={fadeUpItem}>
             <SectionHeader title="Coach" />
-            <motion.button
-              whileTap={{ scale: 0.98 }}
+            <ListRow
               onClick={() => onOpenCoach(coach.id)}
-              className="flex w-full items-center gap-3 rounded-[22px] border border-white/10 bg-[#11151D] p-3 text-left"
-            >
-              {coach.avatarPreset && (
-                <UserAvatar
-                  avatar={{ mode: 'preset', presetId: coach.avatarPreset, diceStyle: 'lorelei', seed: coach.name, bgColor: '0f172a', auraColor: coach.accent }}
-                  size="md"
-                />
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="font-hud truncate text-sm font-bold text-white">{coach.name}</div>
-                <div className="truncate text-[11px] text-slate-400">{coach.specialty}</div>
-                <div className="mt-0.5 text-[10px] font-semibold text-[#C8FF00]">
-                  {coach.experienceYears ?? 5} ans d’expérience
-                </div>
-              </div>
-              <CaretRight className="h-4 w-4 text-slate-400" />
-            </motion.button>
-          </motion.section>
+              leading={
+                coach.avatarPreset && (
+                  <UserAvatar
+                    avatar={{ mode: 'preset', presetId: coach.avatarPreset, diceStyle: 'lorelei', seed: coach.name, bgColor: '0E0F12', auraColor: coach.accent }}
+                    size="md"
+                    ring={false}
+                    className="!h-12 !w-12"
+                  />
+                )
+              }
+              title={coach.name}
+              subtitle={coach.specialty}
+              meta={`${coach.experienceYears ?? 5} ans d’expérience`}
+            />
+          </motion.div>
 
           {/* Note & avis */}
-          <motion.section variants={fadeUpItem} className="rounded-[26px] border border-white/10 bg-[#11151D] p-4">
-            <div className="flex items-center gap-3">
-              <div className="font-hud text-4xl font-bold text-white">{program.rating.toFixed(1)}</div>
-              <div>
-                <StarRow rating={program.rating} className="h-3.5 w-3.5" />
-                <div className="text-[10px] text-slate-400">{program.ratingsCount} avis vérifiés</div>
-              </div>
-            </div>
-            {review && (
-              <div className="mt-3 rounded-2xl bg-[#0B0E14] p-3">
-                <div className="flex items-center gap-2">
-                  <UserAvatar
-                    avatar={{ mode: 'preset', presetId: review.avatarPreset, diceStyle: 'lorelei', seed: review.author, bgColor: '0f172a', auraColor: '#00E5FF' }}
-                    size="xs"
-                    ring={false}
-                  />
-                  <span className="text-xs font-bold text-white">{review.author}</span>
-                  <span className="ml-auto text-[10px] text-slate-500">{review.timeAgo}</span>
+          <motion.div variants={fadeUpItem}>
+            <Card>
+              <div className="flex items-center gap-5">
+                <div>
+                  <div className="num text-[44px] font-extrabold leading-none text-fg">{program.rating.toFixed(1)}</div>
+                  <StarRow rating={program.rating} className="mt-2 h-3.5 w-3.5" />
+                  <div className="mt-1 text-[12px] text-mute">{program.ratingsCount} avis vérifiés</div>
                 </div>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-300">{review.text}</p>
+                <div className="flex-1 space-y-1.5">
+                  {breakdown.map((n, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[12px] text-mute">
+                      <span className="num w-2">{5 - i}</span>
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-rim">
+                        <div className="h-full rounded-full bg-lime" style={{ width: `${breakdownTotal ? (n / breakdownTotal) * 100 : 0}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            )}
-          </motion.section>
+              {review && (
+                <div className="mt-4 rounded-[20px] bg-tile p-3">
+                  <div className="flex items-center gap-2">
+                    <UserAvatar
+                      avatar={{ mode: 'preset', presetId: review.avatarPreset, diceStyle: 'lorelei', seed: review.author, bgColor: '0E0F12', auraColor: '#5BD6FF' }}
+                      size="xs"
+                      ring={false}
+                    />
+                    <span className="text-[14px] font-bold text-fg">{review.author}</span>
+                    <span className="ml-auto text-[12px] text-faint">{review.timeAgo}</span>
+                  </div>
+                  <p className="mt-2 text-[13px] leading-[18px] text-mute">{review.text}</p>
+                </div>
+              )}
+            </Card>
+          </motion.div>
 
           {/* Exercices */}
-          <motion.section variants={fadeUpItem}>
-            <SectionHeader title={`Exercices • ${program.steps.length} étapes • ${program.rounds} tours`} />
+          <motion.div variants={fadeUpItem}>
+            <SectionHeader title={`Exercices · ${program.steps.length} étapes · ${program.rounds} tours`} />
             <div className="space-y-2">
               {program.steps.map((step, i) => {
                 const ex = EXERCISES[step.exerciseId];
                 return (
-                  <motion.button
+                  <ListRow
                     key={`${step.exerciseId}-${i}`}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => setOpenStep(step)}
-                    className="flex w-full items-center gap-3 rounded-[20px] border border-white/10 bg-[#11151D] p-2 text-left"
-                  >
-                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-white">
-                      <img src={`/demos/${ex.demo}.gif`} alt="" loading="lazy" className="h-full w-full object-contain" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-hud truncate text-[13px] font-bold text-white">{ex.name}</div>
-                      <div className="text-[11px] font-semibold text-[#C8FF00]">{stepLabel(step)}</div>
-                      {step.restSec > 0 && <div className="text-[10px] text-slate-500">Repos {step.restSec} s</div>}
-                    </div>
-                    <CaretRight className="h-4 w-4 shrink-0 text-slate-400" />
-                  </motion.button>
+                    leading={<img src={`/demos/${ex.demo}.gif`} alt="" loading="lazy" className="h-full w-full bg-white object-contain" />}
+                    title={ex.name}
+                    subtitle={step.restSec > 0 ? `Repos ${step.restSec} s` : undefined}
+                    meta={stepLabel(step)}
+                  />
                 );
               })}
             </div>
-          </motion.section>
+          </motion.div>
         </motion.div>
       </div>
 
-      {/* Bouton d'action collant au pouce */}
-      <div className="safe-bottom shrink-0 border-t border-white/10 bg-[#080A0E]/95 px-3.5 pb-3 pt-2.5 backdrop-blur">
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={onStart}
-          className="font-hud flex w-full items-center justify-center gap-2 rounded-full bg-[#C8FF00] py-3.5 text-sm font-bold text-black shadow-[0_10px_30px_-10px_#C8FF00]"
-        >
-          <Play weight="duotone" className="h-5 w-5" /> DÉMARRER LA SÉANCE
-          <span className="rounded-full bg-black/15 px-2 py-0.5 text-[10px]">+{program.xp} XP</span>
-        </motion.button>
+      {/* CTA collant */}
+      <div className="safe-bottom shrink-0 bg-ink px-5 pb-4 pt-3">
+        <Button fullWidth trailingArrow onClick={onStart}>
+          Démarrer la séance · +{program.xp} XP
+        </Button>
       </div>
 
       <BottomSheet open={!!openExercise} onClose={() => setOpenStep(null)} title={openExercise?.name}>

@@ -249,7 +249,7 @@ export const INITIAL_COACHS: CoachProfile[] = [
     avatarInitials: 'YT',
     accent: '#FF8A00',
     avatarPreset: 'manga-sprint',
-    bio: 'Marathonien (2h41), Yannick coache les missions 05h00 et les plans 5 km → semi. Il construit des progressions sûres, palier par palier, avec un œil sur la récupération et le sommeil.',
+    bio: 'Marathonien (2h41), Yannick coache les missions 05h00 et les plans 5 km au semi. Il construit des progressions sûres, palier par palier, avec un œil sur la récupération et le sommeil.',
     experienceYears: 12,
     completedSessions: 2150,
     ratingBreakdown: [201, 12, 2, 0, 0],

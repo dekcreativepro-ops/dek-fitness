@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import * as maplibregl from 'maplibre-gl';
 // MapLibre v6 cherche son worker à côté de son propre fichier : introuvable une fois
 // l'app bundlée par Vite (dev : 504, build : fichier absent) → carte vide.
@@ -7,28 +6,15 @@ import * as maplibregl from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Bike,
-  CheckCircle,
-  Clock,
+  ArrowsClockwise,
+  Check,
   Compass,
-  Cube,
-  Flag,
-  Footprints,
-  Ghost,
-  Globe,
   Lightning,
   Lock,
-  MapPin,
   Microphone,
   MicrophoneSlash,
-  NavigationArrow,
-  Play,
   SlidersHorizontal,
-  Timer,
-  Trophy,
-  Users,
   Warning,
-  X,
 } from './DekIcons';
 import { INITIAL_TERRITORIES } from '../data/gamesData';
 import { INITIAL_RUNNERS, MISSION_TIERS } from '../data/mockData';
@@ -42,7 +28,8 @@ import type {
 import { getTierIndex, TIER_COLORS, TIER_REQUIREMENTS } from '../utils/categorization';
 import { generateLoopRoute, type GeneratedRoute } from '../utils/routeGenerator';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
-import { HeartBeat } from './ui/AnimatedIcons';
+import { CheckDraw } from './ui/AnimatedIcons';
+import { BottomSheet, Button, Card, ChipTabs, IconButton, ListRow, ProgressBar, StatTiles, Tile } from './ui/kit';
 
 interface MissionsViewProps {
   userCategory: MissionDifficulty;
@@ -704,7 +691,7 @@ export function MissionsView({
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setCoords([pos.coords.latitude, pos.coords.longitude]);
-        flashNotice('Position GPS trouvée ✓ Nouveau tracé autour de toi');
+        flashNotice('Position GPS trouvée, nouveau tracé autour de toi');
       },
       (err) => {
         flashNotice(
@@ -788,8 +775,6 @@ export function MissionsView({
 
   const ghostDeltaMeters = Math.round((myProgressKm - ghostProgressKm) * 1000);
 
-  const arcLength = 157;
-  const arcFill = phase === 'running' ? arcLength * progressRatio : arcLength * 0.68;
 
   const guidanceLabel = mapNotice
     ? mapNotice
@@ -809,828 +794,647 @@ export function MissionsView({
         ? `${selectedZone.name} • Détenu par ${selectedZone.ownerClub}`
         : `Boucle 3D ${effectiveDistanceKm} km • ${discObj.label}`;
 
-  const overlayRoot =
-    typeof document !== 'undefined' ? document.getElementById('dek-overlay-root') : null;
+  const modeShort = OUTDOOR_MODES.find((m) => m.id === gameMode)?.short ?? '';
+  const clock = `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, '0')}`;
+  const glassBtn = 'bg-black/50 text-fg backdrop-blur-md';
+  const glassPill =
+    'flex h-10 items-center gap-2 rounded-full bg-black/50 px-4 text-[13px] font-semibold text-fg backdrop-blur-md';
 
   const voiceBottomSheet = (
-    <AnimatePresence>
-      {voiceSheetOpen && (
-        <motion.div
-          key="voice-sheet-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setVoiceSheetOpen(false)}
-          className="pointer-events-auto absolute inset-0 flex flex-col justify-end bg-black/70 backdrop-blur-xs"
-        >
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
-            onClick={(e) => e.stopPropagation()}
-            className="rounded-t-3xl border-t border-white/15 bg-[#121722] p-4 pb-6 shadow-2xl"
-          >
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
-            <div className="flex items-center justify-between">
-              <h3 className="font-hud text-sm font-bold text-white">
-                SALON VOCAL • LOBBY {selectedSlot}
-              </h3>
-              <button
-                onClick={() => setVoiceSheetOpen(false)}
-                className="rounded-xl bg-white/5 p-1.5 text-slate-400"
-              >
-                <X className="h-4 w-4" />
-              </button>
+    <BottomSheet
+      open={voiceSheetOpen}
+      onClose={() => setVoiceSheetOpen(false)}
+      title={`Salon vocal · Lobby ${selectedSlot}`}
+    >
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { id: 'me', name: 'Toi', speaking: !micMuted },
+          ...runners.map((r, i) => ({
+            id: r.id,
+            name: r.name.split('_')[0],
+            speaking: i === 0,
+          })),
+        ].map((member) => (
+          <div key={member.id} className="flex flex-col items-center rounded-[20px] bg-tile p-3">
+            <div
+              className={`flex h-11 w-11 items-center justify-center rounded-full bg-card text-[13px] font-bold text-fg ${
+                member.speaking ? 'ring-2 ring-lime' : ''
+              }`}
+            >
+              {member.name.slice(0, 2).toUpperCase()}
             </div>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {[
-                { id: 'me', name: 'Toi', speaking: !micMuted },
-                ...runners.map((r, i) => ({
-                  id: r.id,
-                  name: r.name.split('_')[0],
-                  speaking: i === 0,
-                })),
-              ].map((member) => (
-                <div
-                  key={member.id}
-                  className="flex flex-col items-center rounded-2xl border border-white/5 bg-[#0B0E14] p-2.5"
-                >
-                  <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#1C2331] text-xs font-bold text-white">
-                    {member.speaking && (
-                      <motion.span
-                        animate={{ scale: [1, 1.35, 1], opacity: [0.65, 0, 0.65] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                        className="absolute inset-0 rounded-full border-2 border-[#C8FF00]"
-                      />
-                    )}
-                    {member.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <span className="mt-1 truncate text-[10px] text-slate-200">{member.name}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => setMicMuted((m) => !m)}
-                className={`font-hud flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold ${
-                  micMuted ? 'bg-[#FF2E54]/20 text-[#FF2E54]' : 'bg-[#C8FF00] text-black'
-                }`}
-              >
-                {micMuted ? (
-                  <MicrophoneSlash weight="duotone" className="h-4 w-4" />
-                ) : (
-                  <Microphone weight="duotone" className="h-4 w-4" />
-                )}
-                {micMuted ? 'Micro coupé' : 'Micro actif'}
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            <span className="mt-1.5 max-w-full truncate text-[12px] font-medium text-mute">
+              {member.name}
+            </span>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => setMicMuted((m) => !m)}
+        className={`mt-4 flex h-[52px] w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold transition active:scale-[0.97] ${
+          micMuted ? 'bg-tile text-danger' : 'bg-lime text-on-lime'
+        }`}
+      >
+        {micMuted ? <MicrophoneSlash className="h-5 w-5" /> : <Microphone className="h-5 w-5" />}
+        {micMuted ? 'Micro coupé' : 'Micro actif'}
+      </button>
+    </BottomSheet>
   );
 
   const detailsBottomSheet = (
-    <AnimatePresence>
-      {detailsSheetOpen && (
-        <motion.div
-          key="details-sheet-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setDetailsSheetOpen(false)}
-          className="pointer-events-auto absolute inset-0 flex flex-col justify-end bg-black/75 backdrop-blur-xs"
+    <BottomSheet
+      open={detailsSheetOpen}
+      onClose={() => setDetailsSheetOpen(false)}
+      title="Réglages et classement"
+      maxHeight="82%"
+    >
+      <div className="space-y-5">
+        <div>
+          <div className="mb-2 text-[13px] font-medium text-mute">Horaire de départ strict</div>
+          <div className={phase !== 'lobby' ? 'pointer-events-none opacity-50' : ''}>
+            <ChipTabs
+              items={TIME_SLOTS.map((s) => ({ id: s, label: s }))}
+              value={selectedSlot}
+              onChange={setSelectedSlot}
+              layoutId="outdoor-slot"
+            />
+          </div>
+        </div>
+
+        <div
+          className={`grid grid-cols-2 gap-1 rounded-full bg-tile p-1 ${
+            phase !== 'lobby' ? 'pointer-events-none opacity-50' : ''
+          }`}
         >
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[78%] space-y-3.5 overflow-y-auto rounded-t-3xl border-t border-white/15 bg-[#121722] p-4 pb-6 shadow-2xl no-scrollbar"
-          >
-            <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />
-            <div className="flex items-center justify-between">
-              <h3 className="font-hud text-sm font-bold text-white">
-                PARAMÈTRES & CLASSEMENT LOBBY
-              </h3>
-              <button
-                onClick={() => setDetailsSheetOpen(false)}
-                className="rounded-xl bg-white/5 p-1.5 text-slate-400"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+          {(
+            [
+              { id: 'global', label: 'Zones différentes' },
+              { id: 'local', label: 'Même parcours' },
+            ] as const
+          ).map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => setGeoMode(g.id)}
+              className={`h-10 rounded-full text-[13px] font-semibold transition-colors ${
+                geoMode === g.id ? 'bg-lime text-on-lime' : 'text-mute'
+              }`}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
 
-            <div>
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
-                <Clock weight="duotone" className="h-4 w-4 text-[#C8FF00]" /> Horaire de départ
-                strict
-              </span>
-              <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto">
-                {TIME_SLOTS.map((slot) => (
-                  <button
-                    key={slot}
-                    disabled={phase !== 'lobby'}
-                    onClick={() => setSelectedSlot(slot)}
-                    className={`font-hud shrink-0 rounded-xl border px-3 py-1.5 text-xs font-bold ${
-                      selectedSlot === slot
-                        ? 'border-[#C8FF00] bg-[#C8FF00] text-black'
-                        : 'border-white/10 bg-[#0B0E14] text-slate-300'
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                disabled={phase !== 'lobby'}
-                onClick={() => setGeoMode('global')}
-                className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-semibold ${
-                  geoMode === 'global'
-                    ? 'border-[#00E5FF] bg-[#00E5FF]/15 text-[#00E5FF]'
-                    : 'border-white/10 bg-[#0B0E14] text-slate-400'
-                }`}
-              >
-                <Globe weight="duotone" className="h-4 w-4" /> Zones différentes
-              </button>
-              <button
-                disabled={phase !== 'lobby'}
-                onClick={() => setGeoMode('local')}
-                className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-semibold ${
-                  geoMode === 'local'
-                    ? 'border-[#00E5FF] bg-[#00E5FF]/15 text-[#00E5FF]'
-                    : 'border-white/10 bg-[#0B0E14] text-slate-400'
-                }`}
-              >
-                <MapPin weight="duotone" className="h-4 w-4" /> Même parcours
-              </button>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-bold text-white">
-                <span className="flex items-center gap-1.5">
-                  <Trophy weight="duotone" className="h-4 w-4 text-[#C8FF00]" /> Lobby{' '}
-                  {selectedSlot}
-                </span>
-                <span className="text-[10px] text-slate-400">
-                  {geoMode === 'global' ? 'Multi-villes' : 'Proximité'}
-                </span>
-              </div>
-              {leaderboard.map((runner, i) => {
-                const isMe = runner.id === 'me';
-                return (
-                  <motion.div
-                    layout
-                    key={runner.id}
-                    className={`flex items-center justify-between rounded-xl border px-3 py-2 text-[11px] ${
-                      isMe
-                        ? 'border-[#C8FF00]/40 bg-[#C8FF00]/10'
-                        : 'border-white/5 bg-[#0B0E14]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-hud font-bold text-slate-400">#{i + 1}</span>
-                      <span className={isMe ? 'font-bold text-[#C8FF00]' : 'text-white'}>
-                        {runner.name}
-                      </span>
-                      <span className="text-[10px] text-slate-500">{runner.city}</span>
-                    </div>
-                    <span className="font-hud font-bold text-white">
-                      {runner.progressKm.toFixed(2)} km
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="text-[16px] font-bold text-fg">Lobby {selectedSlot}</h4>
+            <span className="text-[12px] font-medium text-mute">
+              {geoMode === 'global' ? 'Multi-villes' : 'Proximité'}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {leaderboard.map((runner, i) => {
+              const isMe = runner.id === 'me';
+              return (
+                <ListRow
+                  key={runner.id}
+                  chevron={false}
+                  className={`bg-tile! ${isMe ? 'ring-1 ring-lime' : ''}`}
+                  leading={
+                    <span className="num flex h-full w-full items-center justify-center bg-card text-[14px] font-bold text-fg">
+                      {i + 1}
                     </span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                  }
+                  title={runner.name}
+                  subtitle={runner.city}
+                  meta={`${runner.progressKm.toFixed(2)} km`}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </BottomSheet>
   );
 
   const lockedSheet = (
-    <AnimatePresence>
+    <BottomSheet
+      open={lockedTierModal !== null}
+      onClose={() => setLockedTierModal(null)}
+      title={lockedTierModal ? `Palier ${lockedTierModal} verrouillé` : undefined}
+    >
       {lockedTierModal && (
-        <motion.div
-          key="locked-tier-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setLockedTierModal(null)}
-          className="pointer-events-auto absolute inset-0 flex flex-col justify-end bg-black/75 backdrop-blur-xs"
-        >
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
-            onClick={(e) => e.stopPropagation()}
-            className="space-y-3 rounded-t-3xl border-t border-[#FF8A00]/35 bg-[#121722] p-4 pb-6 shadow-2xl"
-          >
-            <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Lock weight="duotone" className="h-4 w-4 text-[#FF8A00]" />
-                <h3 className="font-hud text-sm font-bold text-white">
-                  PALIER {lockedTierModal.toUpperCase()} VERROUILLÉ
-                </h3>
-              </div>
-              <button
-                onClick={() => setLockedTierModal(null)}
-                className="rounded-xl bg-white/5 p-1.5 text-slate-400"
-              >
-                <X className="h-4 w-4" />
-              </button>
+        <div className="space-y-2">
+          {[
+            { label: 'Santé', text: TIER_REQUIREMENTS[lockedTierModal].healthReason },
+            { label: 'Progression', text: TIER_REQUIREMENTS[lockedTierModal].missionRule },
+            { label: 'Compétences', text: TIER_REQUIREMENTS[lockedTierModal].skillRule },
+          ].map((row) => (
+            <div key={row.label} className="rounded-[20px] bg-tile p-4">
+              <div className="text-[12px] font-medium text-mute">{row.label}</div>
+              <div className="mt-1 text-[14px] font-medium leading-5 text-fg">{row.text}</div>
             </div>
-            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-3 text-[11px] text-emerald-100">
-              <strong className="text-emerald-400">Santé :</strong>{' '}
-              {TIER_REQUIREMENTS[lockedTierModal].healthReason}
-            </div>
-            <div className="space-y-1.5 rounded-2xl border border-white/10 bg-[#0B0E14] p-3 text-[11px]">
-              <div>
-                <strong className="text-[#C8FF00]">Progression : </strong>
-                <span className="text-slate-300">
-                  {TIER_REQUIREMENTS[lockedTierModal].missionRule}
-                </span>
-              </div>
-              <div>
-                <strong className="text-[#00E5FF]">Compétences : </strong>
-                <span className="text-slate-300">
-                  {TIER_REQUIREMENTS[lockedTierModal].skillRule}
-                </span>
-              </div>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.96 }}
+          ))}
+          <div className="pt-2">
+            <Button
+              fullWidth
               onClick={() => {
                 setLockedTierModal(null);
                 onRequestRetakeTest();
               }}
-              className="font-hud w-full rounded-full bg-[#C8FF00] py-3 text-xs font-bold text-black"
             >
-              PASSER LE TEST DE MONTÉE DE PALIER
-            </motion.button>
-          </motion.div>
-        </motion.div>
+              Passer le test de montée de palier
+            </Button>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </BottomSheet>
   );
 
+  const pillState = (done: boolean, active: boolean) =>
+    done
+      ? 'bg-tile text-fg'
+      : active
+        ? 'bg-lime text-on-lime'
+        : 'bg-tile text-faint';
+
   return (
-    <div className="space-y-2.5 pb-2">
-      {/* Barre Disciplines (Course / Marche / Vélo) + 5 Modes Outdoor */}
-      <div className="space-y-1.5">
-        <div className="grid grid-cols-3 gap-1 rounded-2xl border border-white/10 bg-[#11151D] p-1">
+    <div className="space-y-4 pb-4">
+      {/* En-tête de page */}
+      <div>
+        <h1 className="text-[26px] font-bold leading-8 text-fg">Outdoor</h1>
+        <p className="text-[13px] font-medium text-mute">Missions GPS & carte 3D</p>
+      </div>
+
+      {/* Disciplines + modes */}
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-1 rounded-full bg-card p-1">
           {DISCIPLINES.map((d) => {
             const active = discipline === d.id;
             return (
               <button
                 key={d.id}
+                type="button"
                 disabled={phase !== 'lobby'}
                 onClick={() => setDiscipline(d.id)}
-                className={`font-hud flex items-center justify-center gap-1 rounded-xl py-1.5 text-[11px] font-bold transition ${
-                  active ? 'bg-[#C8FF00] text-black' : 'text-slate-300'
+                className={`h-10 rounded-full text-[14px] font-semibold transition-colors disabled:opacity-60 ${
+                  active ? 'bg-lime text-on-lime' : 'text-mute'
                 }`}
               >
-                {d.id === 'velo' ? (
-                  <Bike weight="duotone" className="h-3.5 w-3.5" />
-                ) : (
-                  <Footprints weight="duotone" className="h-3.5 w-3.5" />
-                )}
                 {d.label}
               </button>
             );
           })}
         </div>
 
-        <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-0.5">
-          {OUTDOOR_MODES.map((m) => {
-            const active = gameMode === m.id;
-            return (
-              <button
-                key={m.id}
-                disabled={phase !== 'lobby'}
-                onClick={() => setGameMode(m.id)}
-                className={`font-hud flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${
-                  active
-                    ? 'border-[#C8FF00] bg-[#C8FF00]/15 text-[#C8FF00]'
-                    : 'border-white/10 bg-[#11151D] text-slate-400'
-                }`}
-              >
-                {m.id === 'survie_checkpoint' && <Timer weight="duotone" className="h-3 w-3" />}
-                {m.id === 'relais_escouade' && <Users weight="duotone" className="h-3 w-3" />}
-                {m.id === 'conquete_territoire' && <Flag weight="duotone" className="h-3 w-3" />}
-                {m.id === 'fantome' && <Ghost weight="duotone" className="h-3 w-3" />}
-                {m.short}
-              </button>
-            );
-          })}
+        <div className={phase !== 'lobby' ? 'pointer-events-none opacity-50' : ''}>
+          <ChipTabs
+            items={OUTDOOR_MODES.map((m) => ({ id: m.id, label: m.short }))}
+            value={gameMode}
+            onChange={setGameMode}
+            layoutId="outdoor-mode"
+          />
         </div>
       </div>
 
-      {/* Héro Carte 3D + Panneau de bord */}
-      <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#11151D]">
-        <div className="relative h-[245px] w-full bg-[#090C12]">
-          <div ref={mapContainerRef} className="h-full w-full" />
+      {/* Carte */}
+      <div className="relative h-[380px] w-full overflow-hidden rounded-[28px] bg-card">
+        <div ref={mapContainerRef} className="h-full w-full" />
 
-          {/* Pilule de guidage flottante */}
-          <div className="pointer-events-none absolute left-2.5 right-2.5 top-2.5 z-20 flex items-center justify-between gap-2">
-            <div className="pointer-events-auto flex min-w-0 items-center gap-2 rounded-2xl border border-white/15 bg-[#080A0E]/88 px-3 py-2 shadow-xl backdrop-blur-md">
-              <NavigationArrow weight="duotone" className="h-4 w-4 shrink-0 text-[#C8FF00]" />
-              <span className="truncate text-[11px] font-semibold text-white">
-                {guidanceLabel}
-              </span>
-            </div>
-
-            <div className="pointer-events-auto flex items-center gap-1">
-              <button
-                onClick={toggle3D}
-                className={`font-hud flex items-center gap-1 rounded-xl border px-2 py-1.5 text-[10px] font-bold backdrop-blur ${
-                  is3D
-                    ? 'border-[#C8FF00]/50 bg-[#C8FF00]/15 text-[#C8FF00]'
-                    : 'border-white/15 bg-[#080A0E]/88 text-slate-300'
-                }`}
-              >
-                <Cube weight="duotone" className="h-3.5 w-3.5" />
-                {is3D ? '3D' : '2D'}
-              </button>
-              <button
-                onClick={handleUseGPS}
-                className="rounded-xl border border-white/15 bg-[#080A0E]/88 p-1.5 text-[#00E5FF] backdrop-blur"
-                title="GPS réel"
-              >
-                <Compass weight="duotone" className="h-4 w-4" />
-              </button>
-              <button
-                disabled={isLoadingRoute || phase !== 'lobby'}
-                onClick={() => void loadNewRoute(coords[0], coords[1], effectiveDistanceKm)}
-                className="font-hud rounded-xl border border-white/15 bg-[#080A0E]/88 px-2 py-1.5 text-[10px] font-bold text-[#C8FF00] backdrop-blur"
-              >
-                {isLoadingRoute ? '...' : 'Tracé'}
-              </button>
-            </div>
+        {/* Consigne */}
+        <div className="pointer-events-none absolute left-3 right-16 top-3 z-20">
+          <div className="pointer-events-auto inline-flex h-10 max-w-full items-center rounded-full bg-ink/80 px-4 backdrop-blur-md">
+            <span className="truncate text-[13px] font-semibold text-fg">{guidanceLabel}</span>
           </div>
-
-          {phase === 'lobby' && (
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between">
-              <select
-                value={cityIdx}
-                onChange={(e) => {
-                  const idx = Number(e.target.value);
-                  setCityIdx(idx);
-                  setCoords([PRESET_CITIES[idx].lat, PRESET_CITIES[idx].lng]);
-                }}
-                className="rounded-xl border border-white/15 bg-[#080A0E]/88 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur outline-none"
-              >
-                {PRESET_CITIES.map((c, i) => (
-                  <option key={c.name} value={i}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-
-              <button
-                onClick={() => setVoiceSheetOpen(true)}
-                className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#080A0E]/88 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur"
-              >
-                <Microphone weight="duotone" className="h-4 w-4 text-[#C8FF00]" /> Vocal (
-                {runners.length + 1})
-              </button>
-            </div>
-          )}
-
-          {/* Panneau Run Tracker en verre (pendant la course) */}
-          <AnimatePresence>
-            {phase === 'running' && (
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 24 }}
-                transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-                className="pointer-events-none absolute inset-x-2.5 bottom-2.5 z-20 rounded-[22px] border border-white/15 bg-[#0B0E14]/55 p-3 shadow-2xl backdrop-blur-xl"
-              >
-                <div className="flex items-end gap-1.5">
-                  <span className="font-hud text-4xl font-bold leading-none text-white">{myProgressKm.toFixed(2)}</span>
-                  <span className="mb-0.5 text-[11px] font-semibold text-slate-300">km sur {effectiveDistanceKm} km</span>
-                  <span className="font-hud mb-0.5 ml-auto rounded-full bg-[#C8FF00] px-2 py-0.5 text-[10px] font-black text-black">
-                    #{myPosition}
-                  </span>
-                </div>
-                <div className="mt-2 grid grid-cols-4 gap-1 text-center">
-                  <div>
-                    <div className="text-[9px] text-slate-400">Temps</div>
-                    <div className="font-hud text-xs font-bold text-white">
-                      {Math.floor(elapsedSec / 60)}:{String(elapsedSec % 60).padStart(2, '0')}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[9px] text-slate-400">Calories</div>
-                    <div className="font-hud text-xs font-bold text-orange-300">{liveKcal}</div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400">
-                      <HeartBeat className="h-2.5 w-2.5" /> Cardio
-                    </div>
-                    <div className="font-hud text-xs font-bold text-[#FF2E54]">{liveBpm}</div>
-                  </div>
-                  <div>
-                    <div className="text-[9px] text-slate-400">Allure</div>
-                    <div className="font-hud text-xs font-bold text-white">{paceLabel}</div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Overlay Attente Relais Escouade */}
-          <AnimatePresence>
-            {phase === 'relay_wait' && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/85 p-4 text-center backdrop-blur-xs"
-              >
-                <span className="font-hud text-[11px] font-bold tracking-widest text-[#00E5FF]">
-                  RELAIS ESCOUADE • ÉTAPE 1/4
-                </span>
-                <h3 className="font-hud mt-1 text-lg font-bold text-white">
-                  Koffi_Sprint court vers toi...
-                </h3>
-                <div className="mt-3 h-2 w-48 overflow-hidden rounded-full bg-white/15">
-                  <div
-                    className="h-full bg-[#C8FF00] transition-all duration-300"
-                    style={{ width: `${relayTeammatePct}%` }}
-                  />
-                </div>
-                <p className="mt-2 text-[11px] text-slate-300">
-                  Tiens-toi prêt à prendre le témoin dans la fenêtre stricte !
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Overlay Countdown */}
-          <AnimatePresence>
-            {phase === 'countdown' && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/82 backdrop-blur-xs"
-              >
-                <p className="font-hud text-[11px] font-bold tracking-[0.22em] text-[#C8FF00]">
-                  TOP DÉPART • {OUTDOOR_MODES.find((m) => m.id === gameMode)?.short.toUpperCase()}
-                </p>
-                <motion.div
-                  key={countdown}
-                  initial={{ scale: 1.55, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.7, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 450, damping: 24 }}
-                  className="font-hud mt-1 text-7xl font-bold text-white"
-                >
-                  {countdown}
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Overlay Fenêtre stricte */}
-          <AnimatePresence>
-            {phase === 'gate' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/88 p-4 text-center backdrop-blur-xs"
-              >
-                <div className="w-44">
-                  <div className="mb-1 flex justify-between text-[11px] font-bold text-[#FF2E54]">
-                    <span>
-                      {gameMode === 'relais_escouade' ? 'TÉMOIN REÇU !' : 'VALIDE VITE'}
-                    </span>
-                    <span>{gateTimer}s</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <motion.div
-                      initial={{ width: '100%' }}
-                      animate={{ width: '0%' }}
-                      transition={{ duration: 8, ease: 'linear' }}
-                      className="h-full bg-[#FF2E54]"
-                    />
-                  </div>
-                </div>
-                <motion.button
-                  whileTap={{ scale: 0.93 }}
-                  onClick={() => setPhase('running')}
-                  className="animate-pulse-volt font-hud mt-4 rounded-full bg-[#C8FF00] px-7 py-3 text-sm font-bold text-black"
-                >
-                  {gameMode === 'relais_escouade' ? 'PRENDRE LE RELAIS !' : 'GO ! LANCER MA COURSE'}
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {phase === 'failed' && (
-              <motion.div
-                initial={{ opacity: 0, x: 0 }}
-                animate={{ opacity: 1, x: [0, -8, 8, -5, 5, 0] }}
-                className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#19080C]/92 p-4 text-center"
-              >
-                <Warning weight="duotone" className="h-10 w-10 text-[#FF2E54]" />
-                <h3 className="font-hud mt-1.5 text-xl font-bold text-[#FF2E54]">
-                  {gameMode === 'survie_checkpoint' ? 'ÉLIMINÉ !' : 'MISSION ÉCHOUÉE'}
-                </h3>
-                <p className="mt-0.5 text-[11px] text-slate-300">{failReason}</p>
-                <button
-                  onClick={handleReset}
-                  className="font-hud mt-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 text-xs font-bold text-white"
-                >
-                  RETOUR
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {phase === 'completed' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#09140A]/92 p-4 text-center"
-              >
-                <CheckCircle weight="duotone" className="h-10 w-10 text-[#C8FF00]" />
-                <h3 className="font-hud mt-1.5 text-xl font-bold text-[#C8FF00]">
-                  {gameMode === 'survie_checkpoint'
-                    ? 'SURVIE VALIDÉE !'
-                    : gameMode === 'conquete_territoire'
-                      ? '+150 PTS TERRITOIRE !'
-                      : 'MISSION RÉUSSIE !'}
-                </h3>
-                <p className="mt-0.5 text-xs text-white">
-                  #{lastResult?.rank ?? myPosition} • {lastResult?.km ?? effectiveDistanceKm} km •{' '}
-                  <strong className="text-[#C8FF00]">+{lastResult?.xp ?? tierObj.xpReward} XP</strong>
-                </p>
-                <button
-                  onClick={handleReset}
-                  className="font-hud mt-3 rounded-full bg-[#C8FF00] px-5 py-2 text-xs font-bold text-black"
-                >
-                  NOUVELLE MISSION
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
-        {/* Panneau de bord minimaliste avec Jauge Arc */}
-        <div className="bg-[#0B0E14] px-4 pb-3.5 pt-2.5">
-          <div className="relative mx-auto flex w-44 flex-col items-center">
-            <svg viewBox="0 0 120 68" className="h-18 w-36">
-              <path
-                d="M 10 60 A 50 50 0 0 1 110 60"
-                fill="none"
-                stroke="rgba(255,255,255,0.1)"
-                strokeWidth="7"
-                strokeLinecap="round"
-              />
-              <motion.path
-                d="M 10 60 A 50 50 0 0 1 110 60"
-                fill="none"
-                stroke="#C8FF00"
-                strokeWidth="7"
-                strokeLinecap="round"
-                strokeDasharray={arcLength}
-                animate={{ strokeDashoffset: arcLength - arcFill }}
-                transition={{ duration: 0.35 }}
-              />
-            </svg>
-            <div className="-mt-8 text-center">
-              <div className="font-hud text-xl font-bold leading-none text-white">
-                {simulatedSpeed ?? `${effectiveDistanceKm}`}
-              </div>
-              <div className="mt-0.5 text-[10px] font-medium text-slate-400">
-                {simulatedSpeed ? 'km/h live' : `km • ${selectedTier}`}
-              </div>
-            </div>
+        {/* Contrôles flottants */}
+        <div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
+          <IconButton label={is3D ? 'Passer en 2D' : 'Passer en 3D'} onClick={toggle3D} size={40} className={glassBtn}>
+            <span className="num text-[13px] font-bold">{is3D ? '3D' : '2D'}</span>
+          </IconButton>
+          <IconButton label="Utiliser ma position GPS" onClick={handleUseGPS} size={40} className={glassBtn}>
+            <Compass className="h-5 w-5" />
+          </IconButton>
+          <IconButton
+            label="Générer un nouveau tracé"
+            onClick={() => void loadNewRoute(coords[0], coords[1], effectiveDistanceKm)}
+            disabled={isLoadingRoute || phase !== 'lobby'}
+            size={40}
+            className={glassBtn}
+          >
+            <ArrowsClockwise className={`h-5 w-5 ${isLoadingRoute ? 'opacity-50' : ''}`} />
+          </IconButton>
+        </div>
+
+        {phase === 'lobby' && (
+          <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-between gap-2">
+            <select
+              aria-label="Ville"
+              value={cityIdx}
+              onChange={(e) => {
+                const idx = Number(e.target.value);
+                setCityIdx(idx);
+                setCoords([PRESET_CITIES[idx].lat, PRESET_CITIES[idx].lng]);
+              }}
+              className="h-10 rounded-full bg-black/50 px-4 text-[13px] font-semibold text-fg outline-none backdrop-blur-md"
+            >
+              {PRESET_CITIES.map((c, i) => (
+                <option key={c.name} value={i} className="bg-card text-fg">
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            <button type="button" onClick={() => setVoiceSheetOpen(true)} className={glassPill}>
+              <Microphone className="h-4 w-4" /> Vocal ({runners.length + 1})
+            </button>
           </div>
+        )}
 
-          {/* Barre spécifique Mode Survie Checkpoint */}
-          {gameMode === 'survie_checkpoint' && (
-            <div className="mt-2.5 grid grid-cols-4 gap-1.5">
-              {[1, 2, 3, 4].map((cp) => {
-                const passed =
-                  phase === 'completed' || (phase === 'running' && cp < checkpointIdx);
-                const current = phase === 'running' && cp === checkpointIdx;
-                return (
-                  <div
-                    key={cp}
-                    className={`font-hud rounded-xl border py-1 text-center text-[10px] font-bold ${
-                      passed
-                        ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
-                        : current
-                          ? 'border-[#FF8A00] bg-[#FF8A00]/15 text-[#FF8A00]'
-                          : 'border-white/5 bg-[#11151D] text-slate-500'
-                    }`}
-                  >
-                    CP{cp} {passed ? '✓' : current ? `${cpTimer}s` : ''}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Barre spécifique Relais Escouade */}
-          {gameMode === 'relais_escouade' && (
-            <div className="mt-2.5 grid grid-cols-4 gap-1.5">
-              {['Koffi', 'TOI', 'Sarah', 'Moussa'].map((name, i) => {
-                const idx = i + 1;
-                const active = phase !== 'lobby' && relayLeg === idx;
-                const done = phase === 'completed' || (phase !== 'lobby' && idx < relayLeg);
-                return (
-                  <div
-                    key={name}
-                    className={`font-hud rounded-xl border py-1 text-center text-[10px] font-bold ${
-                      done
-                        ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
-                        : active
-                          ? 'border-[#C8FF00] bg-[#C8FF00]/15 text-[#C8FF00]'
-                          : 'border-white/5 bg-[#11151D] text-slate-400'
-                    }`}
-                  >
-                    {idx}. {name}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* 2 mini-blocs métriques */}
-          <div className="mt-2.5 grid grid-cols-2 gap-2">
-            <div className="rounded-2xl border border-white/5 bg-[#11151D] px-3 py-1.5 text-center">
-              <div className="font-hud text-sm font-bold text-white">
-                {phase === 'running'
-                  ? `${myProgressKm.toFixed(2)} km`
-                  : `Départ ${selectedSlot}`}
+        {/* Panneau verre « Run Tracker » */}
+        <AnimatePresence>
+          {phase === 'running' && (
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+              className="absolute inset-x-3 bottom-3 z-20 rounded-[24px] border border-white/10 bg-black/45 p-4 backdrop-blur-xl"
+            >
+              <div className="flex items-end gap-2">
+                <span className="num text-[44px] font-extrabold leading-none text-fg">
+                  {myProgressKm.toFixed(2)}
+                </span>
+                <span className="mb-1 text-[14px] font-medium text-mute">
+                  km sur {effectiveDistanceKm} km
+                </span>
+                <span className="num mb-1 ml-auto flex h-7 items-center rounded-full bg-lime px-3 text-[13px] font-bold text-on-lime">
+                  #{myPosition}
+                </span>
               </div>
-              <div className="text-[10px] text-slate-400">
-                {phase === 'running'
-                  ? `Rang #${myPosition}/${leaderboard.length}`
-                  : `${tierObj.participantsCount} inscrits`}
+              <ProgressBar value={progressRatio * 100} className="mt-3" />
+              <div className="mt-3 grid grid-cols-4 gap-1 text-center">
+                <div>
+                  <div className="text-[12px] font-medium text-mute">Temps</div>
+                  <div className="num text-[16px] font-bold text-fg">{clock}</div>
+                </div>
+                <div>
+                  <div className="text-[12px] font-medium text-mute">Calories</div>
+                  <div className="num text-[16px] font-bold text-ember">{liveKcal}</div>
+                </div>
+                <div>
+                  <div className="text-[12px] font-medium text-mute">Cardio</div>
+                  <div className="num text-[16px] font-bold text-danger">{liveBpm}</div>
+                </div>
+                <div>
+                  <div className="text-[12px] font-medium text-mute">Allure</div>
+                  <div className="num text-[16px] font-bold text-fg">{paceLabel}</div>
+                </div>
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/5 bg-[#11151D] px-3 py-1.5 text-center">
-              <div className="font-hud text-sm font-bold text-white">
-                {phase === 'running'
-                  ? `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, '0')}`
-                  : `${tierObj.timeLimitMin} min max`}
-              </div>
-              <div className="text-[10px] text-slate-400">
-                {phase === 'running' ? 'Anti-triche GPS ✓' : `+${tierObj.xpReward} XP`}
-              </div>
-            </div>
-          </div>
-
-          {/* Boutons d'action */}
-          <div className="mt-3 flex items-center gap-2">
-            {phase === 'running' ? (
-              <>
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  onClick={handleSprintBoost}
-                  className="font-hud flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#C8FF00] py-3 text-xs font-bold text-black"
-                >
-                  <Lightning weight="duotone" className="h-4 w-4" /> Accélérer (Sprint)
-                </motion.button>
+              <div className="mt-3 flex gap-2">
+                <Button size="md" className="flex-1" onClick={handleSprintBoost}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Lightning className="h-4 w-4" /> Sprint
+                  </span>
+                </Button>
                 <button
+                  type="button"
                   onClick={() => failMission('Abandon en cours de mission.')}
-                  className="font-hud rounded-full bg-[#FF2E54]/20 px-4 py-3 text-xs font-bold text-[#FF2E54]"
+                  className="h-11 flex-1 rounded-full bg-white text-[15px] font-bold text-on-lime transition active:scale-[0.97]"
                 >
                   Stop
                 </button>
-              </>
-            ) : (
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                onClick={handleJoinMission}
-                className="font-hud flex flex-1 items-center justify-center gap-2 rounded-full bg-[#C8FF00] py-3 text-xs font-bold text-black shadow-lg shadow-[#C8FF00]/15"
-              >
-                <Play weight="duotone" className="h-4 w-4" /> Lancer{' '}
-                {OUTDOOR_MODES.find((m) => m.id === gameMode)?.short}
-              </motion.button>
-            )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={() => setDetailsSheetOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#11151D] text-slate-200"
-              title="Horaires & Classement"
+        {/* Attente relais */}
+        <AnimatePresence>
+          {phase === 'relay_wait' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-ink/85 p-6 text-center backdrop-blur-sm"
             >
-              <SlidersHorizontal weight="duotone" className="h-4 w-4" />
-            </motion.button>
-          </div>
-        </div>
+              <span className="text-[13px] font-medium text-mute">Relais escouade · étape 1/4</span>
+              <h3 className="mt-1 text-[20px] font-bold text-fg">Koffi_Sprint court vers toi…</h3>
+              <ProgressBar value={relayTeammatePct} className="mt-4 w-48" />
+              <p className="mt-3 text-[13px] font-medium text-mute">
+                Tiens-toi prêt à prendre le témoin dans la fenêtre stricte.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Compte à rebours */}
+        <AnimatePresence>
+          {phase === 'countdown' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-ink/85 backdrop-blur-sm"
+            >
+              <p className="text-[14px] font-medium text-mute">Top départ · {modeShort}</p>
+              <motion.div
+                key={countdown}
+                initial={{ scale: 1.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.7, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                className="num text-[140px] font-extrabold leading-none text-lime"
+              >
+                {countdown}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Fenêtre stricte */}
+        <AnimatePresence>
+          {phase === 'gate' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-30 flex items-center justify-center bg-ink/85 p-5 backdrop-blur-sm"
+            >
+              <div className="w-full rounded-[28px] bg-card p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[16px] font-bold text-fg">
+                    {gameMode === 'relais_escouade' ? 'Témoin reçu' : 'Valide vite'}
+                  </span>
+                  <span className="num text-[20px] font-extrabold text-danger">{gateTimer}s</span>
+                </div>
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-rim">
+                  <motion.div
+                    initial={{ width: '100%' }}
+                    animate={{ width: '0%' }}
+                    transition={{ duration: 8, ease: 'linear' }}
+                    className="h-full rounded-full bg-danger"
+                  />
+                </div>
+                <div className="mt-4">
+                  <Button fullWidth onClick={() => setPhase('running')}>
+                    {gameMode === 'relais_escouade' ? 'Prendre le relais' : 'Lancer ma course'}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Échec */}
+        <AnimatePresence>
+          {phase === 'failed' && (
+            <motion.div
+              initial={{ opacity: 0, x: 0 }}
+              animate={{ opacity: 1, x: [0, -8, 8, -5, 5, 0] }}
+              className="absolute inset-0 z-30 flex items-center justify-center bg-ink/85 p-5 backdrop-blur-sm"
+            >
+              <div className="w-full rounded-[28px] bg-card p-6 text-center">
+                <Warning className="mx-auto h-9 w-9 text-danger" />
+                <h3 className="mt-3 text-[22px] font-bold text-danger">
+                  {gameMode === 'survie_checkpoint' ? 'Éliminé' : 'Mission échouée'}
+                </h3>
+                <p className="mt-1 text-[13px] font-medium text-mute">{failReason}</p>
+                <div className="mt-4">
+                  <Button variant="secondary" fullWidth onClick={handleReset}>
+                    Retour
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Succès */}
+        <AnimatePresence>
+          {phase === 'completed' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-30 flex items-center justify-center bg-ink/80 p-5 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ scale: 0.92, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-full rounded-[28px] bg-lime p-6 text-center"
+              >
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-on-lime text-lime">
+                  <CheckDraw className="h-9 w-9" color="currentColor" />
+                </div>
+                <h3 className="mt-3 text-[22px] font-extrabold text-on-lime">
+                  {gameMode === 'survie_checkpoint'
+                    ? 'Survie validée'
+                    : gameMode === 'conquete_territoire'
+                      ? '+150 pts territoire'
+                      : 'Mission réussie'}
+                </h3>
+                <div className="mt-3 grid grid-cols-3 text-on-lime">
+                  <div>
+                    <div className="text-[12px] font-medium opacity-70">Rang</div>
+                    <div className="num text-[20px] font-extrabold">#{lastResult?.rank ?? myPosition}</div>
+                  </div>
+                  <div className="border-l border-on-lime/20">
+                    <div className="text-[12px] font-medium opacity-70">Distance</div>
+                    <div className="num text-[20px] font-extrabold">
+                      {lastResult?.km ?? effectiveDistanceKm} km
+                    </div>
+                  </div>
+                  <div className="border-l border-on-lime/20">
+                    <div className="text-[12px] font-medium opacity-70">XP</div>
+                    <div className="num text-[20px] font-extrabold">+{lastResult?.xp ?? tierObj.xpReward}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="mt-5 h-[52px] w-full rounded-full bg-ink text-[15px] font-bold text-fg transition active:scale-[0.97]"
+                >
+                  Nouvelle mission
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Panneau Conquête de Territoire (quand ce mode est actif) */}
-      {gameMode === 'conquete_territoire' && (
-        <div className="rounded-2xl border border-white/10 bg-[#11151D] p-3">
-          <div className="mb-2 flex items-center justify-between text-[11px] font-bold text-white">
-            <span className="flex items-center gap-1.5">
-              <Flag weight="duotone" className="h-4 w-4 text-[#C8FF00]" /> Zones de la ville
+      {/* Bloc métriques */}
+      <Card className="space-y-4">
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex items-end gap-2">
+            <span className="num text-[56px] font-extrabold leading-none text-fg">
+              {simulatedSpeed ?? effectiveDistanceKm}
             </span>
-            <span className="text-[10px] text-slate-400">Ton club : DEK Warriors</span>
+            <span className="mb-1.5 text-[14px] font-medium text-mute">
+              {simulatedSpeed ? 'km/h' : 'km'}
+            </span>
           </div>
-          <div className="grid grid-cols-2 gap-1.5">
+          <span
+            className="mb-1.5 flex h-7 items-center rounded-full bg-tile px-3 text-[12px] font-semibold"
+            style={{ color: TIER_COLORS[selectedTier] }}
+          >
+            {selectedTier}
+          </span>
+        </div>
+
+        {phase === 'running' ? (
+          <StatTiles
+            items={[
+              { label: 'Rang', value: `#${myPosition}`, unit: `/${leaderboard.length}` },
+              { label: 'Temps', value: clock },
+              { label: 'Anti-triche', value: 'Actif' },
+            ]}
+          />
+        ) : (
+          <StatTiles
+            items={[
+              { label: 'Départ', value: selectedSlot },
+              { label: 'Inscrits', value: tierObj.participantsCount },
+              { label: 'Durée max', value: tierObj.timeLimitMin, unit: 'min' },
+            ]}
+          />
+        )}
+        {phase !== 'running' && (
+          <div className="flex items-center justify-between rounded-full bg-tile px-4 py-2.5">
+            <span className="text-[13px] font-medium text-mute">Récompense</span>
+            <span className="num text-[15px] font-extrabold text-lime">+{tierObj.xpReward} XP</span>
+          </div>
+        )}
+
+        {gameMode === 'survie_checkpoint' && (
+          <div className="grid grid-cols-4 gap-2">
+            {[1, 2, 3, 4].map((cp) => {
+              const passed = phase === 'completed' || (phase === 'running' && cp < checkpointIdx);
+              const current = phase === 'running' && cp === checkpointIdx;
+              return (
+                <div
+                  key={cp}
+                  className={`flex h-8 items-center justify-center gap-1 rounded-full text-[12px] font-semibold ${pillState(passed, current)}`}
+                >
+                  CP{cp}
+                  {passed && <Check className="h-3.5 w-3.5" />}
+                  {current && <span className="num">{cpTimer}s</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {gameMode === 'relais_escouade' && (
+          <div className="grid grid-cols-4 gap-2">
+            {['Koffi', 'Toi', 'Sarah', 'Moussa'].map((name, i) => {
+              const idx = i + 1;
+              const active = phase !== 'lobby' && relayLeg === idx;
+              const done = phase === 'completed' || (phase !== 'lobby' && idx < relayLeg);
+              return (
+                <div
+                  key={name}
+                  className={`flex h-8 items-center justify-center rounded-full px-1 text-[12px] font-semibold ${pillState(done, active)}`}
+                >
+                  <span className="truncate">{name}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          {phase !== 'running' ? (
+            <Button className="flex-1" trailingArrow onClick={handleJoinMission}>
+              Lancer {modeShort}
+            </Button>
+          ) : (
+            <div className="flex-1 text-[13px] font-medium text-mute">Course en cours</div>
+          )}
+          <IconButton label="Horaires et classement" onClick={() => setDetailsSheetOpen(true)} size={52}>
+            <SlidersHorizontal className="h-5 w-5" />
+          </IconButton>
+        </div>
+      </Card>
+
+      {/* Conquête de territoire */}
+      {gameMode === 'conquete_territoire' && (
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-[18px] font-bold leading-6 text-fg">Zones de la ville</h3>
+            <span className="text-[13px] font-medium text-mute">Ton club : DEK Warriors</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             {territories.map((z) => {
               const active = z.id === selectedZoneId;
+              const pct = Math.round((z.points / z.targetPoints) * 100);
               return (
-                <button
+                <Tile
                   key={z.id}
                   onClick={() => setSelectedZoneId(z.id)}
-                  className={`rounded-xl border p-2 text-left transition ${
-                    active ? 'border-[#C8FF00] bg-[#C8FF00]/10' : 'border-white/10 bg-[#0B0E14]'
-                  }`}
+                  className={`bg-card! ${active ? 'ring-1 ring-lime' : ''}`}
                 >
-                  <div className="font-hud text-[11px] font-bold text-white">{z.name}</div>
-                  <div className="text-[9px]" style={{ color: z.color }}>
-                    {z.ownerClub}
-                  </div>
-                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.round((z.points / z.targetPoints) * 100)}%`,
-                        backgroundColor: z.color,
-                      }}
-                    />
-                  </div>
-                </button>
+                  <div className="truncate text-[15px] font-bold text-fg">{z.name}</div>
+                  <div className="truncate text-[12px] font-medium text-mute">{z.ownerClub}</div>
+                  <ProgressBar value={pct} className="mt-3" />
+                  <div className="num mt-1.5 text-[12px] font-semibold text-fg">{pct} %</div>
+                </Tile>
               );
             })}
           </div>
         </div>
       )}
 
-      {/* Sélecteur des 4 paliers compact avec cadenas */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between px-1 text-[10px] font-semibold text-slate-400">
+      {/* Paliers */}
+      <div>
+        <div className="mb-2 flex items-center justify-between text-[13px] font-medium text-mute">
           <span>
-            Catégorie <strong style={{ color: TIER_COLORS[selectedTier] }}>{selectedTier}</strong>{' '}
-            • Équitable
+            Catégorie{' '}
+            <strong className="font-bold" style={{ color: TIER_COLORS[selectedTier] }}>
+              {selectedTier}
+            </strong>{' '}
+            · Équitable
           </span>
           <span>
             Palier {userCategory} ({Math.min(2, missionsInCurrentTier)}/2)
           </span>
         </div>
 
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 gap-1 rounded-[24px] bg-card p-1.5">
           {MISSION_TIERS.map((tier) => {
             const active = selectedTier === tier.id;
             const isLocked = getTierIndex(tier.id) > getTierIndex(userCategory);
             return (
-              <motion.button
+              <button
                 key={tier.id}
-                whileTap={{ scale: 0.94 }}
+                type="button"
                 disabled={phase !== 'lobby'}
                 onClick={() => {
                   if (isLocked) setLockedTierModal(tier.id);
                   else setSelectedTier(tier.id);
                 }}
-                className={`relative rounded-2xl border p-2 text-left transition ${
-                  isLocked
-                    ? 'border-white/5 bg-[#0D1017] opacity-60'
-                    : active
-                      ? 'border-[#C8FF00] bg-[#181E29]'
-                      : 'border-white/10 bg-[#11151D]'
-                }`}
+                className={`rounded-[18px] px-2 py-3 text-left transition active:scale-[0.97] disabled:opacity-60 ${
+                  active && !isLocked ? 'bg-tile ring-1 ring-lime' : ''
+                } ${isLocked ? 'opacity-50' : ''}`}
               >
-                <div className="flex items-center justify-between">
-                  <span
-                    className="font-hud text-[10px] font-bold uppercase"
-                    style={{ color: tier.color }}
-                  >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="truncate text-[12px] font-semibold" style={{ color: tier.color }}>
                     {tier.id}
                   </span>
-                  {isLocked && <Lock weight="duotone" className="h-3 w-3 text-slate-400" />}
+                  {isLocked && <Lock className="h-3.5 w-3.5 shrink-0 text-faint" />}
                 </div>
-                <div className="font-hud mt-0.5 text-sm font-bold text-white">{tier.badge}</div>
-              </motion.button>
+                <div className="num mt-0.5 text-[15px] font-bold text-fg">{tier.badge}</div>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {overlayRoot ? createPortal(voiceBottomSheet, overlayRoot) : voiceBottomSheet}
-      {overlayRoot ? createPortal(detailsBottomSheet, overlayRoot) : detailsBottomSheet}
-      {overlayRoot ? createPortal(lockedSheet, overlayRoot) : lockedSheet}
+      {voiceBottomSheet}
+      {detailsBottomSheet}
+      {lockedSheet}
     </div>
   );
 }

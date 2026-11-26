@@ -57,7 +57,13 @@ import {
   X as LucideX,
   Zap,
   Activity,
+  ArrowLeft as LucideArrowLeft,
+  BatteryFull as LucideBatteryFull,
+  Maximize2 as LucideMaximize,
+  Minimize2 as LucideMinimize,
+  Wifi as LucideWifi,
   ArrowRight as LucideArrowRight,
+  ArrowUpRight as LucideArrowUpRight,
   Bookmark as LucideBookmark,
   ChevronLeft,
   ChevronRight,
@@ -82,96 +88,97 @@ export interface DekIconProps {
   weight?: 'duotone' | 'bold' | 'regular';
 }
 
-function makeDuotone(IconComp: ComponentType<LucideProps>) {
-  return function DekIcon({ className, weight = 'duotone' }: DekIconProps) {
-    return (
-      <IconComp
-        className={className}
-        strokeWidth={weight === 'bold' ? 2.5 : 2.1}
-        fill={weight === 'duotone' ? 'currentColor' : 'none'}
-        fillOpacity={weight === 'duotone' ? 0.24 : 0}
-      />
-    );
+/** Icônes en style ligne uniquement : trait 1.75 (2.25 en `bold`), jamais de remplissage. */
+function makeLine(IconComp: ComponentType<LucideProps>) {
+  return function DekIcon({ className, weight = 'regular' }: DekIconProps) {
+    return <IconComp className={className} strokeWidth={weight === 'bold' ? 2.25 : 1.75} fill="none" />;
   };
 }
 
-export const ArrowsClockwise = makeDuotone(RotateCcw);
-export const BowlFood = makeDuotone(Utensils);
-export const CalendarIcon = makeDuotone(Calendar);
+export const ArrowsClockwise = makeLine(RotateCcw);
+export const BowlFood = makeLine(Utensils);
+export const CalendarIcon = makeLine(Calendar);
 export { CalendarIcon as Calendar };
-export const CalendarCheckIcon = makeDuotone(CalendarCheck);
+export const CalendarCheckIcon = makeLine(CalendarCheck);
 export { CalendarCheckIcon as CalendarCheck };
-export const CameraIcon = makeDuotone(Camera);
+export const CameraIcon = makeLine(Camera);
 export { CameraIcon as Camera };
-export const CameraSlash = makeDuotone(CameraOff);
-export const CheckIcon = makeDuotone(Check);
+export const CameraSlash = makeLine(CameraOff);
+export const CheckIcon = makeLine(Check);
 export { CheckIcon as Check };
-export const CheckCircle = makeDuotone(CheckCircle2);
-export const ClockIcon = makeDuotone(Clock);
+export const CheckCircle = makeLine(CheckCircle2);
+export const ClockIcon = makeLine(Clock);
 export { ClockIcon as Clock };
-export const Compass = makeDuotone(LucideCompass);
-export const Cube = makeDuotone(Box);
-export const Drop = makeDuotone(Droplets);
-export const Fire = makeDuotone(Flame);
-export const Globe = makeDuotone(LucideGlobe);
-export const HandsClapping = makeDuotone(ThumbsUp);
-export const House = makeDuotone(Home);
-export const Lightning = makeDuotone(Zap);
-export const Lock = makeDuotone(LucideLock);
-export const MapPin = makeDuotone(LucideMapPin);
-export const Medal = makeDuotone(Award);
-export const Microphone = makeDuotone(Mic);
-export const MicrophoneSlash = makeDuotone(MicOff);
-export const Minus = makeDuotone(LucideMinus);
-export const NavigationArrow = makeDuotone(Navigation);
-export const PaintBrush = makeDuotone(Paintbrush);
-export const PaperPlaneRight = makeDuotone(Send);
-export const Play = makeDuotone(LucidePlay);
-export const PlayCircle = makeDuotone(LucidePlayCircle);
-export const Plus = makeDuotone(LucidePlus);
-export const ShieldCheck = makeDuotone(LucideShieldCheck);
-export const ShieldWarning = makeDuotone(ShieldAlert);
-export const Shuffle = makeDuotone(LucideShuffle);
-export const SignOut = makeDuotone(LogOut);
-export const SlidersHorizontal = makeDuotone(LucideSlidersHorizontal);
-export const SoccerBall = makeDuotone(CircleDot);
-export const Sparkle = makeDuotone(Sparkles);
-export const Star = makeDuotone(LucideStar);
-export const Sword = makeDuotone(Swords);
-export const Trophy = makeDuotone(LucideTrophy);
-export const Users = makeDuotone(LucideUsers);
-export const UsersThree = makeDuotone(LucideUsers);
-export const VideoCamera = makeDuotone(Video);
-export const Warning = makeDuotone(AlertTriangle);
-export const X = makeDuotone(LucideX);
-export const QrCode = makeDuotone(LucideQrCode);
-export const Timer = makeDuotone(LucideTimer);
-export const Dumbbell = makeDuotone(LucideDumbbell);
-export const Flag = makeDuotone(LucideFlag);
-export const Ghost = makeDuotone(LucideGhost);
-export const Handshake = makeDuotone(LucideHandshake);
-export const Bell = makeDuotone(LucideBell);
-export const Bike = makeDuotone(LucideBike);
-export const Footprints = makeDuotone(LucideFootprints);
-export const Wallet = makeDuotone(LucideWallet);
-export const Crown = makeDuotone(LucideCrown);
-export const SpeakerHigh = makeDuotone(Volume2);
-export const SpeakerSlash = makeDuotone(VolumeX);
-export const CaretLeft = makeDuotone(ChevronLeft);
-export const CaretRight = makeDuotone(ChevronRight);
-export const BookmarkSimple = makeDuotone(LucideBookmark);
-export const MagnifyingGlass = makeDuotone(Search);
-export const Pause = makeDuotone(LucidePause);
-export const SkipForward = makeDuotone(LucideSkipForward);
-export const SkipBackward = makeDuotone(SkipBack);
-export const ArrowRight = makeDuotone(LucideArrowRight);
-export const GenderMale = makeDuotone(Mars);
-export const GenderFemale = makeDuotone(Venus);
-export const TrendUp = makeDuotone(TrendingUp);
-export const TrendDown = makeDuotone(TrendingDown);
-export const Target = makeDuotone(LucideTarget);
-export const RulerIcon = makeDuotone(LucideRuler);
-export const ScaleIcon = makeDuotone(LucideScale);
-export const ListNumbers = makeDuotone(ListOrdered);
-export const Pulse = makeDuotone(Activity);
-export const Rounds = makeDuotone(Repeat);
+export const Compass = makeLine(LucideCompass);
+export const Cube = makeLine(Box);
+export const Drop = makeLine(Droplets);
+export const Fire = makeLine(Flame);
+export const Globe = makeLine(LucideGlobe);
+export const HandsClapping = makeLine(ThumbsUp);
+export const House = makeLine(Home);
+export const Lightning = makeLine(Zap);
+export const Lock = makeLine(LucideLock);
+export const MapPin = makeLine(LucideMapPin);
+export const Medal = makeLine(Award);
+export const Microphone = makeLine(Mic);
+export const MicrophoneSlash = makeLine(MicOff);
+export const Minus = makeLine(LucideMinus);
+export const NavigationArrow = makeLine(Navigation);
+export const PaintBrush = makeLine(Paintbrush);
+export const PaperPlaneRight = makeLine(Send);
+export const Play = makeLine(LucidePlay);
+export const PlayCircle = makeLine(LucidePlayCircle);
+export const Plus = makeLine(LucidePlus);
+export const ShieldCheck = makeLine(LucideShieldCheck);
+export const ShieldWarning = makeLine(ShieldAlert);
+export const Shuffle = makeLine(LucideShuffle);
+export const SignOut = makeLine(LogOut);
+export const SlidersHorizontal = makeLine(LucideSlidersHorizontal);
+export const SoccerBall = makeLine(CircleDot);
+export const Sparkle = makeLine(Sparkles);
+export const Star = makeLine(LucideStar);
+export const Sword = makeLine(Swords);
+export const Trophy = makeLine(LucideTrophy);
+export const Users = makeLine(LucideUsers);
+export const UsersThree = makeLine(LucideUsers);
+export const VideoCamera = makeLine(Video);
+export const Warning = makeLine(AlertTriangle);
+export const X = makeLine(LucideX);
+export const QrCode = makeLine(LucideQrCode);
+export const Timer = makeLine(LucideTimer);
+export const Dumbbell = makeLine(LucideDumbbell);
+export const Flag = makeLine(LucideFlag);
+export const Ghost = makeLine(LucideGhost);
+export const Handshake = makeLine(LucideHandshake);
+export const Bell = makeLine(LucideBell);
+export const Bike = makeLine(LucideBike);
+export const Footprints = makeLine(LucideFootprints);
+export const Wallet = makeLine(LucideWallet);
+export const Crown = makeLine(LucideCrown);
+export const SpeakerHigh = makeLine(Volume2);
+export const SpeakerSlash = makeLine(VolumeX);
+export const CaretLeft = makeLine(ChevronLeft);
+export const CaretRight = makeLine(ChevronRight);
+export const BookmarkSimple = makeLine(LucideBookmark);
+export const MagnifyingGlass = makeLine(Search);
+export const Pause = makeLine(LucidePause);
+export const SkipForward = makeLine(LucideSkipForward);
+export const SkipBackward = makeLine(SkipBack);
+export const ArrowRight = makeLine(LucideArrowRight);
+export const GenderMale = makeLine(Mars);
+export const GenderFemale = makeLine(Venus);
+export const TrendUp = makeLine(TrendingUp);
+export const TrendDown = makeLine(TrendingDown);
+export const Target = makeLine(LucideTarget);
+export const RulerIcon = makeLine(LucideRuler);
+export const ScaleIcon = makeLine(LucideScale);
+export const ListNumbers = makeLine(ListOrdered);
+export const Pulse = makeLine(Activity);
+export const Rounds = makeLine(Repeat);
+export const ArrowLeft = makeLine(LucideArrowLeft);
+export const ArrowUpRight = makeLine(LucideArrowUpRight);
+export const Funnel = makeLine(LucideSlidersHorizontal);
+export const BatteryFull = makeLine(LucideBatteryFull);
+export const Maximize = makeLine(LucideMaximize);
+export const Minimize = makeLine(LucideMinimize);
+export const Wifi = makeLine(LucideWifi);

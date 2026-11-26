@@ -1,16 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  CheckCircle,
-  Dumbbell,
-  MapPin,
-  Play,
-  Plus,
-  Sparkle,
-  Timer,
-  UsersThree,
-  X,
-} from './DekIcons';
+import { Check } from './DekIcons';
+import { Button, Card, ChipTabs, TimerRing } from './ui/kit';
 import {
   DUO_ROUTINES,
   INITIAL_FORM_CHECKS,
@@ -44,10 +35,10 @@ const GYM_PLACES = [
 ];
 
 const QUICK_TIPS = [
-  'Posture propre ✓',
+  'Posture propre',
   'Gaine les abdos',
   'Contrôle la descente',
-  'Amplitude top 🔥',
+  'Amplitude maximale',
 ];
 
 function presetAvatar(presetId: AvatarPresetId): UserAvatarConfig {
@@ -110,7 +101,7 @@ export function GymBuddyView({
         if (prev <= 1) {
           setRestRunning(false);
           playGo();
-          setDuoBanner('Repos terminé ! GO série suivante 💪');
+          setDuoBanner('Repos terminé ! GO série suivante');
           return 0;
         }
         return prev - 1;
@@ -214,77 +205,59 @@ export function GymBuddyView({
     setExercises(DUO_ROUTINES[routineKey].exercises.map((e) => ({ ...e })));
     setRestRunning(false);
     setRestRemaining(0);
-    setDuoBanner('Séance clôturée ✓ Nouvelle séance prête');
+    setDuoBanner('Séance clôturée. Nouvelle séance prête');
   };
 
-  return (
-    <div className="space-y-3 pb-2">
-      {/* Bannière compacte Salle & Street */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/15 bg-[#11151D] p-3.5">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <span className="font-hud inline-flex items-center gap-1 rounded-full bg-[#00E5FF]/15 px-2 py-0.5 text-[9px] font-bold text-[#00E5FF]">
-              <Dumbbell weight="duotone" className="h-3 w-3" /> UNIVERS 4 • SALLE & STREET
-            </span>
-            <h3 className="font-hud mt-1 text-base font-bold text-white">
-              Gym Buddy & Duo Synchronisé
-            </h3>
-          </div>
-          <span className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-[#C8FF00]">
-            {checkedInGym ? '✓ En salle' : 'Check-in'}
-          </span>
-        </div>
+  const inputCls =
+    'w-full rounded-2xl bg-tile px-4 py-3 text-[14px] font-medium text-fg outline-none placeholder:text-faint focus:ring-1 focus:ring-lime';
 
-        {/* Sous-onglets Gym Buddy */}
-        <div className="mt-3 grid grid-cols-3 gap-1 rounded-2xl border border-white/10 bg-[#0A0D13] p-1">
-          {(
-            [
-              { id: 'spot', label: 'Spot Me' },
-              { id: 'duo', label: 'Duo Live' },
-              { id: 'form', label: 'Form Check' },
-            ] as { id: GymSubTab; label: string }[]
-          ).map((t) => {
-            const active = subTab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setSubTab(t.id)}
-                className={`font-hud relative rounded-xl py-1.5 text-[11px] font-bold transition ${
-                  active ? 'text-black' : 'text-slate-300'
-                }`}
-              >
-                {active && (
-                  <motion.div
-                    layoutId="gymSubTabPill"
-                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                    className="absolute inset-0 rounded-xl bg-[#C8FF00]"
-                  />
-                )}
-                <span className="relative z-10">{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
+  return (
+    <div className="space-y-4 pb-2">
+      {/* Segmented Gym Buddy */}
+      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-full bg-card p-1">
+        {(
+          [
+            { id: 'spot', label: 'Spot Me' },
+            { id: 'duo', label: 'Duo Live' },
+            { id: 'form', label: 'Form Check' },
+          ] as { id: GymSubTab; label: string }[]
+        ).map((t) => {
+          const active = subTab === t.id;
+          return (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setSubTab(t.id)}
+              className={`relative h-10 rounded-full text-[13px] font-semibold transition-colors ${
+                active ? 'text-on-lime' : 'text-mute'
+              }`}
+            >
+              {active && (
+                <motion.div
+                  layoutId="gymSubTabPill"
+                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                  className="absolute inset-0 rounded-full bg-lime"
+                />
+              )}
+              <span className="relative z-10">{t.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* SOUS-ONGLET 1 : SPOT ME */}
       {subTab === 'spot' && (
-        <div className="space-y-3">
-          {/* Check-in rapide lieu */}
-          <div className="rounded-3xl border border-white/10 bg-[#11151D] p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-hud flex items-center gap-1 text-[11px] font-bold text-slate-300">
-                <MapPin weight="duotone" className="h-3.5 w-3.5 text-[#C8FF00]" /> Lieux actifs autour
-              </span>
-              <button
-                onClick={() => setShowNewCall((v) => !v)}
-                className="font-hud flex items-center gap-1 rounded-full bg-[#C8FF00] px-2.5 py-1 text-[10px] font-bold text-black"
-              >
-                {showNewCall ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />} Appel Spot
-              </button>
+        <div className="space-y-4">
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-[18px] font-bold leading-6 text-fg">Lieux actifs autour</h3>
+              <Button size="md" onClick={() => setShowNewCall((v) => !v)}>
+                {showNewCall ? 'Fermer' : 'Appel Spot'}
+              </Button>
             </div>
 
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+            <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
               {GYM_PLACES.map((g) => {
                 const isHere = checkedInGym === g.name;
                 return (
@@ -295,89 +268,64 @@ export function GymBuddyView({
                       setCheckedInGym(isHere ? null : g.name);
                       if (!isHere) playHit();
                     }}
-                    className={`shrink-0 rounded-2xl border px-3 py-2 text-left transition ${
-                      isHere
-                        ? 'border-[#C8FF00] bg-[#C8FF00]/15 text-white'
-                        : 'border-white/10 bg-white/5 text-slate-300'
+                    className={`shrink-0 rounded-[20px] px-4 py-3 text-left transition-colors ${
+                      isHere ? 'bg-lime text-on-lime' : 'bg-card text-fg'
                     }`}
                   >
-                    <div className="text-[11px] font-bold">{g.name}</div>
-                    <div className="text-[9px] text-slate-400">
-                      {isHere ? '✓ Présent sur place' : `${g.activeCount} athlètes DEK`}
+                    <div className="text-[14px] font-bold leading-5">{g.name}</div>
+                    <div className={`text-[12px] font-medium leading-4 ${isHere ? 'text-on-lime' : 'text-mute'}`}>
+                      {isHere ? 'Présent sur place' : `${g.activeCount} athlètes DEK`}
                     </div>
                   </button>
                 );
               })}
             </div>
-
-            {showNewCall && (
-              <div className="mt-3 space-y-2 rounded-2xl border border-[#C8FF00]/30 bg-black/50 p-3">
-                <div className="text-[11px] font-bold text-[#C8FF00]">
-                  Publier un appel partenaire ({selectedGym})
-                </div>
-                <input
-                  value={newFocus}
-                  onChange={(e) => setNewFocus(e.target.value)}
-                  placeholder="Séance / Muscles ciblés..."
-                  className="w-full rounded-xl border border-white/10 bg-[#11151D] px-3 py-2 text-xs text-white outline-none focus:border-[#C8FF00]"
-                />
-                <div className="flex gap-2">
-                  <input
-                    value={newSlot}
-                    onChange={(e) => setNewSlot(e.target.value)}
-                    placeholder="Créneau (ex: 19:00)"
-                    className="flex-1 rounded-xl border border-white/10 bg-[#11151D] px-3 py-2 text-xs text-white outline-none focus:border-[#C8FF00]"
-                  />
-                  <button
-                    onClick={publishCall}
-                    className="font-hud rounded-xl bg-[#C8FF00] px-4 py-2 text-xs font-bold text-black"
-                  >
-                    Publier
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
+
+          {showNewCall && (
+            <Card className="space-y-3">
+              <div className="text-[15px] font-bold text-fg">Publier un appel partenaire ({selectedGym})</div>
+              <input
+                value={newFocus}
+                onChange={(e) => setNewFocus(e.target.value)}
+                placeholder="Séance / Muscles ciblés..."
+                className={inputCls}
+              />
+              <input
+                value={newSlot}
+                onChange={(e) => setNewSlot(e.target.value)}
+                placeholder="Créneau (ex: 19:00)"
+                className={inputCls}
+              />
+              <Button fullWidth onClick={publishCall}>
+                Publier
+              </Button>
+            </Card>
+          )}
 
           {/* Liste des appels Spot Me */}
           <div className="space-y-2">
             {calls.map((c) => (
-              <div
-                key={c.id}
-                className="flex items-center justify-between gap-2.5 rounded-3xl border border-white/10 bg-[#11151D] p-3"
-              >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <UserAvatar avatar={presetAvatar(c.avatarPreset)} size="sm" />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-hud truncate text-xs font-bold text-white">
-                        {c.author}
-                      </span>
-                      <span
-                        className="rounded px-1.5 py-0.5 text-[9px] font-bold"
-                        style={{
-                          backgroundColor: `${TIER_COLORS[c.level]}22`,
-                          color: TIER_COLORS[c.level],
-                        }}
-                      >
-                        {c.level}
-                      </span>
-                    </div>
-                    <div className="truncate text-[11px] font-medium text-slate-200">{c.focus}</div>
-                    <div className="truncate text-[10px] text-slate-400">
-                      {c.gymName} • {c.timeSlot}
-                    </div>
+              <div key={c.id} className="flex items-center gap-3 rounded-[24px] bg-card p-3">
+                <UserAvatar avatar={presetAvatar(c.avatarPreset)} size="sm" className="h-12! w-12!" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[15px] font-bold leading-5 text-fg">{c.author}</div>
+                  <div className="truncate text-[12px] font-medium leading-4 text-mute">{c.focus}</div>
+                  <div className="truncate text-[12px] font-medium leading-4 text-mute">
+                    {c.gymName} • {c.timeSlot}
                   </div>
+                  <span className="text-[12px] font-semibold" style={{ color: TIER_COLORS[c.level] }}>
+                    {c.level}
+                  </span>
                 </div>
                 <button
                   onClick={() => toggleJoinCall(c.id)}
-                  className={`font-hud shrink-0 rounded-full px-3 py-2 text-[10px] font-bold transition ${
-                    c.joined
-                      ? 'border border-[#C8FF00]/40 bg-[#C8FF00]/15 text-[#C8FF00]'
-                      : 'bg-[#C8FF00] text-black'
+                  className={`flex h-9 shrink-0 items-center gap-1 rounded-full px-4 text-[13px] font-bold transition active:scale-95 ${
+                    c.joined ? 'bg-tile text-fg' : 'bg-lime text-on-lime'
                   }`}
                 >
-                  {c.joined ? 'Partenaire ✓' : 'Je viens'}
+                  {c.joined && <Check weight="bold" className="h-4 w-4" />}
+                  {c.joined ? 'Inscrit' : 'Rejoindre'}
                 </button>
               </div>
             ))}
@@ -387,230 +335,194 @@ export function GymBuddyView({
 
       {/* SOUS-ONGLET 2 : DUO LIVE */}
       {subTab === 'duo' && (
-        <div className="space-y-3">
-          {/* Choix Salle vs Street */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {(
-              [
-                { key: 'salle', label: 'Push Salle (Pecs/Épaules)' },
-                { key: 'street', label: 'Street Workout (Barres)' },
-              ] as const
-            ).map((r) => (
-              <button
-                key={r.key}
-                onClick={() => selectRoutine(r.key)}
-                className={`font-hud rounded-2xl border px-3 py-2 text-[11px] font-bold transition ${
-                  routineKey === r.key
-                    ? 'border-[#00E5FF] bg-[#00E5FF]/15 text-[#00E5FF]'
-                    : 'border-white/10 bg-[#11151D] text-slate-300'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
+        <div className="space-y-4">
+          <ChipTabs
+            items={[
+              { id: 'salle', label: 'Push Salle (Pecs/Épaules)' },
+              { id: 'street', label: 'Street Workout (Barres)' },
+            ]}
+            value={routineKey}
+            onChange={selectRoutine}
+            layoutId="gymRoutinePill"
+          />
 
-          {/* Chrono Repos Synchronisé */}
-          <div className="rounded-3xl border border-[#C8FF00]/25 bg-[#11151D] p-3.5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#C8FF00]">
-                  <Timer weight="duotone" className="h-3.5 w-3.5" /> CHRONO REPOS SYNCHRO DUO
-                </div>
-                <div className="mt-0.5 text-[11px] text-slate-300">{duoBanner}</div>
-              </div>
-              <div className="font-hud text-3xl font-black text-white">
+          {/* Chrono repos synchronisé */}
+          <Card className="flex flex-col items-center">
+            <div className="mb-3 text-[13px] font-medium text-mute">Chrono repos synchro duo</div>
+            <TimerRing total={restDuration} remaining={restRemaining} size={170} stroke={8}>
+              <span className="num text-[40px] font-extrabold leading-none text-fg">
                 00:{String(restRemaining).padStart(2, '0')}
-              </div>
-            </div>
+              </span>
+            </TimerRing>
+            <div className="mt-3 text-center text-[13px] font-medium text-mute">{duoBanner}</div>
 
-            <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-[#C8FF00] transition-all duration-300"
-                style={{
-                  width: `${restDuration > 0 ? (restRemaining / restDuration) * 100 : 0}%`,
-                }}
-              />
-            </div>
-
-            <div className="mt-2.5 flex items-center justify-between gap-2">
-              <div className="flex gap-1.5">
-                {[45, 60, 75].map((sec) => (
+            <div className="mt-4 grid w-full grid-cols-3 gap-1 rounded-full bg-tile p-1">
+              {[45, 60, 75].map((sec) => {
+                const active = restDuration === sec && restRunning;
+                return (
                   <button
                     key={sec}
                     onClick={() => startRest(sec)}
-                    className={`font-hud rounded-xl border px-2.5 py-1 text-[10px] font-bold ${
-                      restDuration === sec && restRunning
-                        ? 'border-[#C8FF00] bg-[#C8FF00] text-black'
-                        : 'border-white/10 bg-white/5 text-slate-200'
+                    className={`h-9 rounded-full text-[13px] font-semibold transition-colors ${
+                      active ? 'bg-lime text-on-lime' : 'text-mute'
                     }`}
                   >
                     {sec}s
                   </button>
-                ))}
-              </div>
-              <button
+                );
+              })}
+            </div>
+            <div className="mt-3 w-full">
+              <Button
+                variant="secondary"
+                size="md"
+                fullWidth
                 onClick={() => {
                   if (restRemaining === 0) startRest(restDuration);
                   else setRestRunning((r) => !r);
                 }}
-                className="font-hud flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold text-white"
               >
-                <Play weight="duotone" className="h-3 w-3 text-[#C8FF00]" />
                 {restRunning ? 'Pause' : 'Lancer'}
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
 
           {/* Exercices synchronisés */}
           <div className="space-y-2">
             {exercises.map((ex) => {
               const done = ex.completedSets >= ex.sets;
               return (
-                <div
-                  key={ex.id}
-                  className="rounded-3xl border border-white/10 bg-[#11151D] p-3"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <div className="font-hud text-xs font-bold text-white">{ex.name}</div>
-                      <div className="text-[10px] text-slate-400">
+                <Card key={ex.id} className="p-4!">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-[15px] font-bold leading-5 text-fg">{ex.name}</div>
+                      <div className="text-[12px] font-medium leading-4 text-mute">
                         {ex.sets} séries • {ex.reps} • Repos {ex.restSec}s
                       </div>
                     </div>
                     <button
                       disabled={done}
                       onClick={() => completeSet(ex.id)}
-                      className={`font-hud rounded-full px-3 py-1.5 text-[10px] font-bold transition ${
-                        done
-                          ? 'bg-[#C8FF00]/15 text-[#C8FF00]'
-                          : 'bg-[#C8FF00] text-black active:scale-95'
+                      className={`h-9 shrink-0 rounded-full px-4 text-[13px] font-bold transition ${
+                        done ? 'bg-tile text-mute' : 'bg-lime text-on-lime active:scale-95'
                       }`}
                     >
-                      {done ? 'Terminé ✓' : `+1 Série`}
+                      {done ? 'Terminé' : '+1 série'}
                     </button>
                   </div>
 
-                  <div className="mt-2.5 grid grid-cols-2 gap-2 text-[10px]">
-                    <div className="rounded-xl bg-white/5 px-2.5 py-1.5">
-                      <span className="text-slate-400">Toi : </span>
-                      <strong className="text-[#C8FF00]">
-                        {ex.completedSets}/{ex.sets}
-                      </strong>
-                    </div>
-                    <div className="rounded-xl bg-white/5 px-2.5 py-1.5">
-                      <span className="text-slate-400">Moussa_Iron : </span>
-                      <strong className="text-[#00E5FF]">
-                        {ex.partnerSets}/{ex.sets}
-                      </strong>
-                    </div>
+                  <div className="mt-3 space-y-2">
+                    <SetDots label="Toi" done={ex.completedSets} total={ex.sets} />
+                    <SetDots label="Moussa_Iron" done={ex.partnerSets} total={ex.sets} muted />
                   </div>
-                </div>
+                </Card>
               );
             })}
           </div>
 
-          <button
-            onClick={handleCloseDuo}
-            disabled={!canCloseDuo}
-            className={`font-hud flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-bold ${
-              canCloseDuo
-                ? 'bg-[#C8FF00] text-black'
-                : 'cursor-not-allowed bg-white/10 text-slate-400'
-            }`}
-          >
-            <CheckCircle weight="duotone" className="h-4 w-4" />
+          <Button fullWidth disabled={!canCloseDuo} onClick={handleCloseDuo}>
             {canCloseDuo
               ? `Clôturer séance Duo (${totalSetsDone}/${totalSetsPlanned} séries) • +120 XP`
               : `Valide au moins ${minSetsToClose} séries (${totalSetsDone}/${totalSetsPlanned})`}
-          </button>
+          </Button>
         </div>
       )}
 
       {/* SOUS-ONGLET 3 : FORM CHECK */}
       {subTab === 'form' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="font-hud flex items-center gap-1.5 text-xs font-bold text-slate-300">
-              <UsersThree weight="duotone" className="h-4 w-4 text-[#C8FF00]" /> Entraide technique
-            </span>
-            <button
-              onClick={() => setShowNewForm((v) => !v)}
-              className="font-hud flex items-center gap-1 rounded-full bg-[#C8FF00] px-3 py-1.5 text-[10px] font-bold text-black"
-            >
-              {showNewForm ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />} Poster un Form Check
-            </button>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-[18px] font-bold leading-6 text-fg">Entraide technique</h3>
+            <Button size="md" onClick={() => setShowNewForm((v) => !v)}>
+              {showNewForm ? 'Fermer' : 'Poster un Form Check'}
+            </Button>
           </div>
 
           {showNewForm && (
-            <div className="space-y-2 rounded-3xl border border-[#C8FF00]/30 bg-[#11151D] p-3">
+            <Card className="space-y-3">
               <input
                 value={newExName}
                 onChange={(e) => setNewExName(e.target.value)}
                 placeholder="Exercice & charge..."
-                className="w-full rounded-xl border border-white/10 bg-[#0A0D13] px-3 py-2 text-xs text-white outline-none focus:border-[#C8FF00]"
+                className={inputCls}
               />
               <textarea
                 rows={2}
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Décris ce que tu veux faire vérifier..."
-                className="w-full rounded-xl border border-white/10 bg-[#0A0D13] px-3 py-2 text-xs text-white outline-none focus:border-[#C8FF00]"
+                className={inputCls}
               />
-              <button
-                onClick={publishFormCheck}
-                className="font-hud w-full rounded-full bg-[#C8FF00] py-2 text-xs font-bold text-black"
-              >
+              <Button fullWidth onClick={publishFormCheck}>
                 Publier la demande technique
-              </button>
-            </div>
+              </Button>
+            </Card>
           )}
 
           {formChecks.map((fc) => (
-            <div
-              key={fc.id}
-              className="rounded-3xl border border-white/10 bg-[#11151D] p-3.5"
-            >
-              <div className="flex items-center gap-2.5">
-                <UserAvatar avatar={presetAvatar(fc.avatarPreset)} size="sm" />
-                <div>
-                  <div className="font-hud text-xs font-bold text-white">{fc.author}</div>
-                  <div className="text-[10px] font-bold text-[#00E5FF]">{fc.exercise}</div>
+            <Card key={fc.id}>
+              <div className="flex items-center gap-3">
+                <UserAvatar avatar={presetAvatar(fc.avatarPreset)} size="sm" className="h-12! w-12!" />
+                <div className="min-w-0">
+                  <div className="truncate text-[15px] font-bold leading-5 text-fg">{fc.author}</div>
+                  <div className="truncate text-[12px] font-medium leading-4 text-lime">{fc.exercise}</div>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-slate-200">{fc.note}</p>
+              <p className="mt-3 text-[14px] font-medium leading-5 text-fg">{fc.note}</p>
 
-              <div className="mt-2.5 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {fc.tips.map((tip) => (
-                  <span
-                    key={tip}
-                    className="inline-flex items-center gap-1 rounded-full border border-[#C8FF00]/25 bg-[#C8FF00]/10 px-2.5 py-1 text-[10px] font-medium text-[#C8FF00]"
-                  >
-                    <Sparkle weight="duotone" className="h-3 w-3" /> {tip}
+                  <span key={tip} className="rounded-full bg-tile px-3 py-1.5 text-[12px] font-medium text-fg">
+                    {tip}
                   </span>
                 ))}
               </div>
 
-              <div className="mt-2.5 border-t border-white/10 pt-2">
-                <div className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                  Conseil rapide en 1 tap :
-                </div>
-                <div className="flex flex-wrap gap-1">
+              <div className="mt-4 border-t border-rim pt-3">
+                <div className="mb-2 text-[12px] font-medium text-mute">Conseil rapide en 1 tap</div>
+                <div className="flex flex-wrap gap-2">
                   {QUICK_TIPS.map((qt) => (
                     <button
                       key={qt}
                       onClick={() => addTipToForm(fc.id, qt)}
-                      className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] text-slate-200 transition hover:border-[#C8FF00]/50 hover:text-[#C8FF00]"
+                      className="rounded-full bg-tile px-3 py-1.5 text-[12px] font-medium text-mute transition active:scale-95"
                     >
                       + {qt}
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Rangée de pastilles rondes : une par série, cochée (lime) quand validée. */
+function SetDots({ label, done, total, muted = false }: { label: string; done: number; total: number; muted?: boolean }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-24 shrink-0 truncate text-[12px] font-medium text-mute">{label}</span>
+      <div className="flex flex-wrap gap-1.5">
+        {Array.from({ length: total }, (_, i) => {
+          const on = i < done;
+          return (
+            <span
+              key={i}
+              className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                on ? (muted ? 'bg-fg text-ink' : 'bg-lime text-on-lime') : 'border-2 border-rim text-transparent'
+              }`}
+            >
+              <Check weight="bold" className="h-3.5 w-3.5" />
+            </span>
+          );
+        })}
+      </div>
+      <span className="num ml-auto text-[12px] font-semibold text-mute">
+        {done}/{total}
+      </span>
     </div>
   );
 }

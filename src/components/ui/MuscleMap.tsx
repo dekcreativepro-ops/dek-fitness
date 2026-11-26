@@ -1,9 +1,8 @@
-import { useId } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { MuscleGroup } from '../../types/dek';
 
-// Carte de chaleur musculaire (face + dos) en lecture seule : muscles principaux en lime
-// pulsant, secondaires en lime atténué — inspirée des visuels « muscles ciblés par variante ».
+// Carte musculaire (face + dos) en lecture seule : principaux en lime plein,
+// secondaires en lime atténué, le reste en gris neutre. Sans halo ni pulsation.
 
 interface MuscleMapProps {
   primary: MuscleGroup[];
@@ -12,24 +11,21 @@ interface MuscleMapProps {
   color?: string;
 }
 
-export function MuscleMap({ primary, secondary = [], className = 'h-40', color = '#C8FF00' }: MuscleMapProps) {
-  const uid = useId().replace(/:/g, '');
-  const reduce = useReducedMotion();
+const NEUTRAL = '#2E2F35';
+const BODY = '#24252A';
 
+export function MuscleMap({ primary, secondary = [], className = 'h-40', color = '#C8FF00' }: MuscleMapProps) {
   const level = (m: MuscleGroup) => (primary.includes(m) ? 2 : secondary.includes(m) ? 1 : 0);
 
   const part = (m: MuscleGroup, children: React.ReactNode) => {
     const l = level(m);
-    const fill = l === 2 ? color : l === 1 ? `${color}66` : 'rgba(148,163,184,0.16)';
-    const stroke = l > 0 ? `${color}cc` : 'rgba(255,255,255,0.12)';
     return (
       <motion.g
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={1.2}
-        filter={l === 2 ? `url(#glow-${uid})` : undefined}
-        animate={l === 2 && !reduce ? { opacity: [0.75, 1, 0.75] } : undefined}
-        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+        fill={l === 2 ? color : NEUTRAL}
+        fillOpacity={1}
+        stroke="#1A1B1F"
+        strokeWidth={1}
+        style={l === 1 ? { fill: color, fillOpacity: 0.4 } : undefined}
       >
         {children}
       </motion.g>
@@ -38,8 +34,8 @@ export function MuscleMap({ primary, secondary = [], className = 'h-40', color =
 
   const body = (side: 'front' | 'back', dx: number) => (
     <g key={side} transform={`translate(${dx} 0)`}>
-      <circle cx="45" cy="16" r="10" fill="#1F2633" stroke="rgba(255,255,255,0.15)" />
-      <rect x="40" y="26" width="10" height="7" rx="3" fill="#1F2633" />
+      <circle cx="45" cy="16" r="10" fill={BODY} />
+      <rect x="40" y="26" width="10" height="7" rx="3" fill={BODY} />
       {part('epaules', <>
         <ellipse cx="27" cy="41" rx="9" ry="7" />
         <ellipse cx="63" cy="41" rx="9" ry="7" />
@@ -75,30 +71,18 @@ export function MuscleMap({ primary, secondary = [], className = 'h-40', color =
           </>)}
         </>
       )}
-      <path d="M33 88h24l-4 11H37Z" fill="#1F2633" />
+      <path d="M33 88h24l-4 11H37Z" fill={BODY} />
       {part('jambes', <>
         <path d="M33 101h11l-1 38H31Z" />
         <path d="M46 101h11l2 38H47Z" />
         <path d="M32 143h11l-3 32h-8Z" />
         <path d="M47 143h11l1 32h-8Z" />
       </>)}
-      <text x="45" y="192" textAnchor="middle" fontSize="8" fill="#64748B" fontFamily="Chakra Petch, sans-serif">
-        {side === 'front' ? 'FACE' : 'DOS'}
-      </text>
     </g>
   );
 
   return (
-    <svg viewBox="0 0 190 196" className={className} role="img" aria-label="Muscles sollicités">
-      <defs>
-        <filter id={`glow-${uid}`} x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="2.4" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
+    <svg viewBox="0 0 190 180" className={className} role="img" aria-label="Muscles sollicités">
       {body('front', 0)}
       {body('back', 100)}
     </svg>

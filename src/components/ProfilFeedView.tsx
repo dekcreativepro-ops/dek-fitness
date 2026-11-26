@@ -1,31 +1,15 @@
 import { useState, useSyncExternalStore } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useDekNav } from '../context/DekNav';
 import { ACHIEVEMENTS, getEarnedAchievementIds } from '../utils/achievements';
-import { RankEmblem } from './ui/RankEmblem';
-import { TrophyShine } from './ui/AnimatedIcons';
-import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  ArrowsClockwise,
-  Fire,
-  HandsClapping,
-  Lightning,
-  PaintBrush,
-  PaperPlaneRight,
-  ShieldCheck,
-  SignOut,
-  Sparkle,
-  SpeakerHigh,
-  SpeakerSlash,
-  Trophy,
-  X,
-} from './DekIcons';
+import { CaretRight, Fire, HandsClapping, Lightning, PaintBrush } from './DekIcons';
 import type { FeedPost, FeedReaction, UserAvatarConfig, UserProfile } from '../types/dek';
 import { CARDIO_LABELS, TIER_COLORS } from '../utils/categorization';
 import { FITNESS_GOALS, MUSCLE_LABELS } from '../utils/programsAndNutrition';
 import { formatTimeAgo, getRankInfo } from '../utils/progression';
 import { isSoundEnabled, setSoundEnabled, subscribeSound } from '../utils/soundFx';
 import { AvatarStudio } from './AvatarStudio';
+import { BottomSheet, Button, Card, ProgressBar, StatTiles } from './ui/kit';
 import { UserAvatar } from './UserAvatar';
 
 interface ProfilFeedViewProps {
@@ -41,13 +25,48 @@ interface ProfilFeedViewProps {
 const REACTIONS: {
   key: FeedReaction;
   Icon: typeof Fire;
-  color: string;
+  name: string;
   label: string;
 }[] = [
-  { key: 'feu', Icon: Fire, color: 'text-orange-400', label: 'Réaction feu' },
-  { key: 'force', Icon: Lightning, color: 'text-[#C8FF00]', label: 'Réaction force' },
-  { key: 'respect', Icon: HandsClapping, color: 'text-[#00E5FF]', label: 'Réaction respect' },
+  { key: 'feu', Icon: Fire, name: 'Feu', label: 'Réaction feu' },
+  { key: 'force', Icon: Lightning, name: 'Force', label: 'Réaction force' },
+  { key: 'respect', Icon: HandsClapping, name: 'Respect', label: 'Réaction respect' },
 ];
+
+const POST_BADGES = ['DÉFI COMMUNAUTÉ', 'RECHERCHE PARTENAIRE', 'MOTIVATION 5AM'];
+
+/** « DÉFI COMMUNAUTÉ » → « Défi communauté » (affichage seulement). */
+function soft(label: string): string {
+  const low = label.toLowerCase();
+  return low.charAt(0).toUpperCase() + low.slice(1);
+}
+
+/** Ligne de réglage / navigation (carte, libellé, valeur, chevron). */
+function SettingRow({
+  title,
+  value,
+  onClick,
+}: {
+  title: string;
+  value?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-[24px] bg-card px-4 py-3.5 text-left transition active:scale-[0.99]"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="text-[15px] font-bold leading-5 text-fg">{title}</div>
+        {value && <div className="truncate text-[12px] font-medium text-mute">{value}</div>}
+      </div>
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tile text-fg">
+        <CaretRight className="h-4 w-4" />
+      </span>
+    </button>
+  );
+}
 
 export function ProfilFeedView({
   user,
@@ -75,386 +94,226 @@ export function ProfilFeedView({
   };
 
   const rankInfo = getRankInfo(user.xp);
-  const radius = 24;
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference - (user.disciplineScore / 100) * circumference;
-
-  const overlayRoot =
-    typeof document !== 'undefined' ? document.getElementById('dek-overlay-root') : null;
-
-  const avatarSheet = (
-    <AnimatePresence>
-      {showAvatarEditor && (
-        <motion.div
-          key="avatar-editor-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setShowAvatarEditor(false)}
-          className="pointer-events-auto absolute inset-0 flex flex-col justify-end bg-black/75 backdrop-blur-xs"
-        >
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[82%] space-y-3 overflow-y-auto rounded-t-3xl border-t border-[#C8FF00]/35 bg-[#121722] p-4 pb-6 shadow-2xl no-scrollbar"
-          >
-            <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />
-            <div className="flex items-center justify-between">
-              <h3 className="font-hud text-sm font-bold text-white">
-                PERSONNALISER MON AVATAR
-              </h3>
-              <button
-                onClick={() => setShowAvatarEditor(false)}
-                className="rounded-xl bg-white/5 p-1.5 text-slate-400"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <AvatarStudio value={user.avatar} onChange={onUpdateAvatar} />
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={() => setShowAvatarEditor(false)}
-              className="font-hud w-full rounded-full bg-[#C8FF00] py-3 text-xs font-bold text-black"
-            >
-              VALIDER MON AVATAR
-            </motion.button>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
 
   return (
-    <div className="space-y-3 pb-2">
-      {/* Carte Athlète DEK */}
-      <div className="rounded-3xl border border-[#C8FF00]/30 bg-gradient-to-br from-[#171D28] via-[#11151D] to-[#0B0E14] p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowAvatarEditor(true)}
-              className="group relative"
-              title="Personnaliser mon avatar"
-            >
-              <UserAvatar avatar={user.avatar} size="lg" />
-              <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#C8FF00] text-black shadow">
-                <PaintBrush weight="bold" className="h-3 w-3" />
-              </span>
-            </button>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <h2 className="font-hud text-base font-bold text-white">{user.name}</h2>
-                <span
-                  className="rounded-md px-1.5 py-0.5 text-[10px] font-bold"
-                  style={{
-                    backgroundColor: `${TIER_COLORS[user.category]}22`,
-                    color: TIER_COLORS[user.category],
-                  }}
-                >
-                  {user.category}
-                </span>
-              </div>
-              <p className="truncate text-[11px] text-slate-400">
-                {user.handle} • {user.city}
-              </p>
-              <button
-                onClick={() => setShowAvatarEditor(true)}
-                className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-[#C8FF00]"
-              >
-                <PaintBrush weight="duotone" className="h-3 w-3" /> Personnaliser mon avatar
-              </button>
-            </div>
-          </div>
-
-          <div className="relative flex h-15 w-15 shrink-0 items-center justify-center">
-            <svg className="h-15 w-15 -rotate-90" viewBox="0 0 60 60">
-              <circle
-                cx="30"
-                cy="30"
-                r={radius}
-                fill="none"
-                stroke="rgba(255,255,255,0.1)"
-                strokeWidth="5"
-              />
-              <motion.circle
-                cx="30"
-                cy="30"
-                r={radius}
-                fill="none"
-                stroke="#34D399"
-                strokeWidth="5"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                initial={{ strokeDashoffset: circumference }}
-                animate={{ strokeDashoffset: dashOffset }}
-                transition={{ duration: 0.85, ease: 'easeOut' }}
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center leading-none">
-              <span className="font-hud text-xs font-bold text-white">
-                {user.disciplineScore}%
-              </span>
-              <span className="text-[8px] font-semibold uppercase text-emerald-400">Disc.</span>
-            </div>
-          </div>
+    <div className="space-y-5 pb-2">
+      {/* Carte athlète */}
+      <Card className="flex flex-col items-center text-center">
+        <div className="relative">
+          <UserAvatar avatar={user.avatar} size="xl" ring={false} className="!h-[88px] !w-[88px]" />
+          <button
+            onClick={() => setShowAvatarEditor(true)}
+            aria-label="Personnaliser mon avatar"
+            title="Personnaliser mon avatar"
+            className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-lime text-on-lime transition active:scale-90"
+          >
+            <PaintBrush className="h-4 w-4" />
+          </button>
         </div>
-
-        {/* Barre XP */}
-        <div className="mt-3">
-          <div className="flex justify-between text-[10px] font-semibold">
-            <span className="text-slate-300">
-              SAISON 1 • <span className="font-hud text-white">{rankInfo.rank.toUpperCase()}</span>
-            </span>
-            <span className="font-hud text-[#C8FF00]">
-              {rankInfo.nextRank
-                ? `${user.xp} / ${rankInfo.nextRankXp} XP`
-                : `${user.xp} XP • RANG MAX`}
-            </span>
-          </div>
-          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/60">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${rankInfo.pct}%` }}
-              transition={{ duration: 0.7, ease: 'easeOut' }}
-              className="h-full rounded-full bg-gradient-to-r from-[#00E5FF] to-[#C8FF00]"
-            />
-          </div>
-          {rankInfo.nextRank && (
-            <div className="mt-1 text-[9px] text-slate-400">
-              Encore {rankInfo.nextRankXp - user.xp} XP pour passer{' '}
-              <strong className="text-slate-200">{rankInfo.nextRank}</strong> • Série{' '}
-              <strong className="text-[#00E5FF]">{user.streakDays} j</strong>
-            </div>
-          )}
-        </div>
-
-        {/* Profil physique */}
-        <button
-          onClick={nav.editBodyProfile}
-          className="mt-3 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#0B0E14]/90 px-3 py-2 text-left"
+        <h2 className="mt-3 text-[24px] font-bold leading-8 text-fg">{user.name}</h2>
+        <p className="text-[13px] font-medium text-mute">
+          {user.handle} · {user.city}
+        </p>
+        <span
+          className="mt-2 rounded-full bg-tile px-3 py-1 text-[12px] font-semibold"
+          style={{ color: TIER_COLORS[user.category] }}
         >
-          <span className="text-[11px] text-slate-300">
-            <span className="font-hud font-bold text-white">Profil physique</span>
-            {' • '}
-            {user.body
-              ? `${user.body.age} ans • ${user.body.weightKg} kg • ${user.body.heightCm} cm`
-              : 'À compléter pour calibrer tes calories'}
-          </span>
-          <span className="text-[10px] font-bold text-[#C8FF00]">Modifier</span>
-        </button>
+          {user.category}
+        </span>
 
-        {/* Raccourcis Trophées & Classement */}
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={nav.openTrophies}
-            className="flex items-center gap-2 rounded-2xl border border-[#F5C542]/30 bg-[#F5C542]/10 px-3 py-2.5 text-left"
-          >
-            <TrophyShine className="h-6 w-6" />
-            <span>
-              <span className="font-hud block text-[11px] font-bold text-white">Trophées</span>
-              <span className="block text-[10px] text-[#F5C542]">
-                {earnedCount}/{ACHIEVEMENTS.length} débloqués
-              </span>
+        <StatTiles
+          className="mt-5 w-full"
+          items={[
+            { label: 'XP', value: user.xp.toLocaleString('fr-FR') },
+            { label: 'Discipline', value: user.disciplineScore, unit: '%' },
+            { label: 'Rang', value: rankInfo.rank },
+          ]}
+        />
+
+        <div className="mt-5 w-full text-left">
+          <div className="mb-2 flex items-center justify-between text-[13px] font-medium">
+            <span className="text-mute">
+              Saison 1 · <span className="text-fg">{rankInfo.rank}</span>
             </span>
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={nav.openLeaderboard}
-            className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left"
-          >
-            <RankEmblem rank={rankInfo.rank} size={26} animated={false} />
-            <span>
-              <span className="font-hud block text-[11px] font-bold text-white">Classement</span>
-              <span className="block text-[10px] text-slate-400">{rankInfo.rank}</span>
+            <span className="num text-lime">
+              {rankInfo.nextRank ? `${user.xp} / ${rankInfo.nextRankXp} XP` : `${user.xp} XP · Rang max`}
             </span>
-          </motion.button>
+          </div>
+          <ProgressBar value={rankInfo.pct} />
+          {rankInfo.nextRank && (
+            <div className="mt-2 text-[12px] font-medium text-mute">
+              Encore <span className="num text-fg">{rankInfo.nextRankXp - user.xp}</span> XP pour passer{' '}
+              {rankInfo.nextRank} · Série <span className="num text-fg">{user.streakDays}</span> j
+            </div>
+          )}
         </div>
+      </Card>
 
-        {/* Badges débloqués (Territoires, Raids, Jeudi) */}
-        {user.badges && user.badges.length > 0 && (
-          <div className="mt-3 rounded-2xl border border-[#C8FF00]/25 bg-[#0B0E14]/90 p-2.5">
-            <div className="font-hud mb-1.5 flex items-center gap-1 text-[10px] font-bold uppercase text-[#C8FF00]">
-              <Trophy weight="duotone" className="h-3.5 w-3.5" /> Badges Débloqués (
-              {user.badges.length})
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {user.badges.map((badge) => (
-                <span
-                  key={badge}
-                  className="font-hud inline-flex items-center gap-1 rounded-full border border-[#C8FF00]/35 bg-[#C8FF00]/12 px-2.5 py-0.5 text-[10px] font-bold text-[#C8FF00]"
-                >
-                  <Sparkle weight="duotone" className="h-3 w-3" /> {badge}
-                </span>
-              ))}
-            </div>
+      {/* Lignes de navigation */}
+      <div className="space-y-2">
+        <SettingRow
+          title="Profil physique"
+          value={
+            user.body
+              ? `${user.body.age} ans · ${user.body.weightKg} kg · ${user.body.heightCm} cm`
+              : 'À compléter pour calibrer tes calories'
+          }
+          onClick={nav.editBodyProfile}
+        />
+        <SettingRow
+          title={`Trophées · ${earnedCount}/${ACHIEVEMENTS.length}`}
+          value="Écussons débloqués"
+          onClick={nav.openTrophies}
+        />
+        <SettingRow title="Classement" value={rankInfo.rank} onClick={nav.openLeaderboard} />
+
+        {/* Réglage son */}
+        <div className="flex items-center gap-3 rounded-[24px] bg-card px-4 py-3.5">
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-bold leading-5 text-fg">Sons et vibrations</div>
+            <div className="text-[12px] font-medium text-mute">{soundOn ? 'Activés' : 'Coupés'}</div>
           </div>
-        )}
-
-        {/* Bilan Test d'Initiation + Boutons */}
-        <div className="mt-3 rounded-2xl border border-white/10 bg-[#0B0E14]/90 p-3">
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="flex items-center gap-1 font-bold text-emerald-400">
-              <ShieldCheck weight="duotone" className="h-4 w-4" /> Bilan Test d’Initiation
-            </span>
-            <span className="font-hud font-bold" style={{ color: TIER_COLORS[user.category] }}>
-              {user.category}
-            </span>
-          </div>
-
-          {user.initiationResult && (
-            <div className="mt-1 text-[11px] text-slate-300">
-              {user.initiationResult.pushups} pompes • {user.initiationResult.squats} squats •{' '}
-              {user.initiationResult.plankSec}s gainage •{' '}
-              <span className="text-slate-400">
-                {CARDIO_LABELS[user.initiationResult.cardioLevel]}
-              </span>
-            </div>
-          )}
-
-          {(user.goals.length > 0 || user.targetMuscles.length > 0) && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {user.goals.map((gId) => (
-                <span
-                  key={gId}
-                  className="rounded-md bg-[#C8FF00]/12 px-1.5 py-0.5 text-[9px] font-semibold text-[#C8FF00]"
-                >
-                  {FITNESS_GOALS.find((fg) => fg.id === gId)?.label ?? gId}
-                </span>
-              ))}
-              {user.targetMuscles.map((m) => (
-                <span
-                  key={m}
-                  className="rounded-md bg-white/8 px-1.5 py-0.5 text-[9px] font-medium text-slate-300"
-                >
-                  {MUSCLE_LABELS[m]}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-2.5 flex gap-2">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={onRetakeInitiation}
-              className="font-hud flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#C8FF00]/35 bg-[#C8FF00]/10 py-2 text-[11px] font-bold text-[#C8FF00]"
-            >
-              <ArrowsClockwise weight="duotone" className="h-3.5 w-3.5" /> Repasser Test
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setSoundEnabled(!soundOn)}
-              aria-pressed={soundOn}
-              title={soundOn ? 'Couper sons & vibrations' : 'Activer sons & vibrations'}
-              className={`flex items-center justify-center rounded-xl border px-2.5 py-2 ${
-                soundOn
-                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                  : 'border-white/10 bg-white/5 text-slate-400'
+          <button
+            type="button"
+            role="switch"
+            aria-checked={soundOn}
+            aria-label={soundOn ? 'Couper sons & vibrations' : 'Activer sons & vibrations'}
+            onClick={() => setSoundEnabled(!soundOn)}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${soundOn ? 'bg-lime' : 'bg-rim'}`}
+          >
+            <span
+              className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
+                soundOn ? 'left-[22px] bg-on-lime' : 'left-0.5 bg-fg'
               }`}
-            >
-              {soundOn ? (
-                <SpeakerHigh weight="duotone" className="h-3.5 w-3.5" />
-              ) : (
-                <SpeakerSlash weight="duotone" className="h-3.5 w-3.5" />
-              )}
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setConfirmLogout(true)}
-              className="font-hud flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-slate-300 hover:text-[#FF2E54]"
-            >
-              <SignOut weight="duotone" className="h-3.5 w-3.5" /> Compte
-            </motion.button>
-          </div>
-
-          <AnimatePresence>
-            {confirmLogout && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-2.5 rounded-xl border border-[#FF2E54]/40 bg-[#FF2E54]/10 p-2.5 text-[11px] text-slate-200">
-                  <strong className="text-[#FF2E54]">Se déconnecter ?</strong> Ton XP, tes badges et
-                  ton fil seront effacés de ce téléphone.
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      onClick={() => setConfirmLogout(false)}
-                      className="font-hud flex-1 rounded-lg border border-white/15 bg-white/5 py-1.5 text-[11px] font-bold text-slate-200"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      onClick={onLogout}
-                      className="font-hud flex-1 rounded-lg bg-[#FF2E54] py-1.5 text-[11px] font-bold text-white"
-                    >
-                      Oui, effacer
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            />
+          </button>
         </div>
       </div>
 
-      {/* Barre rapide « Partager une actu / Lancer un défi » */}
-      <form
-        onSubmit={handlePublish}
-        className="rounded-2xl border border-white/10 bg-[#11151D] p-3 space-y-2"
-      >
-        <div className="flex items-center gap-2">
-          <UserAvatar avatar={user.avatar} size="xs" />
-          <input
-            type="text"
-            placeholder="Partage une actu ou lance un défi (ex: 5 km à 05h00 ?)..."
-            value={newPostText}
-            onChange={(e) => setNewPostText(e.target.value)}
-            className="flex-1 rounded-xl border border-white/10 bg-[#080A0E] px-3 py-2 text-xs text-white outline-none focus:border-[#C8FF00]"
-          />
+      {/* Badges débloqués */}
+      {user.badges && user.badges.length > 0 && (
+        <Card>
+          <h3 className="text-[16px] font-bold leading-[22px] text-fg">
+            Badges débloqués <span className="num text-mute">({user.badges.length})</span>
+          </h3>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {user.badges.map((badge) => (
+              <span key={badge} className="rounded-full bg-tile px-3 py-1.5 text-[12px] font-semibold text-fg">
+                {badge}
+              </span>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Bilan d'initiation */}
+      <Card>
+        <div className="flex items-center justify-between">
+          <h3 className="text-[16px] font-bold leading-[22px] text-fg">Bilan Test d’Initiation</h3>
+          <span className="text-[13px] font-semibold" style={{ color: TIER_COLORS[user.category] }}>
+            {user.category}
+          </span>
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-            {['DÉFI COMMUNAUTÉ', 'RECHERCHE PARTENAIRE', 'MOTIVATION 5AM'].map((b) => (
+        {user.initiationResult && (
+          <div className="mt-2 text-[13px] font-medium text-mute">
+            {user.initiationResult.pushups} pompes · {user.initiationResult.squats} squats ·{' '}
+            {user.initiationResult.plankSec}s gainage · {CARDIO_LABELS[user.initiationResult.cardioLevel]}
+          </div>
+        )}
+
+        {(user.goals.length > 0 || user.targetMuscles.length > 0) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {user.goals.map((gId) => (
+              <span key={gId} className="rounded-full bg-tile px-3 py-1 text-[12px] font-semibold text-lime">
+                {FITNESS_GOALS.find((fg) => fg.id === gId)?.label ?? gId}
+              </span>
+            ))}
+            {user.targetMuscles.map((m) => (
+              <span key={m} className="rounded-full bg-tile px-3 py-1 text-[12px] font-medium text-mute">
+                {MUSCLE_LABELS[m]}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Button variant="secondary" size="md" onClick={onRetakeInitiation}>
+            Repasser le test
+          </Button>
+          <Button variant="secondary" size="md" onClick={() => setConfirmLogout(true)}>
+            Compte
+          </Button>
+        </div>
+
+        <AnimatePresence>
+          {confirmLogout && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-3 rounded-[20px] bg-tile p-4">
+                <div className="text-[15px] font-bold text-danger">Se déconnecter ?</div>
+                <p className="mt-1 text-[13px] font-medium text-mute">
+                  Ton XP, tes badges et ton fil seront effacés de ce téléphone.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button variant="ghost" size="md" onClick={() => setConfirmLogout(false)}>
+                    Annuler
+                  </Button>
+                  <Button variant="secondary" size="md" onClick={onLogout} className="!text-danger">
+                    Oui, effacer
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Card>
+
+      {/* Composer */}
+      <form onSubmit={handlePublish}>
+        <Card className="space-y-3">
+          <div className="flex items-center gap-3">
+            <UserAvatar avatar={user.avatar} size="md" ring={false} />
+            <input
+              type="text"
+              placeholder="Partage une actu ou lance un défi (ex: 5 km à 05h00 ?)..."
+              value={newPostText}
+              onChange={(e) => setNewPostText(e.target.value)}
+              className="h-11 min-w-0 flex-1 rounded-2xl bg-tile px-4 text-[14px] font-medium text-fg outline-none placeholder:text-faint focus:ring-1 focus:ring-lime"
+            />
+          </div>
+          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+            {POST_BADGES.map((b) => (
               <button
                 key={b}
                 type="button"
                 onClick={() => setNewPostBadge(b)}
-                className={`shrink-0 rounded-lg px-2 py-1 text-[9px] font-bold ${
-                  newPostBadge === b
-                    ? 'bg-[#00E5FF]/20 text-[#00E5FF]'
-                    : 'bg-white/5 text-slate-400'
+                className={`h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold ${
+                  newPostBadge === b ? 'bg-lime text-on-lime' : 'bg-tile text-mute'
                 }`}
               >
-                {b}
+                {soft(b)}
               </button>
             ))}
           </div>
-
-          <motion.button
-            whileTap={{ scale: 0.94 }}
-            type="submit"
-            className="font-hud flex shrink-0 items-center gap-1 rounded-xl bg-[#C8FF00] px-3 py-1.5 text-[11px] font-bold text-black"
-          >
-            <PaperPlaneRight weight="duotone" className="h-3.5 w-3.5" /> Publier
-          </motion.button>
-        </div>
+          <Button type="submit" size="md" fullWidth>
+            Publier
+          </Button>
+        </Card>
       </form>
 
-      {/* Feed Réseau Social DEK illustré */}
+      {/* Fil du réseau */}
       <div>
-        <div className="mb-2 flex items-center justify-between px-0.5">
-          <h3 className="font-hud flex items-center gap-1.5 text-xs font-bold text-white">
-            <Sparkle weight="duotone" className="h-4 w-4 text-[#C8FF00]" /> FIL DU RÉSEAU DEK
-          </h3>
-          <span className="text-[10px] text-slate-400">Communauté en direct</span>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h3 className="text-[18px] font-bold leading-6 text-fg">Fil du réseau DEK</h3>
+          <span className="text-[12px] font-medium text-mute">Communauté en direct</span>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-4">
           {feed.map((post) => {
             const postAvatar: UserAvatarConfig = post.avatarPreset
               ? {
@@ -463,97 +322,85 @@ export function ProfilFeedView({
                   diceStyle: 'lorelei',
                   seed: post.author,
                   bgColor: '0f172a',
-                  auraColor: '#00E5FF',
+                  auraColor: '#C8FF00',
                 }
               : user.avatar;
 
             return (
-              <div
-                key={post.id}
-                className="overflow-hidden rounded-2xl border border-white/10 bg-[#11151D]"
-              >
+              <Card key={post.id} className="!p-4">
                 {post.bannerImage && (
-                  <div className="relative h-24 w-full">
-                    <img
-                      src={post.bannerImage}
-                      alt={post.badge}
-                      className="h-full w-full object-cover opacity-80"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#11151D] via-transparent to-black/30" />
-                    <span className="font-hud absolute right-2.5 top-2.5 rounded-lg bg-black/75 px-2 py-0.5 text-[9px] font-bold text-[#C8FF00] backdrop-blur">
-                      {post.badge}
+                  <div className="relative mb-3 h-40 w-full overflow-hidden rounded-[24px]">
+                    <img src={post.bannerImage} alt={post.badge} className="h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    <span className="absolute left-3 top-3 rounded-full bg-black/40 px-3 py-1 text-[12px] font-semibold text-white">
+                      {soft(post.badge)}
                     </span>
                   </div>
                 )}
 
-                <div className="p-3.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <UserAvatar avatar={postAvatar} size="sm" />
-                      <div>
-                        <div className="text-xs font-bold text-white">{post.author}</div>
-                        <div className="text-[10px] text-slate-400">
-                          {post.createdAt ? formatTimeAgo(post.createdAt) : post.timeAgo}
-                        </div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <UserAvatar avatar={postAvatar} size="md" ring={false} />
+                    <div className="min-w-0">
+                      <div className="truncate text-[15px] font-bold leading-5 text-fg">{post.author}</div>
+                      <div className="text-[12px] font-medium text-mute">
+                        {post.createdAt ? formatTimeAgo(post.createdAt) : post.timeAgo}
                       </div>
                     </div>
-                    {!post.bannerImage && (
-                      <span className="font-hud rounded-lg bg-white/5 px-2 py-0.5 text-[9px] font-bold text-[#00E5FF]">
-                        {post.badge}
-                      </span>
-                    )}
                   </div>
-
-                  <p className="mt-2.5 text-xs leading-relaxed text-slate-200">{post.content}</p>
-
-                  {post.stats.length > 0 && (
-                    <div className="mt-2.5 grid grid-cols-3 gap-1.5 rounded-xl border border-white/5 bg-[#0B0E14] p-2">
-                      {post.stats.map((st) => (
-                        <div key={st.label} className="text-center">
-                          <div className="text-[9px] text-slate-400">{st.label}</div>
-                          <div className="font-hud text-xs font-bold text-white">{st.value}</div>
-                        </div>
-                      ))}
-                    </div>
+                  {!post.bannerImage && (
+                    <span className="shrink-0 rounded-full bg-tile px-3 py-1 text-[12px] font-semibold text-mute">
+                      {soft(post.badge)}
+                    </span>
                   )}
-
-                  <div className="mt-2.5 flex items-center gap-2">
-                    {REACTIONS.map(({ key, Icon, color, label }) => {
-                      const mine = post.myReaction === key;
-                      return (
-                        <motion.button
-                          key={key}
-                          whileTap={{ scale: 1.25 }}
-                          onClick={() => onReact(post.id, key)}
-                          aria-pressed={mine}
-                          aria-label={label}
-                          className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] ${
-                            mine
-                              ? 'border-[#C8FF00]/50 bg-[#C8FF00]/12 text-white'
-                              : 'border-white/10 bg-white/5 text-slate-200'
-                          }`}
-                        >
-                          <Icon weight="duotone" className={`h-4 w-4 ${color}`} />{' '}
-                          {post.reactions[key]}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
                 </div>
-              </div>
+
+                <p className="mt-3 text-[14px] font-medium leading-5 text-fg">{post.content}</p>
+
+                {post.stats.length > 0 && (
+                  <div className="mt-3 rounded-[20px] bg-tile py-3">
+                    <StatTiles items={post.stats.map((st) => ({ label: st.label, value: st.value }))} />
+                  </div>
+                )}
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {REACTIONS.map(({ key, Icon, name, label }) => {
+                    const mine = post.myReaction === key;
+                    return (
+                      <motion.button
+                        key={key}
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => onReact(post.id, key)}
+                        aria-pressed={mine}
+                        aria-label={label}
+                        className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold ${
+                          mine ? 'bg-lime text-on-lime' : 'bg-tile text-mute'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {name} <span className="num">{post.reactions[key]}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </Card>
             );
           })}
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-xl border border-white/5 bg-[#11151D] px-3 py-2.5 text-[11px] text-slate-400">
-        <span className="flex items-center gap-1.5">
-          <Trophy weight="duotone" className="h-4 w-4 shrink-0 text-[#C8FF00]" /> Missions, House
-          et Santé alimentent ce fil.
-        </span>
-      </div>
+      <p className="text-center text-[12px] font-medium text-faint">
+        Missions, House et Santé alimentent ce fil.
+      </p>
 
-      {overlayRoot ? createPortal(avatarSheet, overlayRoot) : avatarSheet}
+      <BottomSheet open={showAvatarEditor} onClose={() => setShowAvatarEditor(false)} title="Personnaliser mon avatar">
+        <div className="space-y-4">
+          <AvatarStudio value={user.avatar} onChange={onUpdateAvatar} />
+          <Button fullWidth onClick={() => setShowAvatarEditor(false)}>
+            Valider mon avatar
+          </Button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

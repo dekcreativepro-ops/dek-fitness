@@ -1,13 +1,59 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { playTick } from '../../utils/soundFx';
+import { CaretLeft, CaretRight } from '../DekIcons';
 
 // Sélecteurs tactiles basés sur le défilement natif « aimanté » (fluide au pouce, 60 fps).
 
-const WHEEL_ITEM_H = 46;
-const WHEEL_VISIBLE = 5;
+const WHEEL_ITEM_H = 52;
+const WHEEL_VISIBLE = 7;
 
-/** Roue verticale (âge…) : la valeur centrale est sélectionnée. */
+/** Pied d'écran « une question par écran » : cercle retour `tile` + pilule lime « Suivant ›». */
+export function StepFooter({
+  showBack = true,
+  onBack,
+  onNext,
+  nextLabel = 'Suivant',
+  nextDisabled = false,
+  backLabel = 'Étape précédente',
+}: {
+  showBack?: boolean;
+  onBack?: () => void;
+  onNext: () => void;
+  nextLabel?: string;
+  nextDisabled?: boolean;
+  backLabel?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <button
+        type="button"
+        onClick={onBack}
+        disabled={!showBack}
+        aria-label={backLabel}
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tile text-fg transition active:scale-90 ${
+          showBack ? '' : 'pointer-events-none opacity-0'
+        }`}
+      >
+        <CaretLeft weight="bold" className="h-5 w-5" />
+      </button>
+      <motion.button
+        type="button"
+        whileTap={{ scale: 0.96 }}
+        onClick={onNext}
+        disabled={nextDisabled}
+        className={`flex min-h-[52px] flex-1 items-center justify-center gap-1.5 rounded-full px-6 py-2 text-center text-[15px] font-bold leading-5 transition-colors ${
+          nextDisabled ? 'bg-tile text-faint' : 'bg-lime text-on-lime'
+        } ${showBack ? 'max-w-[240px]' : ''}`}
+      >
+        <span>{nextLabel}</span>
+        <CaretRight weight="bold" className="h-4 w-4 shrink-0" />
+      </motion.button>
+    </div>
+  );
+}
+
+/** Roue verticale (âge…) : la valeur centrale est sélectionnée, entre deux traits lime. */
 export function WheelPicker({
   min,
   max,
@@ -48,10 +94,10 @@ export function WheelPicker({
   const pad = ((WHEEL_VISIBLE - 1) / 2) * WHEEL_ITEM_H;
 
   return (
-    <div className="relative mx-auto w-44 select-none" style={{ height: WHEEL_ITEM_H * WHEEL_VISIBLE }}>
-      {/* Bandeau de sélection */}
+    <div className="relative mx-auto w-52 select-none" style={{ height: WHEEL_ITEM_H * WHEEL_VISIBLE }}>
+      {/* Deux traits lime autour de la valeur centrale */}
       <div
-        className="pointer-events-none absolute inset-x-0 z-10 border-y-2 border-[#C8FF00]"
+        className="pointer-events-none absolute inset-x-0 z-10 border-y-2 border-lime"
         style={{ top: pad, height: WHEEL_ITEM_H }}
       />
       <div
@@ -61,8 +107,8 @@ export function WheelPicker({
         style={{
           paddingTop: pad,
           paddingBottom: pad,
-          maskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)',
+          maskImage: 'linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)',
         }}
         role="listbox"
         aria-label="Sélecteur"
@@ -82,15 +128,17 @@ export function WheelPicker({
               role="option"
               aria-selected={selected}
               onClick={() => ref.current?.scrollTo({ top: i * WHEEL_ITEM_H, behavior: 'smooth' })}
-              className="font-hud flex snap-center items-center justify-center font-bold transition-colors"
+              className={`num flex snap-center items-center justify-center transition-colors ${
+                selected ? 'font-extrabold text-fg' : 'font-semibold text-faint'
+              }`}
               style={{
                 height: WHEEL_ITEM_H,
-                fontSize: selected ? 34 : Math.max(16, 26 - dist * 5),
-                color: selected ? '#FFFFFF' : `rgba(148,163,184,${Math.max(0.25, 0.9 - dist * 0.25)})`,
+                fontSize: selected ? 48 : Math.max(18, 28 - dist * 4),
+                opacity: selected ? 1 : Math.max(0.35, 1 - dist * 0.22),
               }}
             >
               {v}
-              {selected && suffix && <span className="ml-1 mt-2 text-xs text-[#C8FF00]">{suffix}</span>}
+              {selected && suffix && <span className="ml-1.5 mt-3 text-[14px] font-semibold text-mute">{suffix}</span>}
             </div>
           );
         })}
@@ -142,21 +190,21 @@ export function RulerPicker({
 
   return (
     <div className="select-none">
-      <div className="mb-3 flex items-end justify-center gap-1.5">
+      <div className="mb-6 flex items-end justify-center gap-2">
         <motion.span
           key={value}
           initial={{ y: 6, opacity: 0.5 }}
           animate={{ y: 0, opacity: 1 }}
-          className="font-hud dek-neon-text text-6xl font-bold leading-none text-white"
+          className="num text-[88px] font-extrabold leading-none text-fg"
         >
           {value}
         </motion.span>
-        <span className="font-hud mb-1.5 text-sm font-bold text-[#C8FF00]">{unit}</span>
+        <span className="mb-3 text-[16px] font-semibold text-mute">{unit}</span>
       </div>
 
       <div className="relative">
         {/* Index central */}
-        <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-[64px] w-1 -translate-x-1/2 rounded-full bg-[#C8FF00] shadow-[0_0_12px_#C8FF00]" />
+        <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-[64px] w-[3px] -translate-x-1/2 rounded-full bg-lime" />
         <div
           ref={ref}
           onScroll={onScroll}
@@ -170,7 +218,7 @@ export function RulerPicker({
             if (e.key === 'ArrowRight') nudge(1);
             if (e.key === 'ArrowLeft') nudge(-1);
           }}
-          className="no-scrollbar snap-x-mandatory flex h-[86px] overflow-x-auto"
+          className="no-scrollbar snap-x-mandatory flex h-[90px] overflow-x-auto"
           style={{
             // Marges en CSS (et non mesurées en JS) : la graduation de départ est centrée
             // dès la première image, sinon l'accroche décalait la valeur initiale.
@@ -184,17 +232,15 @@ export function RulerPicker({
             const v = min + i;
             const major = v % majorEvery === 0;
             const mid = !major && v % (majorEvery / 2) === 0;
+            const tone = v === value ? 'bg-lime' : major ? 'bg-mute' : 'bg-rim';
             return (
               <div key={v} className="relative flex shrink-0 snap-center flex-col items-center" style={{ width: TICK_W }}>
                 <div
-                  className="w-[2px] rounded-full"
-                  style={{
-                    height: major ? 44 : mid ? 32 : 22,
-                    backgroundColor: v === value ? '#C8FF00' : major ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)',
-                  }}
+                  className={`w-[2px] rounded-full ${tone}`}
+                  style={{ height: major ? 44 : mid ? 32 : 22 }}
                 />
                 {major && (
-                  <span className="font-hud absolute top-[50px] text-[10px] font-bold text-slate-400">{v}</span>
+                  <span className="num absolute top-[50px] text-[11px] font-semibold text-faint">{v}</span>
                 )}
               </div>
             );

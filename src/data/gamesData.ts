@@ -128,7 +128,7 @@ export const INITIAL_FORM_CHECKS: FormCheckItem[] = [
     avatarPreset: 'manga-sprint',
     exercise: 'Squat barre (70 kg)',
     note: 'Mes genoux rentrent légèrement sur les 2 dernières reps, des conseils ?',
-    tips: ['Écarte un peu les pointes de pieds ✓', 'Gaine fort avant de descendre'],
+    tips: ['Écarte un peu les pointes de pieds', 'Gaine fort avant de descendre'],
   },
   {
     id: 'fc2',
@@ -136,7 +136,7 @@ export const INITIAL_FORM_CHECKS: FormCheckItem[] = [
     avatarPreset: 'manga-fighter',
     exercise: 'Pompes strictes',
     note: 'Est-ce que mon dos reste assez droit en bas du mouvement ?',
-    tips: ['Posture super propre ✓', 'Resserre légèrement les coudes à 45°'],
+    tips: ['Posture super propre', 'Resserre légèrement les coudes à 45°'],
   },
 ];
 

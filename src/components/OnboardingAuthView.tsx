@@ -1,17 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  ArrowRight,
-  AtSign,
-  HeartPulse,
-  Mail,
-  MessageCircle,
-  ShieldCheck,
-  Sparkles,
-  User,
-} from 'lucide-react';
+import { ArrowRight, Check } from './DekIcons';
 import type { AuthProvider, UserAvatarConfig } from '../types/dek';
 import { AvatarStudio } from './AvatarStudio';
+import { ChipTabs } from './ui/kit';
 
 interface OnboardingAuthViewProps {
   onAuthComplete: (payload: {
@@ -23,14 +15,17 @@ interface OnboardingAuthViewProps {
   }) => void;
 }
 
-const PROVIDERS: { id: AuthProvider; label: string; icon: typeof Mail }[] = [
-  { id: 'gmail', label: 'Gmail', icon: Mail },
-  { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
-  { id: 'email', label: 'Autre / Email', icon: AtSign },
+const PROVIDERS: { id: AuthProvider; label: string }[] = [
+  { id: 'gmail', label: 'Gmail' },
+  { id: 'whatsapp', label: 'WhatsApp' },
+  { id: 'email', label: 'Autre / Email' },
 ];
 
 const COUNTRY_CODES = ['+225', '+33', '+221', '+237', '+212'];
 const CITIES = ['Abidjan', 'Paris', 'Dakar', 'Lyon', 'Autre'];
+
+const FIELD = 'h-11 w-full border-b border-rim bg-transparent text-[15px] font-medium text-fg outline-none transition-colors placeholder:text-faint focus:border-lime';
+const LABEL = 'block text-[12px] font-medium leading-4 text-mute';
 
 export function OnboardingAuthView({ onAuthComplete }: OnboardingAuthViewProps) {
   const [provider, setProvider] = useState<AuthProvider>('gmail');
@@ -113,221 +108,177 @@ export function OnboardingAuthView({ onAuthComplete }: OnboardingAuthViewProps) 
   };
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-[#080A0E] text-slate-100">
-      <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-6 pt-5">
-        {/* En-tête identitaire */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-[#C8FF00]/25 bg-gradient-to-br from-[#161D2A] via-[#11151D] to-[#0B0E14] p-4"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="font-hud flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#C8FF00] text-base font-black tracking-tighter text-black shadow-lg shadow-[#C8FF00]/20">
-              DEK
-            </div>
-            <div>
-              <h1 className="font-hud text-lg font-bold tracking-wide text-white">
-                BIENVENUE SUR <span className="text-[#C8FF00]">DEK FITNESS</span>
-              </h1>
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
-                <ShieldCheck className="h-3 w-3" /> Sécurité & Matchmaking équitable
-              </span>
-            </div>
+    <div className="flex h-full w-full flex-col overflow-hidden bg-ink text-fg">
+      <div className="no-scrollbar flex-1 overflow-y-auto pb-8">
+        {/* Photo + titre */}
+        <div className="relative h-[240px] overflow-hidden">
+          <img
+            src="/images/banner-coach.jpg"
+            alt=""
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: '40% 30%' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-black/20" />
+          <div className="relative flex h-full flex-col justify-end px-5 pb-4">
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-[34px] font-extrabold leading-[38px] tracking-tight text-white"
+            >
+              Crée ton profil athlète
+            </motion.h1>
+            <p className="mt-2 text-[14px] font-medium leading-5 text-white/75">
+              Tu passeras ensuite un court <strong className="font-bold text-lime">test d’initiation sans quota</strong> pour
+              adapter les défis à ta santé et jouer à la régulière.
+            </p>
           </div>
+        </div>
 
-          <p className="mt-3 text-xs leading-relaxed text-slate-300">
-            Crée ton profil athlète — Tu passeras ensuite un court{' '}
-            <strong className="text-[#C8FF00]">test d’initiation sans quota</strong> pour adapter les
-            défis à ta santé et jouer à la régulière.
-          </p>
-        </motion.div>
-
-        {/* Formulaire */}
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
-          {/* Choix méthode de connexion */}
+        <form onSubmit={handleSubmit} className="mt-5 space-y-6 px-5">
+          {/* Mode d'inscription */}
           <div>
-            <label className="mb-1.5 block text-[11px] font-semibold text-slate-400">
-              Méthode d’inscription
-            </label>
-            <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-white/10 bg-[#11151D] p-1">
-              {PROVIDERS.map((p) => {
-                const Icon = p.icon;
-                const active = provider === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setProvider(p.id);
-                      setErrorMsg(null);
-                    }}
-                    className={`font-hud relative flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-bold transition ${
-                      active ? 'text-black' : 'text-slate-300 hover:text-white'
-                    }`}
-                  >
-                    {active && (
-                      <motion.div
-                        layoutId="authProviderTab"
-                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                        className="absolute inset-0 rounded-xl bg-[#C8FF00]"
-                      />
-                    )}
-                    <Icon className="relative z-10 h-3.5 w-3.5" />
-                    <span className="relative z-10">{p.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <span className={`${LABEL} mb-2`}>Méthode d’inscription</span>
+            <ChipTabs
+              items={PROVIDERS}
+              value={provider}
+              onChange={(id) => {
+                setProvider(id);
+                setErrorMsg(null);
+              }}
+              layoutId="authProviderTab"
+            />
           </div>
 
-          {/* Champ dynamique selon la méthode */}
-          <div className="rounded-2xl border border-white/10 bg-[#11151D] p-3.5 space-y-3">
+          {/* Champs soulignés */}
+          <div className="space-y-5">
             {provider === 'gmail' && (
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-300">
-                  Adresse Gmail
-                </label>
-                <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#080A0E] px-3 py-2.5 focus-within:border-[#C8FF00]">
-                  <Mail className="h-4 w-4 shrink-0 text-[#C8FF00]" />
-                  <input
-                    type="email"
-                    placeholder="prenom@gmail.com"
-                    value={gmailInput}
-                    onChange={(e) => setGmailInput(e.target.value)}
-                    className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
-                  />
-                </div>
-              </div>
+              <label className="block">
+                <span className={LABEL}>Adresse Gmail</span>
+                <input
+                  type="email"
+                  placeholder="prenom@gmail.com"
+                  value={gmailInput}
+                  onChange={(e) => setGmailInput(e.target.value)}
+                  className={FIELD}
+                />
+              </label>
             )}
 
             {provider === 'whatsapp' && (
               <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-300">
-                  Numéro WhatsApp
-                </label>
-                <div className="flex gap-2">
+                <span className={LABEL}>Numéro WhatsApp</span>
+                <div className="flex gap-3">
                   <select
                     value={countryCode}
                     onChange={(e) => setCountryCode(e.target.value)}
-                    className="rounded-xl border border-white/10 bg-[#080A0E] px-2.5 py-2.5 text-xs font-semibold text-[#C8FF00] outline-none"
+                    aria-label="Indicatif"
+                    className={`${FIELD} w-[84px] shrink-0 font-semibold`}
                   >
                     {COUNTRY_CODES.map((code) => (
-                      <option key={code} value={code}>
+                      <option key={code} value={code} className="bg-card">
                         {code}
                       </option>
                     ))}
                   </select>
-                  <div className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-[#080A0E] px-3 py-2.5 focus-within:border-[#C8FF00]">
-                    <MessageCircle className="h-4 w-4 shrink-0 text-emerald-400" />
-                    <input
-                      type="tel"
-                      placeholder="07 08 45 12 90"
-                      value={phoneInput}
-                      onChange={(e) => setPhoneInput(e.target.value)}
-                      className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
-                    />
-                  </div>
+                  <input
+                    type="tel"
+                    placeholder="07 08 45 12 90"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    aria-label="Numéro WhatsApp"
+                    className={`${FIELD} min-w-0 flex-1`}
+                  />
                 </div>
               </div>
             )}
 
             {provider === 'email' && (
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-300">
-                  Email ou identifiant
-                </label>
-                <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#080A0E] px-3 py-2.5 focus-within:border-[#C8FF00]">
-                  <AtSign className="h-4 w-4 shrink-0 text-[#00E5FF]" />
-                  <input
-                    type="text"
-                    placeholder="prenom@exemple.com"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
-                  />
-                </div>
-              </div>
+              <label className="block">
+                <span className={LABEL}>Email ou identifiant</span>
+                <input
+                  type="text"
+                  placeholder="prenom@exemple.com"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  className={FIELD}
+                />
+              </label>
             )}
 
-            {/* Pseudo & Ville */}
-            <div className="grid grid-cols-[1.3fr_1fr] gap-2">
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-300">
-                  Prénom / Pseudo
-                </label>
-                <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#080A0E] px-3 py-2.5 focus-within:border-[#C8FF00]">
-                  <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Ex: Karim"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-300">Ville</label>
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-[#080A0E] px-2.5 py-2.5 text-xs text-white outline-none focus:border-[#C8FF00]"
-                >
+            <div className="grid grid-cols-[1.3fr_1fr] gap-4">
+              <label className="block">
+                <span className={LABEL}>Prénom / Pseudo</span>
+                <input
+                  type="text"
+                  placeholder="Ex: Karim"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={FIELD}
+                />
+              </label>
+              <label className="block">
+                <span className={LABEL}>Ville</span>
+                <select value={city} onChange={(e) => setCity(e.target.value)} className={FIELD}>
                   {CITIES.map((c) => (
-                    <option key={c} value={c}>
+                    <option key={c} value={c} className="bg-card">
                       {c}
                     </option>
                   ))}
                 </select>
-              </div>
+              </label>
             </div>
           </div>
 
-          {/* Choix rapide ou personnalisation Avatar Manga / Fantaisie */}
+          {/* Studio d'avatar */}
           <AvatarStudio value={avatar} onChange={setAvatar} compact />
 
-          {/* Engagement santé obligatoire */}
-          <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border border-emerald-500/25 bg-emerald-500/8 p-3">
+          {/* Engagement santé */}
+          <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={healthAccepted}
               onChange={(e) => setHealthAccepted(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[#C8FF00]"
+              className="peer sr-only"
             />
-            <span className="text-[11px] leading-relaxed text-slate-200">
-              <strong className="inline-flex items-center gap-1 text-emerald-400">
-                <HeartPulse className="h-3.5 w-3.5" /> Engagement Santé :
-              </strong>{' '}
-              Je confirme pratiquer à mon rythme et m’arrêter en cas de douleur ou d’essoufflement
-              inhabituel.
+            <span
+              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-lime ${
+                healthAccepted ? 'border-lime bg-lime text-on-lime' : 'border-faint text-transparent'
+              }`}
+            >
+              <Check weight="bold" className="h-3.5 w-3.5" />
+            </span>
+            <span className="text-[13px] font-medium leading-5 text-mute">
+              <strong className="font-bold text-fg">Engagement Santé :</strong> Je confirme pratiquer à mon rythme et
+              m’arrêter en cas de douleur ou d’essoufflement inhabituel.
             </span>
           </label>
 
           {errorMsg && (
-            <div className="rounded-xl border border-[#FF2E54]/40 bg-[#FF2E54]/12 px-3 py-2 text-[11px] font-medium text-[#FF2E54]">
+            <div role="alert" className="rounded-2xl bg-danger/10 px-4 py-3 text-[13px] font-semibold text-danger">
               {errorMsg}
             </div>
           )}
 
-          {/* Bouton principal */}
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            type="submit"
-            className="font-hud flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C8FF00] py-3.5 text-xs font-bold tracking-wider text-black shadow-lg shadow-[#C8FF00]/15"
-          >
-            CRÉER MON COMPTE & LANCER L’INITIATION
-            <ArrowRight className="h-4 w-4" />
-          </motion.button>
-
-          <div className="pt-1 text-center">
-            <button
-              type="button"
-              onClick={handleQuickFill}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 underline decoration-slate-600 underline-offset-4 hover:text-[#00E5FF]"
+          <div>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              type="submit"
+              className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-lime px-5 py-2 text-center text-[15px] font-bold leading-5 text-on-lime"
             >
-              <Sparkles className="h-3 w-3 text-[#00E5FF]" /> Pré-remplir (démo rapide)
-            </button>
+              Créer mon compte & lancer l’initiation
+              <ArrowRight weight="bold" className="h-4 w-4 shrink-0" />
+            </motion.button>
+
+            <div className="pt-4 text-center">
+              <button
+                type="button"
+                onClick={handleQuickFill}
+                className="text-[13px] font-medium text-mute underline decoration-rim underline-offset-4 transition active:opacity-70"
+              >
+                Pré-remplir (démo rapide)
+              </button>
+            </div>
           </div>
         </form>
       </div>

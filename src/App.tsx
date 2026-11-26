@@ -1,27 +1,15 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, MotionConfig, type TargetAndTransition } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { BodyProfileView } from './components/BodyProfileView';
-import {
-  Compass,
-  Fire,
-  House,
-  PaperPlaneRight,
-  Play,
-  ShieldCheck,
-  SoccerBall,
-  Sword,
-  UsersThree,
-} from './components/DekIcons';
+import { ArrowRight, Compass, House, Sword, UsersThree } from './components/DekIcons';
 import { HomeView } from './components/HomeView';
 import type { NetworkSubTab } from './components/NetworkHubView';
 import { OnboardingAuthView } from './components/OnboardingAuthView';
 import { OnboardingIntro } from './components/OnboardingIntro';
 import { PhoneSimulatorFrame } from './components/PhoneSimulatorFrame';
-import { DropWave, DumbbellLift, PlusMorph, TrophyShine } from './components/ui/AnimatedIcons';
+import { PlusMorph } from './components/ui/AnimatedIcons';
 import { BottomSheet, ScreenHeader } from './components/ui/kit';
 import { pushScreen, riseScreen } from './components/ui/motion';
-import { RankEmblem } from './components/ui/RankEmblem';
-import { UserAvatar } from './components/UserAvatar';
 import { ViewBoundary } from './components/ViewBoundary';
 import { DekNavContext, type DekNavValue, type OverlayEntry } from './context/DekNav';
 import { INITIAL_COACHS, INITIAL_FEED, INITIAL_USER } from './data/mockData';
@@ -43,7 +31,7 @@ import type {
   UserProfile,
 } from './types/dek';
 import { ACHIEVEMENTS, getEarnedAchievementIds } from './utils/achievements';
-import { getTierIndex, TIER_COLORS, TIER_ORDER } from './utils/categorization';
+import { getTierIndex, TIER_ORDER } from './utils/categorization';
 import { getNutritionPlan } from './utils/programsAndNutrition';
 import {
   computeStreak,
@@ -95,15 +83,15 @@ const FEED_STORAGE_KEY = 'dek_fitness_feed_v1';
 const MAX_FEED_POSTS = 40;
 const MAX_CLAIMED_REWARDS = 400;
 
-// Barre du bas : 4 onglets + bouton d'action central « ＋ » (Nutrition et Séances guidées
-// sont accessibles depuis l'accueil et le bouton ＋).
-const NAV_LEFT: { id: TabId; label: string; icon: typeof Compass; motion: TargetAndTransition }[] = [
-  { id: 'home', label: 'Accueil', icon: House, motion: { y: [0, -5, 0] } },
-  { id: 'missions', label: 'Outdoor', icon: Compass, motion: { rotate: [0, -35, 25, 0] } },
+// Barre du bas : 4 onglets + bouton d'action central « + » (Nutrition et Séances guidées
+// sont accessibles depuis l'accueil et le bouton +).
+const NAV_LEFT: { id: TabId; label: string; icon: typeof Compass }[] = [
+  { id: 'home', label: 'Accueil', icon: House },
+  { id: 'missions', label: 'Outdoor', icon: Compass },
 ];
-const NAV_RIGHT: { id: TabId; label: string; icon: typeof Compass; motion: TargetAndTransition }[] = [
-  { id: 'house', label: 'Arène', icon: Sword, motion: { rotate: [0, -25, 15, 0], scale: [1, 1.15, 1] } },
-  { id: 'network', label: 'Réseau', icon: UsersThree, motion: { scale: [1, 1.22, 0.95, 1] } },
+const NAV_RIGHT: { id: TabId; label: string; icon: typeof Compass }[] = [
+  { id: 'house', label: 'Arène', icon: Sword },
+  { id: 'network', label: 'Réseau', icon: UsersThree },
 ];
 
 /** Remise à zéro quotidienne (eau & repas) + nettoyage du journal d'activité. */
@@ -181,8 +169,8 @@ type NewPost = Pick<FeedPost, 'type' | 'badge' | 'content' | 'stats'> &
 
 function ViewLoader() {
   return (
-    <div className="flex h-48 flex-col items-center justify-center gap-2 text-[11px] text-slate-400">
-      <span className="h-7 w-7 animate-spin rounded-full border-2 border-white/10 border-t-[#C8FF00]" />
+    <div className="flex h-48 flex-col items-center justify-center gap-3 text-[13px] font-medium text-mute">
+      <span className="h-7 w-7 animate-spin rounded-full border-2 border-rim border-t-lime" />
       Chargement…
     </div>
   );
@@ -348,8 +336,8 @@ export default function App() {
       () =>
         showToast(
           fresh.length === 1
-            ? `🏅 Nouveau trophée débloqué : ${title} !`
-            : `🏅 ${fresh.length} nouveaux trophées débloqués !`,
+            ? `Nouveau trophée débloqué : ${title}`
+            : `${fresh.length} nouveaux trophées débloqués`,
         ),
       1800,
     );
@@ -364,7 +352,7 @@ export default function App() {
     if (prev === rankInfo.rank) return;
     const prevIdx = SEASON_RANKS.findIndex((r) => r.name === prev);
     const nextIdx = SEASON_RANKS.findIndex((r) => r.name === rankInfo.rank);
-    if (nextIdx > prevIdx) showToast(`NOUVEAU RANG DE SAISON : ${rankInfo.rank.toUpperCase()} !`);
+    if (nextIdx > prevIdx) showToast(`Nouveau rang de saison : ${rankInfo.rank}`);
   }, [rankInfo.rank, showToast]);
 
   /**
@@ -529,7 +517,7 @@ export default function App() {
     });
 
     if (promotedTo) {
-      showToast(`PALIER DÉBLOQUÉ ! Tu passes en catégorie ${promotedTo} !`);
+      showToast(`Palier débloqué : tu passes en catégorie ${promotedTo}`);
     } else {
       showToast(`${modeLabel} réussie ! +${xpEarned} XP ajoutés.`);
     }
@@ -611,7 +599,7 @@ export default function App() {
       content: `Séance synchronisée « ${routineTitle} » bouclée en duo (${totalSets} séries validées).`,
       stats: [
         { label: 'Séries', value: String(totalSets) },
-        { label: 'Duo', value: 'Synchro ✓' },
+        { label: 'Duo', value: 'Synchro' },
         { label: 'Gain', value: '+120 XP' },
       ],
       reactions: { feu: 1, force: 2, respect: 1 },
@@ -664,7 +652,7 @@ export default function App() {
       content: `${summaryText} MVP élu : ${mvpName} (+50 XP).`,
       stats: [
         { label: 'MVP', value: mvpName },
-        { label: 'Check-in', value: 'Certifié ✓' },
+        { label: 'Check-in', value: 'Certifié' },
         { label: 'Gain', value: '+150 XP' },
       ],
       reactions: { feu: 3, force: 2, respect: 2 },
@@ -712,12 +700,12 @@ export default function App() {
       showToast(
         rewarded
           ? 'Séance de pacte validée (+40 XP) !'
-          : 'Déjà validé aujourd’hui pour ce pacte : reviens demain 💪',
+          : 'Déjà validé aujourd’hui pour ce pacte : reviens demain',
       );
       return rewarded;
     }
     if (kind === 'nudge') {
-      showToast(`Relance envoyée à ${label} 🔔`);
+      showToast(`Relance envoyée à ${label}`);
       return true;
     }
     const rewarded = commitProgress((u) => ({ ...u, xp: u.xp + 50 }), {
@@ -750,7 +738,7 @@ export default function App() {
       const rewarded = commitProgress((u) => ({ ...u, xp: u.xp + 20 }), {
         claimKey: `water:${dayKey()}`,
       });
-      if (rewarded) showToast('Objectif hydratation atteint ! (+20 XP) 💧');
+      if (rewarded) showToast('Objectif hydratation atteint ! (+20 XP)');
     }
   };
 
@@ -801,7 +789,7 @@ export default function App() {
         ? u.savedWorkouts.filter((w) => w !== id)
         : [...u.savedWorkouts, id],
     }));
-    showToast(saved ? 'Retirée des favoris' : 'Ajoutée à tes favoris ★');
+    showToast(saved ? 'Retirée des favoris' : 'Ajoutée à tes favoris');
   };
 
   /** Fin de séance guidée : stats + XP (une fois par séance et par jour). Retourne l'XP accordée. */
@@ -811,7 +799,7 @@ export default function App() {
     // Anti-triche : il faut avoir validé au moins 60 % des exercices (pas seulement les passer)
     const enoughDone = result.exercisesDone >= Math.ceil(result.totalSteps * MIN_VALIDATED_RATIO);
     if (!enoughDone) {
-      showToast('Trop d’exercices passés : séance non comptée, retente-la en entier 💪');
+      showToast('Trop d’exercices passés : séance non comptée, retente-la en entier');
       return 0;
     }
     commitProgress(
@@ -913,15 +901,15 @@ export default function App() {
 
   const todayProgram = getRecommendedProgram(user.goals[0], getTierIndex(user.category));
   type QuickId = 'today' | 'library' | 'outdoor' | 'house' | 'water' | 'thursday' | 'ladder' | 'post';
-  const QUICK_ACTIONS: { id: QuickId; label: string; sub: string; icon: React.ReactNode; color: string }[] = [
-    { id: 'today', label: 'Séance du jour', sub: `${todayProgram.durationMin} min • ${todayProgram.level}`, icon: <Play weight="duotone" className="h-6 w-6" />, color: '#C8FF00' },
-    { id: 'library', label: 'Séances guidées', sub: '6 programmes', icon: <DumbbellLift className="h-6 w-6" />, color: '#C8FF00' },
-    { id: 'outdoor', label: 'Mission Outdoor', sub: 'Carte 3D & GPS', icon: <Compass weight="duotone" className="h-6 w-6" />, color: '#00E5FF' },
-    { id: 'house', label: 'Défi House IA', sub: 'Duel caméra', icon: <Sword weight="duotone" className="h-6 w-6" />, color: '#FF2E54' },
-    { id: 'water', label: '+250 ml d’eau', sub: `${user.waterGlasses} verre(s) aujourd’hui`, icon: <DropWave className="h-6 w-6" />, color: '#00E5FF' },
-    { id: 'thursday', label: 'Terrain du Jeudi', sub: 'Check-in & live', icon: <SoccerBall weight="duotone" className="h-6 w-6" />, color: '#34D399' },
-    { id: 'ladder', label: 'Classement', sub: 'Podium de la semaine', icon: <TrophyShine className="h-6 w-6" />, color: '#F5C542' },
-    { id: 'post', label: 'Publier', sub: 'Actu ou défi', icon: <PaperPlaneRight weight="duotone" className="h-6 w-6" />, color: '#A855F7' },
+  const QUICK_ACTIONS: { id: QuickId; label: string; sub: string }[] = [
+    { id: 'today', label: 'Séance du jour', sub: `${todayProgram.durationMin} min • ${todayProgram.level}` },
+    { id: 'library', label: 'Séances guidées', sub: '6 programmes' },
+    { id: 'outdoor', label: 'Mission Outdoor', sub: 'Carte 3D & GPS' },
+    { id: 'house', label: 'Défi House IA', sub: 'Duel caméra' },
+    { id: 'water', label: '+250 ml d’eau', sub: `${user.waterGlasses} verre(s) aujourd’hui` },
+    { id: 'thursday', label: 'Terrain du Jeudi', sub: 'Check-in & live' },
+    { id: 'ladder', label: 'Classement', sub: 'Podium de la semaine' },
+    { id: 'post', label: 'Publier', sub: 'Actu ou défi' },
   ];
 
   const runQuickAction = (id: QuickId) => {
@@ -943,7 +931,7 @@ export default function App() {
         handleUpdateWater(1);
         setQuickOpen(false);
         if (user.waterGlasses + 1 < waterTarget) {
-          showToast(`Hydratation : ${user.waterGlasses + 1}/${waterTarget} verres 💧`);
+          showToast(`Hydratation : ${user.waterGlasses + 1}/${waterTarget} verres`);
         }
         break;
       case 'thursday':
@@ -973,7 +961,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <PhoneSimulatorFrame>
-        <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#080A0E] text-slate-100">
+        <div className="relative flex h-full w-full flex-col overflow-hidden bg-ink text-fg">
           {/* Splash Screen animé */}
           <AnimatePresence>
             {showSplash && (
@@ -983,29 +971,24 @@ export default function App() {
                 exit={{ opacity: 0, scale: 1.04 }}
                 transition={{ duration: 0.25, ease: 'easeOut' }}
                 onClick={() => setShowSplash(false)}
-                className="absolute inset-0 z-[800] flex cursor-pointer flex-col items-center justify-center bg-[#080A0E]"
+                className="absolute inset-0 z-[800] flex cursor-pointer flex-col items-center justify-center bg-ink"
               >
                 <motion.div
-                  initial={{ scale: 0.72, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
                   className="flex flex-col items-center"
                 >
-                  <div className="font-hud flex h-20 w-20 items-center justify-center rounded-3xl bg-[#C8FF00] text-3xl font-black tracking-tighter text-black shadow-[0_0_40px_rgba(200,255,0,0.35)]">
-                    DEK
-                  </div>
-                  <h1 className="font-hud mt-4 text-2xl font-bold tracking-[0.2em] text-white">
-                    DEK <span className="text-[#C8FF00]">FITNESS</span>
-                  </h1>
-                  <p className="mt-1 text-xs text-slate-400">5 Univers Sportifs &amp; Réseau</p>
+                  <h1 className="text-[56px] font-extrabold leading-none tracking-[-0.02em] text-fg">DEK</h1>
+                  <p className="mt-2 text-[15px] font-semibold tracking-[0.32em] text-mute">FITNESS</p>
                 </motion.div>
 
-                <div className="mt-8 h-1 w-40 overflow-hidden rounded-full bg-white/10">
+                <div className="mt-10 h-[3px] w-32 overflow-hidden rounded-full bg-rim">
                   <motion.div
                     initial={{ x: '-100%' }}
                     animate={{ x: '0%' }}
                     transition={{ duration: 0.9, ease: 'easeInOut' }}
-                    className="h-full w-full rounded-full bg-gradient-to-r from-[#00E5FF] to-[#C8FF00]"
+                    className="h-full w-full rounded-full bg-lime"
                   />
                 </div>
               </motion.div>
@@ -1040,63 +1023,9 @@ export default function App() {
             </ViewBoundary>
           ) : (
             <DekNavContext.Provider value={navValue}>
-              {/* Header compact */}
-              <header className="safe-top shrink-0 border-b border-white/10 bg-[#080A0E]/95 px-3 py-2 backdrop-blur-md">
-                <div className="flex items-center justify-between gap-1.5">
-                  <button
-                    onClick={() => openNetwork('profil')}
-                    className="flex items-center gap-2 text-left"
-                  >
-                    <UserAvatar avatar={user.avatar} size="xs" />
-                    <div>
-                      <h1 className="font-hud text-sm font-bold leading-none tracking-wider text-white">
-                        DEK <span className="text-[#C8FF00]">FITNESS</span>
-                      </h1>
-                      <span
-                        className="font-hud text-[10px] font-bold uppercase"
-                        style={{ color: TIER_COLORS[user.category] }}
-                      >
-                        {user.category} • <span className="text-slate-400">{rankInfo.rank}</span>
-                      </span>
-                    </div>
-                  </button>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => pushOverlay({ kind: 'leaderboard' })}
-                      aria-label={`Rang ${rankInfo.rank} : voir le classement`}
-                      className="flex items-center"
-                    >
-                      <RankEmblem rank={rankInfo.rank} size={30} />
-                    </button>
-                    <motion.div
-                      key={`disc-${user.disciplineScore}`}
-                      initial={{ scale: 1.15 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 450, damping: 20 }}
-                      className="flex items-center gap-1 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[11px] font-bold text-emerald-400"
-                    >
-                      <ShieldCheck weight="duotone" className="h-3.5 w-3.5" />
-                      <span className="font-hud">{user.disciplineScore}%</span>
-                    </motion.div>
-
-                    <motion.div
-                      key={`xp-${user.xp}`}
-                      initial={{ scale: 1.2, backgroundColor: 'rgba(200, 255, 0, 0.3)' }}
-                      animate={{ scale: 1, backgroundColor: 'rgba(200, 255, 0, 0.1)' }}
-                      transition={{ type: 'spring', stiffness: 420, damping: 22 }}
-                      className="flex items-center gap-1 rounded-xl border border-[#C8FF00]/30 px-2 py-1 text-[11px] font-bold text-[#C8FF00]"
-                    >
-                      <Fire weight="duotone" className="h-3.5 w-3.5" />
-                      <span className="font-hud">{user.xp} XP</span>
-                    </motion.div>
-                  </div>
-                </div>
-              </header>
-
               <div id="dek-overlay-root" className="pointer-events-none absolute inset-0 z-[750]" />
 
-              <main className="relative min-h-0 flex-1 overflow-y-auto no-scrollbar px-3.5 pt-3 pb-4">
+              <main className="safe-top relative min-h-0 flex-1 overflow-y-auto no-scrollbar bg-ink px-5 pb-6 pt-4">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
@@ -1145,7 +1074,7 @@ export default function App() {
                           />
                         )}
                         {activeTab === 'nutrition' && (
-                          <ScreenHeader title="NUTRITION" onBack={() => setActiveTab('home')} />
+                          <ScreenHeader title="Nutrition" onBack={() => setActiveTab('home')} />
                         )}
                         {activeTab === 'nutrition' && (
                           <NutritionView
@@ -1179,28 +1108,21 @@ export default function App() {
                 </AnimatePresence>
               </main>
 
-              {/* Barre du bas : 4 onglets + bouton ＋ central surélevé */}
-              <nav className="safe-bottom relative shrink-0 px-2.5 pb-2 pt-1" aria-label="Navigation principale">
-                <div className="relative grid grid-cols-5 items-end rounded-[26px] border border-white/10 bg-[#11151D]/95 px-1 py-1.5 shadow-[0_-10px_30px_-12px_rgba(0,0,0,0.8)] backdrop-blur-lg">
+              {/* Barre du bas : bande card, 4 onglets + bouton « + » central surélevé */}
+              <nav className="safe-bottom relative shrink-0 rounded-t-[28px] bg-card px-3 pb-3 pt-2" aria-label="Navigation principale">
+                <div className="grid grid-cols-5 items-end">
                   {[...NAV_LEFT, null, ...NAV_RIGHT].map((item) => {
                     if (!item) {
                       return (
                         <div key="fab" className="flex justify-center">
                           <motion.button
-                            whileTap={{ scale: 0.88 }}
+                            whileTap={{ scale: 0.92 }}
                             onClick={() => setQuickOpen((o) => !o)}
                             aria-label={quickOpen ? 'Fermer le menu rapide' : 'Démarrer une activité'}
                             aria-expanded={quickOpen}
-                            className="relative -mt-8 flex h-[58px] w-[58px] items-center justify-center rounded-full bg-[#C8FF00] shadow-[0_10px_28px_-6px_rgba(200,255,0,0.7)] ring-[6px] ring-[#080A0E]"
+                            className="-mt-7 flex h-14 w-14 items-center justify-center rounded-full bg-lime ring-[6px] ring-ink"
                           >
-                            {!quickOpen && (
-                              <motion.span
-                                className="absolute inset-0 rounded-full border-2 border-[#C8FF00]"
-                                animate={{ scale: [1, 1.35], opacity: [0.55, 0] }}
-                                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1.5 }}
-                              />
-                            )}
-                            <PlusMorph open={quickOpen} className="h-7 w-7" />
+                            <PlusMorph open={quickOpen} className="h-6 w-6" />
                           </motion.button>
                         </div>
                       );
@@ -1210,29 +1132,24 @@ export default function App() {
                     return (
                       <motion.button
                         key={item.id}
-                        whileTap={{ scale: 0.9 }}
+                        whileTap={{ scale: 0.92 }}
                         onClick={() => goTab(item.id)}
                         aria-current={active ? 'page' : undefined}
-                        className={`relative flex flex-col items-center justify-center gap-0.5 rounded-2xl py-1.5 transition-colors ${
-                          active ? 'text-[#C8FF00]' : 'text-slate-400 hover:text-slate-200'
+                        className={`relative flex flex-col items-center justify-center gap-1 py-1.5 transition-colors ${
+                          active ? 'text-fg' : 'text-faint'
                         }`}
                       >
-                        <motion.span
-                          key={`${item.id}-${active}`}
-                          animate={active ? item.motion : undefined}
-                          transition={{ duration: 0.55, ease: 'easeOut' }}
-                          className="relative z-10"
-                        >
-                          <Icon weight={active ? 'duotone' : 'regular'} className="h-[22px] w-[22px]" />
-                        </motion.span>
-                        <span className="font-hud relative z-10 text-[10px] font-bold tracking-wide">{item.label}</span>
-                        {active && (
-                          <motion.span
-                            layoutId="dekActiveTabDot"
-                            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                            className="absolute -bottom-0.5 h-1 w-5 rounded-full bg-[#C8FF00] shadow-[0_0_8px_#C8FF00]"
-                          />
-                        )}
+                        <Icon className="h-[22px] w-[22px]" />
+                        <span className="text-[11px] font-semibold leading-none">{item.label}</span>
+                        <span className="flex h-1 items-center justify-center">
+                          {active && (
+                            <motion.span
+                              layoutId="dekActiveTabDot"
+                              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                              className="h-1 w-1 rounded-full bg-lime"
+                            />
+                          )}
+                        </span>
                       </motion.button>
                     );
                   })}
@@ -1240,33 +1157,46 @@ export default function App() {
               </nav>
 
               {/* Menu d'actions rapides (bouton ＋) */}
-              <BottomSheet open={quickOpen} onClose={() => setQuickOpen(false)} title="DÉMARRER UNE ACTIVITÉ">
+              <BottomSheet open={quickOpen} onClose={() => setQuickOpen(false)} title="Démarrer une activité">
                 <motion.div
-                  className="grid grid-cols-2 gap-2"
+                  className="flex flex-col gap-3"
                   initial="hidden"
                   animate="show"
-                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.03 } } }}
                 >
-                  {QUICK_ACTIONS.map((a) => (
-                    <motion.button
+                  {QUICK_ACTIONS.filter((a) => a.id === 'today').map((a) => (
+                    <motion.div
                       key={a.id}
-                      variants={{ hidden: { opacity: 0, y: 12, scale: 0.96 }, show: { opacity: 1, y: 0, scale: 1 } }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => runQuickAction(a.id)}
-                      className="flex items-center gap-2.5 rounded-[20px] border border-white/10 bg-[#0B0E14] p-3 text-left"
+                      variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
                     >
-                      <span
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-                        style={{ backgroundColor: `${a.color}1f`, color: a.color }}
+                      <button
+                        onClick={() => runQuickAction(a.id)}
+                        className="flex w-full items-center justify-between gap-3 rounded-full bg-lime px-6 py-3 text-left text-on-lime transition active:scale-[0.98]"
                       >
-                        {a.icon}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="font-hud block truncate text-xs font-bold text-white">{a.label}</span>
-                        <span className="block truncate text-[10px] text-slate-400">{a.sub}</span>
-                      </span>
-                    </motion.button>
+                        <span className="min-w-0">
+                          <span className="block truncate text-[15px] font-bold leading-5">{a.label}</span>
+                          <span className="block truncate text-[12px] font-medium leading-4 opacity-70">{a.sub}</span>
+                        </span>
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-on-lime text-lime">
+                          <ArrowRight weight="bold" className="h-4 w-4" />
+                        </span>
+                      </button>
+                    </motion.div>
                   ))}
+                  <div className="grid grid-cols-2 gap-3">
+                    {QUICK_ACTIONS.filter((a) => a.id !== 'today').map((a) => (
+                      <motion.button
+                        key={a.id}
+                        variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => runQuickAction(a.id)}
+                        className="min-w-0 rounded-[20px] bg-tile p-4 text-left"
+                      >
+                        <span className="block truncate text-[14px] font-bold leading-5 text-fg">{a.label}</span>
+                        <span className="mt-0.5 block truncate text-[12px] font-medium leading-4 text-mute">{a.sub}</span>
+                      </motion.button>
+                    ))}
+                  </div>
                 </motion.div>
               </BottomSheet>
 
@@ -1280,7 +1210,7 @@ export default function App() {
                       initial="initial"
                       animate="animate"
                       exit="exit"
-                      className="pointer-events-auto absolute inset-0 overflow-hidden bg-[#080A0E] shadow-[-20px_0_40px_rgba(0,0,0,0.6)]"
+                      className="pointer-events-auto absolute inset-0 overflow-hidden bg-ink"
                     >
                       <ViewBoundary resetKey={`${entry.kind}-${i}`}>
                         <Suspense fallback={<ViewLoader />}>{renderOverlay(entry)}</Suspense>
@@ -1299,13 +1229,13 @@ export default function App() {
                 key={toast}
                 role="status"
                 aria-live="polite"
-                initial={{ opacity: 0, y: -20, scale: 0.94 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -16, scale: 0.94 }}
-                transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-                className="pointer-events-none absolute left-3 right-3 top-14 z-[760] flex items-center justify-center"
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
+                className="pointer-events-none absolute left-5 right-5 top-12 z-[760] flex items-center justify-center"
               >
-                <div className="rounded-2xl border border-[#C8FF00]/45 bg-[#121821]/95 px-4 py-2 text-center text-xs font-semibold text-[#C8FF00] shadow-2xl backdrop-blur-md">
+                <div className="rounded-full bg-fg px-4 py-2.5 text-center text-[13px] font-semibold leading-[18px] text-ink">
                   {toast}
                 </div>
               </motion.div>

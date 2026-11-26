@@ -3,6 +3,7 @@ import { Play } from '../DekIcons';
 import { useDekNav } from '../../context/DekNav';
 import { getProgram } from '../../data/workoutsData';
 import { getWorkoutResume } from '../../utils/workoutResume';
+import { ProgressBar } from '../ui/kit';
 
 /** Carte « Continuer la séance » (progression en %), affichée s'il existe une séance interrompue. */
 export function ResumeCard() {
@@ -14,33 +15,26 @@ export function ResumeCard() {
 
   return (
     <motion.button
-      initial={{ opacity: 0, y: 10 }}
+      type="button"
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => nav.startWorkout(program.id)}
-      className="flex w-full items-center gap-3 rounded-[24px] border border-[#C8FF00]/30 bg-[#11151D] p-2.5 text-left"
+      className="flex w-full items-center gap-3 rounded-[24px] bg-card p-3 text-left"
     >
-      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl">
+      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[18px]">
         <img src={program.image} alt="" className="h-full w-full object-cover" style={{ objectPosition: program.imagePosition }} />
-        <div className="absolute inset-0 bg-black/30" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="font-hud text-[9px] font-bold tracking-wider text-[#C8FF00]">CONTINUER LA SÉANCE</div>
-        <div className="font-hud truncate text-[13px] font-bold text-white">{program.title}</div>
-        <div className="mt-1 flex items-center gap-2">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
-            <motion.div
-              className="h-full rounded-full bg-[#C8FF00]"
-              initial={{ width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={{ duration: 0.8 }}
-            />
-          </div>
-          <span className="font-hud text-[11px] font-bold text-white">{pct} %</span>
+        <div className="text-[12px] font-semibold text-lime">Continuer la séance</div>
+        <div className="truncate text-[15px] font-bold leading-5 text-fg">{program.title}</div>
+        <div className="mt-2 flex items-center gap-2">
+          <ProgressBar value={pct} className="flex-1" />
+          <span className="num text-[12px] font-bold text-fg">{pct} %</span>
         </div>
       </div>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#C8FF00] text-black">
-        <Play weight="duotone" className="ml-0.5 h-4 w-4" />
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime">
+        <Play className="ml-0.5 h-5 w-5" />
       </span>
     </motion.button>
   );

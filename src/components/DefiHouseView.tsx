@@ -3,20 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 // quand l'athlète active la caméra, pas au démarrage de l'app.
 import type { PoseLandmarker } from '@mediapipe/tasks-vision';
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  ArrowsClockwise,
-  Camera,
-  CameraSlash,
-  Fire,
-  Lightning,
-  Play,
-  PlayCircle,
-  ShieldWarning,
-  Timer,
-  Trophy,
-  UsersThree,
-  X,
-} from './DekIcons';
+import { Check, CameraSlash, PlayCircle, X } from './DekIcons';
+import { Button, ChipTabs, IconButton } from './ui/kit';
 import type {
   HouseExercise,
   HouseGameMode,
@@ -276,11 +264,11 @@ export function DefiHouseView({
     setCombo((c) => {
       const next = c + 1;
       if (mode === 'equipe_4v4') {
-        spawnPopup(`+${step} SQUAD`, 'opp');
+        spawnPopup(`+${step} Squad`, 'opp');
       } else if (mode === 'survie_maison') {
-        spawnPopup(`SURVIE +4.5s`, 'opp');
+        spawnPopup(`Survie +4.5s`, 'opp');
       } else if (mode === 'first_to_20') {
-        spawnPopup(`+${step} REP`, 'opp');
+        spawnPopup(`+${step} rep`, 'opp');
       } else {
         spawnPopup(next >= 3 ? `-5 HP • x${next}` : '-5 HP', 'opp');
       }
@@ -536,11 +524,9 @@ export function DefiHouseView({
             const lm = result.landmarks?.[0];
             if (lm && lm.length >= 29) {
               ctx.save();
-              ctx.strokeStyle = '#A855F7';
+              ctx.strokeStyle = '#C8FF00';
               ctx.lineWidth = 4;
               ctx.lineCap = 'round';
-              ctx.shadowColor = '#00E5FF';
-              ctx.shadowBlur = 10;
               for (const [i, j] of POSE_CONNECTIONS) {
                 const a = lm[i];
                 const b = lm[j];
@@ -558,7 +544,7 @@ export function DefiHouseView({
                 ctx.arc(p.x * canvas.width, p.y * canvas.height, 4.5, 0, Math.PI * 2);
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fill();
-                ctx.strokeStyle = '#A855F7';
+                ctx.strokeStyle = '#C8FF00';
                 ctx.lineWidth = 2;
                 ctx.stroke();
               }
@@ -691,421 +677,329 @@ export function DefiHouseView({
   const activeEx = EXERCISES.find((e) => e.id === exercise) ?? EXERCISES[0];
   const activeMode = HOUSE_MODES.find((m) => m.id === gameMode) ?? HOUSE_MODES[0];
   const staminaPct = Math.round((staminaMs / SURVIVAL_MAX_MS) * 100);
+  const fighting = matchState === 'fighting';
+
+  // Deux lignes HUD (adversaire / toi) selon le mode actif
+  const oppName = gameMode === 'equipe_4v4' ? 'Iron Crew (4)' : opponent.name;
+  const hud: {
+    opp: { sub: string; value: string; pct: number; trail?: number };
+    me: { name: string; sub: string; value: string; pct: number; danger?: boolean };
+  } =
+    gameMode === 'ko_60s'
+      ? {
+          opp: { sub: `${oppReps} reps adv.`, value: `${oppHp}%`, pct: oppHp, trail: oppTrailHp },
+          me: { name: 'Toi', sub: 'Ta vie', value: `${myHp}%`, pct: myHp },
+        }
+      : gameMode === 'first_to_20'
+        ? {
+            opp: {
+              sub: `${oppReps} reps adv.`,
+              value: `${oppReps}/${FIRST_TO_TARGET}`,
+              pct: Math.min(100, (oppReps / FIRST_TO_TARGET) * 100),
+            },
+            me: {
+              name: 'Toi',
+              sub: `${myReps} reps`,
+              value: `${myReps}/${FIRST_TO_TARGET}`,
+              pct: Math.min(100, (myReps / FIRST_TO_TARGET) * 100),
+            },
+          }
+        : gameMode === 'survie_maison'
+          ? {
+              opp: { sub: `${oppReps} reps adv.`, value: `${oppHp}%`, pct: oppHp, trail: oppTrailHp },
+              me: {
+                name: 'Jauge Survie',
+                sub: 'Une rep avant 0 s',
+                value: `${(staminaMs / 1000).toFixed(1)}s`,
+                pct: staminaPct,
+                danger: staminaPct < 35,
+              },
+            }
+          : {
+              opp: {
+                sub: `${oppSquadReps}/${SQUAD_TARGET_REPS} reps équipe`,
+                value: `${oppSquadReps}/${SQUAD_TARGET_REPS}`,
+                pct: Math.min(100, (oppSquadReps / SQUAD_TARGET_REPS) * 100),
+              },
+              me: {
+                name: 'DEK Squad',
+                sub: `${mySquadReps}/${SQUAD_TARGET_REPS} reps équipe`,
+                value: `${mySquadReps}/${SQUAD_TARGET_REPS}`,
+                pct: Math.min(100, (mySquadReps / SQUAD_TARGET_REPS) * 100),
+              },
+            };
 
   return (
-    <div className="space-y-2.5 pb-2">
-      {/* Sélecteur de Mode de combat (4 modes) */}
-      <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-[#11151D] p-1">
-        {HOUSE_MODES.map((m) => {
-          const active = gameMode === m.id;
-          return (
-            <button
-              key={m.id}
-              disabled={matchState === 'fighting'}
-              onClick={() => setGameMode(m.id)}
-              className={`font-hud relative rounded-xl px-1 py-1.5 text-[10px] font-bold transition ${
-                active ? 'text-black' : 'text-slate-300'
-              }`}
-            >
-              {active && (
-                <motion.div
-                  layoutId="houseModePill"
-                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                  className="absolute inset-0 rounded-xl bg-[#C8FF00]"
-                />
-              )}
-              <span className="relative z-10 block truncate">{m.label}</span>
-            </button>
-          );
-        })}
+    <div className="space-y-4 pb-2">
+      {/* Sélecteur de mode de combat (4 modes) */}
+      <div className={fighting ? 'pointer-events-none opacity-50' : ''}>
+        <ChipTabs
+          items={HOUSE_MODES.map((m) => ({ id: m.id, label: m.label }))}
+          value={gameMode}
+          onChange={(id) => {
+            if (!fighting) setGameMode(id);
+          }}
+          layoutId="houseModePill"
+        />
       </div>
 
       {/* Pilules des 6 exercices + bouton Démo */}
-      <div className="flex items-center gap-1.5">
-        <div className="flex flex-1 gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-[#11151D] p-1">
+      <div className="flex items-center gap-2">
+        <div className="no-scrollbar flex flex-1 gap-2 overflow-x-auto">
           {EXERCISES.map((ex) => {
             const active = exercise === ex.id;
             return (
               <button
                 key={ex.id}
-                disabled={matchState === 'fighting'}
+                disabled={fighting}
                 onClick={() => setExercise(ex.id)}
-                className={`font-hud relative shrink-0 rounded-xl px-2.5 py-1.5 text-[11px] font-bold transition ${
-                  active ? 'text-black' : 'text-slate-300'
+                className={`h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
+                  active ? 'bg-fg text-ink' : 'bg-tile text-mute'
                 }`}
               >
-                {active && (
-                  <motion.div
-                    layoutId="houseExercisePill"
-                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                    className="absolute inset-0 rounded-xl bg-[#00E5FF]"
-                  />
-                )}
-                <span className="relative z-10">{ex.label}</span>
+                {ex.label}
               </button>
             );
           })}
         </div>
-
         <button
           onClick={() => setShowDemo((v) => !v)}
-          className={`font-hud flex shrink-0 items-center gap-1 rounded-2xl border px-3 py-2 text-[11px] font-bold transition ${
-            showDemo
-              ? 'border-[#C8FF00] bg-[#C8FF00] text-black'
-              : 'border-white/15 bg-[#11151D] text-[#C8FF00]'
+          className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors ${
+            showDemo ? 'bg-lime text-on-lime' : 'bg-tile text-fg'
           }`}
         >
-          <PlayCircle weight="duotone" className="h-4 w-4" /> Démo
+          <PlayCircle className="h-4 w-4" /> Démo
         </button>
       </div>
 
-      {/* Arène Caméra Plein Cadre */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/15 bg-[#07090D] shadow-2xl">
-        <div className="relative flex h-[392px] w-full flex-col justify-between bg-black">
-          {!cameraActive && (
-            <>
-              <img
-                src="/images/banner-house.jpg"
-                alt="Studio Défi House"
-                className="absolute inset-0 h-full w-full object-cover opacity-65"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#080A0E] via-[#080A0E]/55 to-[#080A0E]/85" />
-            </>
-          )}
+      {/* Scène caméra : grande carte média */}
+      <div className="relative flex h-[440px] w-full flex-col justify-between overflow-hidden rounded-[28px] bg-card">
+        {!cameraActive && (
+          <>
+            <img
+              src="/images/banner-house.jpg"
+              alt="Studio Défi House"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/60" />
+          </>
+        )}
 
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            className={`absolute inset-0 h-full w-full scale-x-[-1] object-cover ${
-              cameraActive ? 'block' : 'hidden'
-            }`}
-          />
-          <canvas
-            ref={canvasRef}
-            className={`pointer-events-none absolute inset-0 h-full w-full scale-x-[-1] ${
-              cameraActive ? 'block' : 'hidden'
-            }`}
-          />
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          className={`absolute inset-0 h-full w-full scale-x-[-1] object-cover ${
+            cameraActive ? 'block' : 'hidden'
+          }`}
+        />
+        <canvas
+          ref={canvasRef}
+          className={`pointer-events-none absolute inset-0 h-full w-full scale-x-[-1] ${
+            cameraActive ? 'block' : 'hidden'
+          }`}
+        />
+        {cameraActive && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-linear-to-b from-black/60 to-transparent" />
+        )}
 
-          {/* Overlay Haut : HUD adapté au mode actif */}
-          <div className="relative z-20 p-3.5">
-            <div className="flex items-center justify-between gap-2">
+        {/* HUD haut : adversaire puis toi */}
+        <div className="relative z-20 space-y-3 p-4 pr-8">
+          <div className="flex items-center gap-3">
+            <UserAvatar avatar={oppAvatar} size="xs" />
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <UserAvatar avatar={oppAvatar} size="xs" />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-hud text-xs font-bold text-white">
-                      {gameMode === 'equipe_4v4' ? 'Iron Crew (4)' : opponent.name}
-                    </span>
-                    <span
-                      className="rounded-md px-1.5 py-0.5 text-[9px] font-bold"
-                      style={{
-                        backgroundColor: `${TIER_COLORS[userCategory]}22`,
-                        color: TIER_COLORS[userCategory],
-                      }}
-                    >
-                      {userCategory}
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-slate-300">
-                    {gameMode === 'equipe_4v4'
-                      ? `${oppSquadReps}/${SQUAD_TARGET_REPS} reps équipe`
-                      : `${oppReps} reps adv.`}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-hud rounded-lg bg-black/70 px-2 py-0.5 text-xs font-bold text-white backdrop-blur">
-                  {timeLeft}s
+                <span className="truncate text-[13px] font-bold leading-4 text-white">{oppName}</span>
+                <span
+                  className="rounded-full px-2 py-px text-[11px] font-semibold"
+                  style={{
+                    backgroundColor: `${TIER_COLORS[userCategory]}22`,
+                    color: TIER_COLORS[userCategory],
+                  }}
+                >
+                  {userCategory}
                 </span>
-                <UserAvatar avatar={userAvatar} size="xs" />
               </div>
+              <HudBar value={hud.opp.pct} trail={hud.opp.trail} tone="bg-white" />
             </div>
-
-            {/* Jauges selon le mode */}
-            {gameMode === 'ko_60s' && (
-              <>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/15">
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full bg-amber-200/75 transition-all duration-500"
-                      style={{ width: `${oppTrailHp}%` }}
-                    />
-                    <div
-                      className="relative h-full rounded-full bg-gradient-to-r from-[#FF2E54] to-[#FB7185] transition-all duration-150"
-                      style={{ width: `${oppHp}%` }}
-                    />
-                  </div>
-                  <span className="font-hud text-[11px] font-bold text-white">{oppHp}%</span>
-                </div>
-                <div className="mt-1 text-[10px] text-slate-300">
-                  Ta vie : <strong className="text-[#C8FF00]">{myHp}%</strong>
-                </div>
-              </>
-            )}
-
-            {gameMode === 'first_to_20' && (
-              <div className="mt-2 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-8 text-[9px] font-bold text-[#C8FF00]">TOI</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/15">
-                    <div
-                      className="h-full rounded-full bg-[#C8FF00] transition-all"
-                      style={{ width: `${Math.min(100, (myReps / FIRST_TO_TARGET) * 100)}%` }}
-                    />
-                  </div>
-                  <span className="font-hud text-[10px] font-bold text-[#C8FF00]">
-                    {myReps}/{FIRST_TO_TARGET}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-8 text-[9px] font-bold text-[#FF2E54]">ADV</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/15">
-                    <div
-                      className="h-full rounded-full bg-[#FF2E54] transition-all"
-                      style={{ width: `${Math.min(100, (oppReps / FIRST_TO_TARGET) * 100)}%` }}
-                    />
-                  </div>
-                  <span className="font-hud text-[10px] font-bold text-[#FF2E54]">
-                    {oppReps}/{FIRST_TO_TARGET}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {gameMode === 'survie_maison' && (
-              <div className="mt-2">
-                <div className="mb-1 flex items-center justify-between text-[10px]">
-                  <span className="flex items-center gap-1 font-bold text-amber-300">
-                    <Timer weight="duotone" className="h-3.5 w-3.5" /> Jauge Survie (rep avant 0s)
-                  </span>
-                  <span className="font-hud font-bold text-white">
-                    {(staminaMs / 1000).toFixed(1)}s
-                  </span>
-                </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-white/15">
-                  <div
-                    className={`h-full rounded-full transition-all duration-100 ${
-                      staminaPct < 35 ? 'bg-[#FF2E54]' : 'bg-gradient-to-r from-[#FF8A00] to-[#C8FF00]'
-                    }`}
-                    style={{ width: `${staminaPct}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {gameMode === 'equipe_4v4' && (
-              <div className="mt-2 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-[9px] font-bold text-[#C8FF00]">
-                    <UsersThree weight="duotone" className="h-3 w-3" /> DEK
-                  </span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/15">
-                    <div
-                      className="h-full rounded-full bg-[#C8FF00] transition-all"
-                      style={{
-                        width: `${Math.min(100, (mySquadReps / SQUAD_TARGET_REPS) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="font-hud text-[10px] font-bold text-[#C8FF00]">
-                    {mySquadReps}/{SQUAD_TARGET_REPS}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-[#FF2E54]">IRON</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/15">
-                    <div
-                      className="h-full rounded-full bg-[#FF2E54] transition-all"
-                      style={{
-                        width: `${Math.min(100, (oppSquadReps / SQUAD_TARGET_REPS) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="font-hud text-[10px] font-bold text-[#FF2E54]">
-                    {oppSquadReps}/{SQUAD_TARGET_REPS}
-                  </span>
-                </div>
-              </div>
-            )}
+            <span className="num w-14 shrink-0 text-right text-[13px] font-bold text-white">{hud.opp.value}</span>
           </div>
-
-          {/* Centre : Démo GIF HD OU Bouton Caméra IA */}
-          {showDemo ? (
-            <div className="relative z-30 mx-3 my-auto">
-              <div className="relative">
-                <button
-                  onClick={() => setShowDemo(false)}
-                  className="absolute right-2 top-2 z-20 rounded-full bg-black/75 p-1 text-slate-300"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-                <ExerciseDemoCanvas exercise={exercise} />
+          <div className="flex items-center gap-3">
+            <UserAvatar avatar={userAvatar} size="xs" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-2">
+                <span className="truncate text-[13px] font-bold leading-4 text-white">{hud.me.name}</span>
+                <span className="truncate text-[11px] font-medium text-white/70">{hud.me.sub}</span>
               </div>
+              <HudBar value={hud.me.pct} tone={hud.me.danger ? 'bg-danger' : 'bg-lime'} />
             </div>
-          ) : !cameraActive ? (
-            <div className="relative z-10 mx-auto flex max-w-xs flex-col items-center px-4 text-center">
-              <span className="font-hud mb-1 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-0.5 text-[10px] font-bold text-[#C8FF00] backdrop-blur">
-                <Fire weight="duotone" className="h-3 w-3" /> {activeMode.label} • +{activeMode.xpReward} XP
-              </span>
-              <p className="font-hud text-base font-bold text-white drop-shadow">
-                {activeEx.label.toUpperCase()} • ARÈNE IA
-              </p>
-              <p className="mt-0.5 text-[11px] text-slate-200 drop-shadow">{activeMode.shortDesc}</p>
-              <p className="mt-0.5 text-[10px] text-slate-300">{activeEx.tip}</p>
-              <button
-                onClick={() => void startCameraAI()}
-                className="font-hud mt-3 flex items-center gap-1.5 rounded-full border border-[#A855F7]/60 bg-black/70 px-4 py-2 text-[11px] font-bold text-white backdrop-blur"
-              >
-                <Camera weight="duotone" className="h-4 w-4 text-[#C8FF00]" /> Activer Caméra IA
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={stopCameraAI}
-              className="absolute right-12 top-28 z-20 rounded-full bg-black/65 p-1.5 text-[#FF2E54]"
-              title="Couper caméra"
-            >
-              <CameraSlash weight="duotone" className="h-4 w-4" />
-            </button>
-          )}
+            <span className="num w-14 shrink-0 text-right text-[13px] font-bold text-lime">{hud.me.value}</span>
+          </div>
+        </div>
 
-          {/* Jauge verticale DEPTH à droite */}
-          <div className="pointer-events-none absolute bottom-20 right-3 top-28 z-20 flex flex-col items-center gap-1">
-            <span className="font-hud text-[8px] font-bold tracking-widest text-slate-300">
-              DEPTH
+        {/* Centre : démo GIF OU présentation + bouton caméra */}
+        {showDemo ? (
+          <div className="relative z-30 mx-4 my-auto">
+            <div className="relative">
+              <div className="absolute right-2 top-2 z-20">
+                <IconButton label="Fermer la démo" variant="glass" size={32} onClick={() => setShowDemo(false)}>
+                  <X className="h-4 w-4" />
+                </IconButton>
+              </div>
+              <ExerciseDemoCanvas exercise={exercise} />
+            </div>
+          </div>
+        ) : !cameraActive ? (
+          <div className="relative z-10 mx-auto flex max-w-xs flex-col items-center px-4 text-center">
+            <span className="rounded-full bg-black/50 px-3 py-1 text-[12px] font-semibold text-lime">
+              {activeMode.label} • +{activeMode.xpReward} XP
             </span>
-            <div className="relative w-2 flex-1 overflow-hidden rounded-full bg-white/15 backdrop-blur">
-              <motion.div
-                animate={{ top: `${Math.min(88, Math.max(4, depthPct))}%` }}
-                transition={{ duration: 0.14 }}
-                className="absolute inset-x-0 h-2.5 rounded-full bg-white shadow-[0_0_8px_#C8FF00]"
-              />
+            <p className="mt-2 text-[20px] font-bold leading-6 text-white">{activeEx.label} • Arène IA</p>
+            <p className="mt-1 text-[13px] font-medium text-white/80">{activeMode.shortDesc}</p>
+            <p className="mt-0.5 text-[12px] font-medium text-white/60">{activeEx.tip}</p>
+            <div className="mt-3">
+              <Button variant="secondary" size="md" onClick={() => void startCameraAI()}>
+                Activer la caméra
+              </Button>
             </div>
           </div>
-
-          {/* Popups flottants */}
-          <AnimatePresence>
-            {popups.map((p) => (
-              <motion.div
-                key={p.id}
-                initial={{ opacity: 0, y: 8, scale: 0.85 }}
-                animate={{ opacity: 1, y: -26, scale: 1.05 }}
-                exit={{ opacity: 0, y: -44 }}
-                className={`font-hud pointer-events-none absolute top-28 z-30 rounded-lg px-2.5 py-0.5 text-xs font-black ${
-                  p.target === 'opp'
-                    ? 'right-12 bg-[#C8FF00] text-black'
-                    : 'left-4 bg-[#FF2E54] text-white'
-                }`}
-              >
-                {p.text}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {/* Bas de l'arène */}
-          <div className="relative z-20 bg-gradient-to-t from-black/95 via-black/65 to-transparent px-4 pb-3.5 pt-5 text-center">
-            {combo >= 2 && matchState === 'fighting' && (
-              <span className="font-hud mb-1 inline-block rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-black text-black">
-                COMBO x{combo}
-              </span>
-            )}
-            <div className="font-hud text-4xl font-bold leading-none text-white">
-              {myReps}{' '}
-              <span className="text-base font-medium text-slate-300">
-                {exercise === 'gainage' ? 'sec' : 'reps'}
-              </span>
-            </div>
-            <div className="mx-auto mt-2 flex w-full max-w-xs items-center justify-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[11px] font-medium text-slate-200 backdrop-blur">
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  cameraActive ? 'bg-[#C8FF00]' : 'bg-[#00E5FF]'
-                }`}
-              />
-              <span className="truncate">
-                {cameraActive ? liveCue : `${aiStatus} • ${liveCue}`}
-              </span>
-            </div>
+        ) : (
+          <div className="absolute right-4 top-28 z-20">
+            <IconButton label="Couper la caméra" variant="glass" size={36} onClick={stopCameraAI}>
+              <CameraSlash className="h-[18px] w-[18px] text-danger" />
+            </IconButton>
           </div>
+        )}
 
-          {/* Overlay Victoire / Défaite */}
-          <AnimatePresence>
-            {(matchState === 'win' || matchState === 'lose') && (
-              <motion.div
-                initial={{ opacity: 0, scale: 1.08 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90 p-5 text-center backdrop-blur-xs"
-              >
-                {matchState === 'win' ? (
-                  <>
-                    <Trophy weight="duotone" className="h-12 w-12 text-[#C8FF00]" />
-                    <h3 className="font-hud mt-2 text-2xl font-bold text-[#C8FF00]">
-                      VICTOIRE • {activeMode.label.toUpperCase()}
-                    </h3>
-                    <p className="mt-1 text-xs text-white">
-                      {endReason || `${myReps} ${activeEx.label}`} •{' '}
-                      <strong className="text-[#C8FF00]">+{activeMode.xpReward} XP</strong>
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <ShieldWarning weight="duotone" className="h-12 w-12 text-[#FF2E54]" />
-                    <h3 className="font-hud mt-2 text-2xl font-bold text-[#FF2E54]">DÉFAITE</h3>
-                    <p className="mt-1 text-xs text-slate-300">
-                      {endReason || `${opponent.name} gagne (${oppReps} vs ${myReps})`}
-                    </p>
-                  </>
-                )}
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  onClick={startDuel}
-                  className="font-hud mt-4 flex items-center gap-2 rounded-full bg-[#C8FF00] px-6 py-2.5 text-xs font-bold text-black"
-                >
-                  <ArrowsClockwise weight="duotone" className="h-4 w-4" /> Revanche immédiate
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* Jauge DEPTH verticale, fine */}
+        <div className="pointer-events-none absolute bottom-40 right-3 top-32 z-20 flex flex-col items-center gap-1.5">
+          <span className="text-[11px] font-medium text-white/70">Depth</span>
+          <div className="relative w-1 flex-1 rounded-full bg-white/20">
+            <motion.div
+              animate={{ top: `${Math.min(88, Math.max(4, depthPct))}%` }}
+              transition={{ duration: 0.14 }}
+              className="absolute -inset-x-0.5 h-2.5 rounded-full bg-white"
+            />
+          </div>
         </div>
 
-        {/* Bouton d'action au pouce */}
-        <div className="border-t border-white/10 bg-[#11151D] p-3">
-          {matchState === 'idle' ? (
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={startDuel}
-              className="font-hud flex w-full items-center justify-center gap-2 rounded-full bg-[#C8FF00] py-3.5 text-xs font-bold text-black"
+        {/* Popups flottants */}
+        <AnimatePresence>
+          {popups.map((p) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 8, scale: 0.9 }}
+              animate={{ opacity: 1, y: -26, scale: 1 }}
+              exit={{ opacity: 0, y: -44 }}
+              className={`pointer-events-none absolute top-32 z-30 rounded-full px-3 py-1 text-[13px] font-bold ${
+                p.target === 'opp' ? 'right-12 bg-lime text-on-lime' : 'left-4 bg-danger text-white'
+              }`}
             >
-              <Play weight="duotone" className="h-4 w-4" /> Lancer • {activeMode.label}
-            </motion.button>
-          ) : matchState === 'fighting' ? (
-            <div className="flex gap-2">
-              <motion.button
-                whileTap={{ scale: 0.93 }}
-                onClick={registerMyRep}
-                className="animate-pulse-volt font-hud flex flex-1 items-center justify-center gap-2 rounded-full bg-[#C8FF00] py-3.5 text-xs font-bold text-black"
-              >
-                <Lightning weight="duotone" className="h-4 w-4" />{' '}
-                {exercise === 'gainage'
-                  ? '+2s GAINAGE'
-                  : `+1 REP (${activeEx.label.toUpperCase()})`}
-              </motion.button>
-              <button
-                onClick={() => setMatchState('idle')}
-                className="rounded-full border border-white/15 bg-white/5 px-4 py-3 text-xs font-bold text-slate-300"
-              >
-                Stop
-              </button>
-            </div>
-          ) : (
-            <div className="text-center text-[11px] text-slate-400">
-              Duel ({activeMode.label}) enregistré sur ta Carte Athlète.
-            </div>
-          )}
+              {p.text}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {/* Bas de la scène : compteur de reps géant */}
+        <div className="relative z-20 bg-linear-to-t from-black/85 via-black/45 to-transparent px-4 pb-4 pt-10 text-center">
+          <div className="mb-1 flex items-center justify-center gap-2">
+            <span className="num rounded-full bg-black/50 px-3 py-0.5 text-[13px] font-semibold text-white">
+              {timeLeft}s
+            </span>
+            {combo >= 2 && fighting && (
+              <span className="rounded-full bg-fg px-3 py-0.5 text-[13px] font-bold text-ink">Combo x{combo}</span>
+            )}
+          </div>
+          <div className="num text-[88px] font-extrabold leading-none text-lime">
+            {myReps}
+            <span className="ml-2 text-[16px] font-semibold text-white/70">
+              {exercise === 'gainage' ? 'sec' : 'reps'}
+            </span>
+          </div>
+          <div className="mx-auto mt-3 flex w-full max-w-xs items-center justify-center rounded-full bg-black/55 px-4 py-1.5 text-[12px] font-medium text-white/90">
+            <span className="truncate">{cameraActive ? liveCue : `${aiStatus} • ${liveCue}`}</span>
+          </div>
         </div>
+
+        {/* Victoire / Défaite */}
+        <AnimatePresence>
+          {(matchState === 'win' || matchState === 'lose') && (
+            <motion.div
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 p-5"
+            >
+              {matchState === 'win' ? (
+                <div className="w-full rounded-[28px] bg-lime p-6 text-center text-on-lime">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-ink text-lime">
+                    <Check weight="bold" className="h-8 w-8" />
+                  </div>
+                  <h3 className="mt-3 text-[22px] font-extrabold leading-7">Victoire • {activeMode.label}</h3>
+                  <p className="mt-1 text-[13px] font-medium">
+                    {endReason || `${myReps} ${activeEx.label}`} •{' '}
+                    <strong className="font-bold">+{activeMode.xpReward} XP</strong>
+                  </p>
+                  <div className="mt-4">
+                    <Button variant="secondary" fullWidth onClick={startDuel}>
+                      Revanche immédiate
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full rounded-[28px] bg-card p-6 text-center">
+                  <h3 className="text-[22px] font-extrabold leading-7 text-danger">Défaite</h3>
+                  <p className="mt-1 text-[13px] font-medium text-mute">
+                    {endReason || `${opponent.name} gagne (${oppReps} vs ${myReps})`}
+                  </p>
+                  <div className="mt-4">
+                    <Button fullWidth onClick={startDuel}>
+                      Revanche immédiate
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* Actions au pouce */}
+      {matchState === 'idle' ? (
+        <Button fullWidth onClick={startDuel}>
+          Lancer • {activeMode.label}
+        </Button>
+      ) : fighting ? (
+        <div className="flex gap-3">
+          <Button className="flex-1" onClick={registerMyRep}>
+            {exercise === 'gainage' ? '+2s gainage' : `+1 rep (${activeEx.label})`}
+          </Button>
+          <Button variant="secondary" onClick={() => setMatchState('idle')}>
+            Stop
+          </Button>
+        </div>
+      ) : (
+        <p className="text-center text-[13px] font-medium text-mute">
+          Duel ({activeMode.label}) enregistré sur ta Carte Athlète.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Jauge HUD fine, avec traînée optionnelle pour les PV adverses. */
+function HudBar({ value, trail, tone }: { value: number; trail?: number; tone: string }) {
+  return (
+    <div className="relative mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+      {trail !== undefined && (
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-white/40 transition-all duration-500"
+          style={{ width: `${trail}%` }}
+        />
+      )}
+      <div
+        className={`absolute inset-y-0 left-0 rounded-full transition-all duration-150 ${tone}`}
+        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+      />
     </div>
   );
 }

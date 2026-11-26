@@ -191,7 +191,7 @@ export interface CoachProfile {
   bio?: string;
   experienceYears?: number;
   completedSessions?: number;
-  /** Répartition des notes [5★, 4★, 3★, 2★, 1★] */
+  /** Répartition des notes [5 étoiles, 4 étoiles, 3 étoiles, 2 étoiles, 1 étoile] */
   ratingBreakdown?: [number, number, number, number, number];
   reviews?: CoachReview[];
 }

@@ -1,9 +1,7 @@
 import { useId } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { RANK_STYLES } from './rankStyles';
 
-// Insignes de rang de saison (style écusson militaire / esport) dessinés en SVG.
-
+// Insignes de rang de saison : écusson sobre dessiné en SVG (aucun halo, aucune animation).
 
 
 const SHIELD = 'M32 4 54 12v18c0 14-9.5 24.5-22 30C19.5 54.5 10 44 10 30V12L32 4Z';
@@ -33,7 +31,7 @@ function StarShape({ cx, cy, r, color }: { cx: number; cy: number; r: number; co
 export function RankEmblem({
   rank,
   size = 36,
-  animated = true,
+  animated: _animated = true,
   className = '',
 }: {
   rank: string;
@@ -42,30 +40,23 @@ export function RankEmblem({
   className?: string;
 }) {
   const uid = useId().replace(/:/g, '');
-  const reduce = useReducedMotion();
   const style = RANK_STYLES[rank] ?? RANK_STYLES.Recrue;
-  const { color, glow, level } = style;
-  const play = animated && !reduce;
+  const { color, level } = style;
 
   return (
-    <motion.svg
+    <svg
       viewBox="0 0 64 64"
       width={size}
       height={size}
       className={className}
       role="img"
       aria-label={`Rang ${rank}`}
-      animate={play && level >= 4 ? { filter: [`drop-shadow(0 0 2px ${glow}66)`, `drop-shadow(0 0 7px ${glow}aa)`, `drop-shadow(0 0 2px ${glow}66)`] } : undefined}
-      transition={{ duration: 2.4, repeat: Infinity }}
     >
       <defs>
         <linearGradient id={`g-${uid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={color} stopOpacity={0.38} />
-          <stop offset="1" stopColor="#080A0E" stopOpacity={0.95} />
+          <stop offset="1" stopColor="#0E0F12" stopOpacity={0.95} />
         </linearGradient>
-        <clipPath id={`c-${uid}`}>
-          <path d={SHIELD} />
-        </clipPath>
       </defs>
 
       {/* Ailes (Élite & Légende) */}
@@ -109,22 +100,6 @@ export function RankEmblem({
         </>
       )}
 
-      {/* Reflet qui balaie l'écusson */}
-      {play && (
-        <g clipPath={`url(#c-${uid})`}>
-          <motion.rect
-            y={-10}
-            width={10}
-            height={90}
-            fill="white"
-            opacity={0.35}
-            initial={{ x: -20 }}
-            animate={{ x: [-20, 80] }}
-            transition={{ duration: 1.3, repeat: Infinity, repeatDelay: 3.5, ease: 'easeInOut' }}
-            style={{ skewX: -20 }}
-          />
-        </g>
-      )}
-    </motion.svg>
+    </svg>
   );
 }

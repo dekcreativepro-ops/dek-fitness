@@ -56,14 +56,7 @@ export function UserAvatar({
 
   return (
     <div
-      className={`relative shrink-0 overflow-hidden rounded-2xl bg-[#0B0E14] ${SIZE_CLASSES[size]} ${className}`}
-      style={
-        ring
-          ? {
-              boxShadow: `0 0 0 2px ${avatar.auraColor}, 0 0 12px ${avatar.auraColor}45`,
-            }
-          : undefined
-      }
+      className={`relative shrink-0 overflow-hidden rounded-full bg-tile ${ring ? 'ring-1 ring-white/10' : ''} ${SIZE_CLASSES[size]} ${className}`}
     >
       {src ? (
         <img
@@ -74,7 +67,7 @@ export function UserAvatar({
           className="h-full w-full object-cover"
         />
       ) : (
-        <div className="h-full w-full animate-pulse" style={{ backgroundColor: `#${avatar.bgColor.replace('#', '')}` }} />
+        <div className="h-full w-full" style={{ backgroundColor: `#${avatar.bgColor.replace('#', '')}` }} />
       )}
     </div>
   );

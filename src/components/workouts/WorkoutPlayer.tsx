@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CaretLeft, Clock, Fire, Pause, Play, SkipBackward, SkipForward, X } from '../DekIcons';
+import { CaretLeft, CaretRight, Check, Pause, Play, X } from '../DekIcons';
 import {
   EXERCISES,
   expandProgram,
@@ -10,9 +10,9 @@ import {
 } from '../../data/workoutsData';
 import { playGo, playHit, playTick, playVictory, speak, stopSpeaking } from '../../utils/soundFx';
 import { clearWorkoutResume, getWorkoutResume, saveWorkoutResume } from '../../utils/workoutResume';
-import { BoltPulse, CheckDraw, ConfettiBurst } from '../ui/AnimatedIcons';
+import { CheckDraw, ConfettiBurst } from '../ui/AnimatedIcons';
 import { useWakeLock } from '../ui/hooks';
-import { CountUp, TimerRing } from '../ui/kit';
+import { CountUp, IconButton, ProgressBar, TimerRing } from '../ui/kit';
 
 type Phase = 'ready' | 'work' | 'rest' | 'done';
 
@@ -200,44 +200,23 @@ export function WorkoutPlayer({
   const progressPct = phase === 'done' ? 100 : Math.round((doneSteps.size / seq.length) * 100);
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-[#080A0E] text-white">
+    <div className="relative flex h-full flex-col overflow-hidden bg-ink text-fg">
       {/* Barre supérieure */}
       {phase !== 'done' && phase !== 'ready' && (
-        <div className="safe-top shrink-0 px-3.5 pt-3">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setConfirmExit(true)}
-              aria-label="Quitter la séance"
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/8 text-white active:scale-90"
-            >
+        <div className="safe-top shrink-0 px-5 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <IconButton label="Quitter la séance" onClick={() => setConfirmExit(true)}>
               <X className="h-5 w-5" />
-            </button>
-            <div className="text-center">
-              <div className="font-hud text-[10px] font-bold tracking-[0.2em] text-slate-400">
-                {phase === 'rest' ? 'RÉCUPÉRATION' : `EXERCICE ${idx + 1}/${seq.length}`}
+            </IconButton>
+            <div className="min-w-0 text-center">
+              <div className="text-[13px] font-medium text-mute">
+                {phase === 'rest' ? 'Récupération' : `Exercice ${idx + 1}/${seq.length}`}
               </div>
-              <div className="font-hud text-xs font-bold text-white">{program.title}</div>
+              <div className="truncate text-[15px] font-bold text-fg">{program.title}</div>
             </div>
-            <button
-              onClick={() => setPaused((p) => !p)}
-              aria-label={paused ? 'Reprendre' : 'Pause'}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/8 text-white active:scale-90"
-            >
-              {paused ? <Play weight="duotone" className="h-5 w-5" /> : <Pause weight="duotone" className="h-5 w-5" />}
-            </button>
-          </div>
-          {/* Progression segmentée */}
-          <div className="mt-3 flex gap-1">
-            {seq.map((_, i) => (
-              <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
-                <motion.div
-                  className="h-full rounded-full bg-[#C8FF00]"
-                  initial={false}
-                  animate={{ width: doneSteps.has(i) ? '100%' : i === idx && phase === 'work' ? '45%' : '0%' }}
-                  transition={{ duration: 0.35 }}
-                />
-              </div>
-            ))}
+            <IconButton label={paused ? 'Reprendre' : 'Pause'} onClick={() => setPaused((p) => !p)}>
+              {paused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
+            </IconButton>
           </div>
         </div>
       )}
@@ -249,54 +228,48 @@ export function WorkoutPlayer({
             key="ready"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            className="relative flex flex-1 flex-col items-center justify-center bg-[#C8FF00] px-6 text-center text-black"
+            exit={{ opacity: 0 }}
+            className="relative flex flex-1 flex-col items-center justify-center bg-lime px-6 text-center text-on-lime"
           >
             <button
+              type="button"
               onClick={handleExit}
               aria-label="Annuler"
-              className="absolute left-3.5 top-3.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-black/10"
+              className="absolute left-5 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-on-lime/10 transition active:scale-90"
             >
-              <CaretLeft weight="bold" className="h-5 w-5" />
+              <CaretLeft className="h-5 w-5" />
             </button>
-            <motion.p
-              initial={{ y: 12, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="font-hud text-sm font-bold tracking-[0.3em]"
-            >
-              PRÉPARE-TOI
+            <motion.p initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[34px] font-extrabold leading-[38px] tracking-tight">
+              Prépare-toi
             </motion.p>
-            <div className="relative mt-4 flex h-44 w-44 items-center justify-center">
-              <motion.span
-                className="absolute inset-0 rounded-full border-[6px] border-black/15"
-                animate={{ scale: [1, 1.12, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              />
+            <div className="relative mt-2 flex h-48 items-center justify-center">
               <AnimatePresence mode="popLayout">
                 <motion.span
                   key={remaining}
-                  initial={{ scale: 1.8, opacity: 0 }}
+                  initial={{ scale: 1.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.4, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 420, damping: 20 }}
-                  className="font-hud text-8xl font-bold"
+                  exit={{ scale: 0.6, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="num text-[160px] font-extrabold leading-none"
                 >
                   {remaining}
                 </motion.span>
               </AnimatePresence>
             </div>
-            <div className="mt-5 text-xs font-semibold text-black/70">
-              {resume ? `Reprise • exercice ${startIdx + 1}/${seq.length}` : 'Premier exercice'}
+            <div className="text-[13px] font-semibold text-on-lime/70">
+              {resume ? `Reprise · exercice ${startIdx + 1}/${seq.length}` : 'Premier exercice'}
             </div>
-            <div className="font-hud text-lg font-bold">{EXERCISES[seq[startIdx].exerciseId].name}</div>
+            <div className="text-[20px] font-bold">{EXERCISES[seq[startIdx].exerciseId].name}</div>
             <button
+              type="button"
               onClick={() => goWork(startIdx)}
-              className="font-hud mt-6 rounded-full bg-black px-6 py-3 text-xs font-bold text-[#C8FF00]"
+              className="mt-6 h-[52px] rounded-full bg-on-lime px-8 text-[15px] font-bold text-lime transition active:scale-95"
             >
               Je suis prêt !
             </button>
             {resume && (
               <button
+                type="button"
                 onClick={() => {
                   clearWorkoutResume();
                   setResume(null);
@@ -304,7 +277,7 @@ export function WorkoutPlayer({
                   setDoneSteps(new Set());
                   setRem(READY_SEC);
                 }}
-                className="mt-3 text-[11px] font-semibold text-black/60 underline"
+                className="mt-3 text-[13px] font-semibold text-on-lime/70 underline"
               >
                 Recommencer depuis le début
               </button>
@@ -316,102 +289,91 @@ export function WorkoutPlayer({
         {phase === 'work' && (
           <motion.div
             key={`work-${idx}`}
-            initial={{ opacity: 0, x: 40 }}
+            initial={{ opacity: 0, x: 32 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
+            exit={{ opacity: 0, x: -32 }}
             transition={{ type: 'spring', stiffness: 360, damping: 34 }}
-            className="flex min-h-0 flex-1 flex-col px-3.5 pb-3 pt-3"
+            className="flex min-h-0 flex-1 flex-col px-5 pb-4 pt-4"
           >
-            {/* Démo */}
-            <div className="relative min-h-0 flex-1 overflow-hidden rounded-[30px] bg-white">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_60%,#ffffff_0%,#e9ffe0_70%,#d6f5c4_100%)]" />
+            {/* Média + énorme chiffre */}
+            <div className="relative min-h-0 flex-1 overflow-hidden rounded-[28px] bg-white">
               <img
                 src={`/demos/${exercise.demo}.gif`}
                 alt={exercise.name}
-                className="relative h-full w-full object-contain p-3 mix-blend-multiply"
+                className="relative h-full w-full object-contain p-4 mix-blend-multiply"
               />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4 pt-10">
-                <div className="font-hud text-lg font-bold text-white">{exercise.name}</div>
-                <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-200">{exercise.cue}</p>
-              </div>
-              {/* Grand compteur façon référence (« 10 ») */}
-              {step.mode === 'reps' && (
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-5 pb-4 pt-16">
                 <motion.div
-                  initial={{ scale: 0.6, opacity: 0 }}
+                  key={`${idx}-${step.mode === 'reps' ? step.target : remaining}`}
+                  initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 18, delay: 0.1 }}
-                  className="font-hud absolute right-4 top-3 text-right leading-none"
+                  transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                  className="num text-[96px] font-extrabold leading-[0.9] text-lime"
                 >
-                  <span className="text-7xl font-bold text-[#080A0E]">×{step.target}</span>
-                  <div className="text-[10px] font-bold tracking-widest text-black/60">RÉPÉTITIONS</div>
+                  {step.mode === 'reps' ? step.target : remaining}
+                  <span className="ml-2 text-[16px] font-bold text-white/80">{step.mode === 'reps' ? 'reps' : 'secondes'}</span>
                 </motion.div>
-              )}
+                <div className="mt-2 text-[20px] font-bold leading-6 text-white">{exercise.name}</div>
+                <p className="mt-0.5 line-clamp-2 text-[13px] text-white/75">{exercise.cue}</p>
+              </div>
               {paused && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                  <span className="font-hud text-2xl font-bold tracking-widest text-white">EN PAUSE</span>
+                <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                  <span className="text-[26px] font-extrabold text-white">En pause</span>
                 </div>
               )}
             </div>
 
-            {step.mode === 'time' && (
-              <div className="mt-3 flex items-center justify-center">
-                <TimerRing total={step.target} remaining={remaining} size={132} stroke={10}>
-                  <span className="font-hud dek-neon-text text-4xl font-bold text-white">{remaining}</span>
-                  <span className="text-[10px] font-semibold text-slate-400">secondes</span>
-                </TimerRing>
-              </div>
-            )}
-
             {nextExercise && (
-              <div className="mt-2.5 flex items-center gap-2 rounded-2xl bg-white/5 px-3 py-2 text-[11px] text-slate-300">
-                <span className="font-hud text-[10px] font-bold text-slate-500">À SUIVRE</span>
-                <span className="truncate font-semibold text-white">{nextExercise.name}</span>
-                <span className="ml-auto shrink-0 text-[#C8FF00]">
+              <div className="mt-3 flex items-center gap-2 rounded-[20px] bg-card px-4 py-2.5 text-[13px]">
+                <span className="font-semibold text-mute">À suivre</span>
+                <span className="truncate font-bold text-fg">{nextExercise.name}</span>
+                <span className="num ml-auto shrink-0 font-semibold text-lime">
                   {nextStep.mode === 'reps' ? `${nextStep.target} reps` : `${nextStep.target} s`}
                 </span>
               </div>
             )}
 
-            {/* Barre de contrôle au pouce : progression + Préc. | action | Suiv. */}
-            <div className="mt-3 rounded-[26px] border border-white/10 bg-[#11151D] px-4 pb-3 pt-2.5">
-              <div className="flex items-center justify-between text-[10px] font-semibold">
-                <span className="text-[#C8FF00]">{progressPct} % terminé</span>
-                <span className="font-hud text-slate-400">
-                  {formatDuration(elapsed)} / ~{program.durationMin}:00
+            {/* Progression + commandes */}
+            <div className="mt-3">
+              <ProgressBar value={progressPct} knob />
+              <div className="mt-2 flex items-center justify-between text-[13px] font-medium">
+                <span className="num text-fg">{progressPct} % terminé</span>
+                <span className="num text-mute">
+                  {formatDuration(elapsed)} / {program.durationMin}:00
                 </span>
               </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
-                <motion.div className="h-full rounded-full bg-[#C8FF00]" animate={{ width: `${progressPct}%` }} />
-              </div>
-              <div className="mt-2.5 flex items-center justify-between">
+              <div className="mt-3 flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={goPrevious}
                   disabled={idx === 0}
                   aria-label="Exercice précédent"
-                  className="flex w-16 flex-col items-center gap-0.5 text-[10px] font-semibold text-slate-300 disabled:opacity-30"
+                  className="flex h-[52px] flex-1 items-center justify-center gap-1 rounded-full bg-tile text-[15px] font-bold text-fg transition active:scale-95 disabled:opacity-40"
                 >
-                  <SkipBackward weight="duotone" className="h-5 w-5" /> Préc.
+                  <CaretLeft className="h-4 w-4" /> Précédent
                 </button>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
+                  type="button"
                   onClick={step.mode === 'reps' ? () => completeCurrent(true) : () => setPaused((p) => !p)}
                   aria-label={step.mode === 'reps' ? 'Exercice terminé' : paused ? 'Reprendre' : 'Pause'}
-                  className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#C8FF00] text-black shadow-[0_10px_30px_-8px_#C8FF00]"
+                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime"
                 >
                   {step.mode === 'reps' ? (
-                    <span className="font-hud text-[11px] font-black leading-tight">FAIT<br />✓</span>
+                    <Check weight="bold" className="h-7 w-7" />
                   ) : paused ? (
-                    <Play weight="duotone" className="ml-0.5 h-7 w-7" />
+                    <Play className="ml-0.5 h-7 w-7" />
                   ) : (
-                    <Pause weight="duotone" className="h-7 w-7" />
+                    <Pause className="h-7 w-7" />
                   )}
                 </motion.button>
                 <button
+                  type="button"
                   onClick={() => completeCurrent(false)}
                   aria-label="Passer l'exercice"
-                  className="flex w-16 flex-col items-center gap-0.5 text-[10px] font-semibold text-slate-300"
+                  className="flex h-[52px] flex-1 items-center justify-center gap-1 rounded-full bg-lime text-[15px] font-bold text-on-lime transition active:scale-95"
                 >
-                  <SkipForward weight="duotone" className="h-5 w-5" /> Suiv.
+                  Suivant <CaretRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -422,45 +384,47 @@ export function WorkoutPlayer({
         {phase === 'rest' && (
           <motion.div
             key={`rest-${idx}`}
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-1 flex-col items-center px-4 pb-4 pt-6"
+            className="flex flex-1 flex-col items-center px-5 pb-5 pt-6"
           >
-            <span className="font-hud text-xs font-bold tracking-[0.35em] text-[#00E5FF]">REPOS</span>
+            <span className="text-[20px] font-bold text-fg">Repos</span>
             <div className="mt-4">
-              <TimerRing total={seq[idx - 1]?.restSec || 30} remaining={remaining} color="#00E5FF" size={200}>
-                <span className="font-hud text-6xl font-bold text-white">{remaining}</span>
-                <span className="text-[11px] text-slate-400">respire profondément</span>
+              <TimerRing total={seq[idx - 1]?.restSec || 30} remaining={remaining} size={210}>
+                <span className="num text-[64px] font-extrabold leading-none text-fg">{remaining}</span>
+                <span className="mt-1 text-[13px] text-mute">respire profondément</span>
               </TimerRing>
             </div>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-5 flex gap-2">
               <button
+                type="button"
                 onClick={() => setRem(remainingRef.current + 15)}
-                className="font-hud rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white"
+                className="h-11 rounded-full bg-tile px-5 text-[14px] font-bold text-fg transition active:scale-95"
               >
                 +15 s
               </button>
               <button
+                type="button"
                 onClick={() => goWork(idx)}
-                className="font-hud flex items-center gap-1 rounded-full bg-[#00E5FF] px-4 py-2 text-xs font-bold text-black"
+                className="flex h-11 items-center gap-1 rounded-full bg-lime px-5 text-[14px] font-bold text-on-lime transition active:scale-95"
               >
-                Passer <SkipForward weight="duotone" className="h-3.5 w-3.5" />
+                Passer <CaretRight className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="mt-auto w-full rounded-[24px] border border-white/10 bg-[#11151D] p-3">
-              <div className="font-hud mb-2 text-[10px] font-bold tracking-widest text-slate-400">À SUIVRE</div>
+            <div className="mt-auto w-full rounded-[24px] bg-card p-3">
+              <div className="mb-2 px-1 text-[13px] font-semibold text-mute">À suivre</div>
               <div className="flex items-center gap-3">
-                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-white">
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[18px] bg-white">
                   <img src={`/demos/${exercise.demo}.gif`} alt="" className="h-full w-full object-contain" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-hud truncate text-sm font-bold text-white">{exercise.name}</div>
-                  <div className="text-xs font-semibold text-[#C8FF00]">
+                  <div className="truncate text-[15px] font-bold text-fg">{exercise.name}</div>
+                  <div className="text-[13px] font-semibold text-lime">
                     {step.mode === 'reps' ? `${step.target} répétitions` : `${step.target} secondes`}
                   </div>
-                  <div className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">{exercise.cue}</div>
+                  <div className="line-clamp-1 text-[12px] text-mute">{exercise.cue}</div>
                 </div>
               </div>
             </div>
@@ -469,50 +433,42 @@ export function WorkoutPlayer({
 
         {/* ============ FÉLICITATIONS ============ */}
         {phase === 'done' && result && (
-          <motion.div
-            key="done"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="relative flex flex-1 flex-col items-center justify-center bg-[radial-gradient(circle_at_50%_30%,#1a2410_0%,#080A0E_60%)] px-5"
-          >
+          <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative flex flex-1 flex-col items-center justify-center px-5">
             <motion.div
-              initial={{ y: 60, scale: 0.9, opacity: 0 }}
-              animate={{ y: 0, scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-              className="relative w-full rounded-[34px] bg-[#C8FF00] p-5 text-center text-black shadow-[0_30px_80px_-20px_#C8FF00]"
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+              className="relative w-full rounded-[32px] bg-lime p-6 text-center text-on-lime"
             >
-              <ConfettiBurst />
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-black/10 ring-8 ring-black/5">
-                <CheckDraw className="h-14 w-14" color="#080A0E" />
+              <ConfettiBurst colors={['#0E0F12', '#FFFFFF', '#A1A1AA', '#24252A']} />
+              <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-on-lime">
+                <CheckDraw className="h-14 w-14" color="#C8FF00" />
               </div>
-              <h2 className="font-hud mt-3 text-2xl font-bold">Bravo !</h2>
-              <p className="text-xs font-medium text-black/70">« {program.title} » terminée</p>
+              <h2 className="mt-4 text-[26px] font-bold leading-8">Félicitations</h2>
+              <p className="mt-1 text-[14px] font-medium text-on-lime/70">« {program.title} » terminée</p>
 
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                <div className="rounded-2xl bg-black/10 py-2.5">
-                  <Clock weight="duotone" className="mx-auto h-4 w-4" />
-                  <div className="font-hud mt-0.5 text-base font-bold">{formatDuration(result.durationSec)}</div>
-                  <div className="text-[9px] font-semibold text-black/60">Durée</div>
+              <div className="mt-5 grid grid-cols-3 divide-x divide-on-lime/15">
+                <div>
+                  <div className="num text-[22px] font-extrabold">{formatDuration(result.durationSec)}</div>
+                  <div className="text-[12px] font-semibold text-on-lime/70">Durée</div>
                 </div>
-                <div className="rounded-2xl bg-black/10 py-2.5">
-                  <Fire weight="duotone" className="mx-auto h-4 w-4" />
-                  <div className="font-hud mt-0.5 text-base font-bold">
+                <div>
+                  <div className="text-[22px] font-extrabold">
                     <CountUp value={result.kcal} />
                   </div>
-                  <div className="text-[9px] font-semibold text-black/60">kcal</div>
+                  <div className="text-[12px] font-semibold text-on-lime/70">kcal</div>
                 </div>
-                <div className="rounded-2xl bg-black/10 py-2.5">
-                  <BoltPulse className="mx-auto h-4 w-4" color="#080A0E" />
-                  <div className="font-hud mt-0.5 text-base font-bold">
+                <div className="px-1">
+                  <div className="num text-[22px] font-extrabold">
                     {result.xp > 0 ? (
                       <>
                         +<CountUp value={result.xp} />
                       </>
                     ) : (
-                      '✓'
+                      <Check weight="bold" className="mx-auto h-6 w-6" />
                     )}
                   </div>
-                  <div className="text-[9px] font-semibold text-black/60">
+                  <div className="text-[12px] font-semibold leading-4 text-on-lime/70">
                     {result.xp > 0
                       ? 'XP'
                       : result.exercisesDone < Math.ceil(result.totalSteps * MIN_VALIDATED_RATIO)
@@ -521,22 +477,18 @@ export function WorkoutPlayer({
                   </div>
                 </div>
               </div>
-              <p className="mt-3 text-[11px] font-medium text-black/70">
+              <p className="mt-4 text-[13px] font-medium text-on-lime/70">
                 {result.exercisesDone}/{seq.length} exercices validés
-                {result.xp > 0 ? ' • publié sur ton fil DEK' : ` • valide-en ${Math.ceil(seq.length * MIN_VALIDATED_RATIO)} pour l’XP`}
+                {result.xp > 0 ? ' · publié sur ton fil DEK' : ` · valide-en ${Math.ceil(seq.length * MIN_VALIDATED_RATIO)} pour l’XP`}
               </p>
+              <button
+                type="button"
+                onClick={onExit}
+                className="mt-5 h-[52px] w-full rounded-full bg-on-lime text-[15px] font-bold text-fg transition active:scale-[0.97]"
+              >
+                Fermer
+              </button>
             </motion.div>
-
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={onExit}
-              className="font-hud mt-5 w-full rounded-full bg-white py-3.5 text-sm font-bold text-black"
-            >
-              Terminer
-            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -548,7 +500,7 @@ export function WorkoutPlayer({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20 flex items-end bg-black/70 p-3 backdrop-blur-sm"
+            className="absolute inset-0 z-20 flex items-end bg-black/70 p-4"
             onClick={() => setConfirmExit(false)}
           >
             <motion.div
@@ -556,23 +508,25 @@ export function WorkoutPlayer({
               animate={{ y: 0 }}
               exit={{ y: 40 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full rounded-[28px] border border-white/10 bg-[#121722] p-4"
+              className="w-full rounded-[28px] bg-card p-5"
             >
-              <h3 className="font-hud text-base font-bold text-white">Quitter la séance ?</h3>
-              <p className="mt-1 text-xs text-slate-400">
+              <h3 className="text-[18px] font-bold text-fg">Quitter la séance ?</h3>
+              <p className="mt-1 text-[14px] leading-5 text-mute">
                 Tu as validé {doneSteps.size}/{seq.length} exercices ({progressPct}%). Ta progression est
                 gardée 24 h : tu pourras reprendre où tu t’es arrêté.
               </p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
+                  type="button"
                   onClick={() => setConfirmExit(false)}
-                  className="font-hud rounded-full bg-[#C8FF00] py-3 text-xs font-bold text-black"
+                  className="h-[52px] rounded-full bg-lime text-[15px] font-bold text-on-lime transition active:scale-95"
                 >
                   Continuer
                 </button>
                 <button
+                  type="button"
                   onClick={handleExit}
-                  className="font-hud rounded-full border border-[#FF2E54]/50 bg-[#FF2E54]/10 py-3 text-xs font-bold text-[#FF2E54]"
+                  className="h-[52px] rounded-full border border-danger text-[15px] font-bold text-danger transition active:scale-95"
                 >
                   Quitter
                 </button>

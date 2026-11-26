@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, CaretLeft, GenderFemale, GenderMale } from './DekIcons';
+import { GenderFemale, GenderMale } from './DekIcons';
 import type { BodyProfile, Sex } from '../types/dek';
-import { RulerPicker, WheelPicker } from './ui/Pickers';
+import { RulerPicker, StepFooter, WheelPicker } from './ui/Pickers';
 
 // Profil physique en 4 écrans (sexe, âge, poids, taille), inspiré des onboardings fitness :
 // sert à calibrer calories, hydratation et estimation des kcal brûlées.
@@ -37,20 +37,20 @@ export function BodyProfileView({
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-[#080A0E] px-5 pb-6 pt-5">
+    <div className="flex h-full w-full flex-col bg-ink px-5 pb-6 pt-5">
       <div className="flex items-center justify-between">
         <div className="flex flex-1 gap-1">
           {STEPS.map((_, i) => (
-            <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+            <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-rim">
               <motion.div
-                className="h-full rounded-full bg-[#C8FF00]"
+                className="h-full rounded-full bg-lime"
                 animate={{ width: i <= step ? '100%' : '0%' }}
                 transition={{ duration: 0.35 }}
               />
             </div>
           ))}
         </div>
-        <button onClick={onSkip} className="ml-3 text-[11px] font-semibold text-slate-400 hover:text-white">
+        <button onClick={onSkip} className="ml-4 text-[13px] font-semibold text-mute transition active:opacity-70">
           Passer
         </button>
       </div>
@@ -62,11 +62,11 @@ export function BodyProfileView({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -30 }}
           transition={{ type: 'spring', stiffness: 340, damping: 32 }}
-          className="flex flex-1 flex-col"
+          className="flex min-h-0 flex-1 flex-col"
         >
           <div className="mt-8 text-center">
-            <h1 className="font-hud text-2xl font-bold text-white">{STEPS[step].title}</h1>
-            <p className="mt-1 text-xs text-slate-400">{STEPS[step].sub}</p>
+            <h1 className="text-[26px] font-bold leading-8 text-fg">{STEPS[step].title}</h1>
+            <p className="mt-1 text-[14px] font-medium leading-5 text-mute">{STEPS[step].sub}</p>
           </div>
 
           <div className="flex flex-1 flex-col items-center justify-center">
@@ -82,18 +82,16 @@ export function BodyProfileView({
                   return (
                     <motion.button
                       key={id}
-                      whileTap={{ scale: 0.92 }}
+                      type="button"
+                      whileTap={{ scale: 0.94 }}
                       onClick={() => setSex(id)}
                       aria-pressed={active}
-                      animate={{ scale: active ? 1.06 : 1 }}
-                      className={`flex h-32 w-32 flex-col items-center justify-center rounded-full transition-colors ${
-                        active
-                          ? 'bg-[#C8FF00] text-black shadow-[0_0_40px_-6px_#C8FF00]'
-                          : 'bg-[#1A1F2A] text-slate-300'
+                      className={`flex h-36 w-36 flex-col items-center justify-center gap-1 rounded-full transition-colors ${
+                        active ? 'bg-lime text-on-lime' : 'bg-tile text-mute'
                       }`}
                     >
-                      <Icon weight={active ? 'bold' : 'regular'} className="h-11 w-11" />
-                      <span className="font-hud mt-1 text-xs font-bold">{label}</span>
+                      <Icon weight={active ? 'bold' : 'regular'} className="h-14 w-14" />
+                      <span className="text-[14px] font-bold">{label}</span>
                     </motion.button>
                   );
                 })}
@@ -108,9 +106,9 @@ export function BodyProfileView({
             {step === 3 && (
               <div className="w-full">
                 <RulerPicker min={130} max={215} value={height} onChange={setHeight} unit="cm" />
-                <p className="mt-4 text-center text-[11px] text-slate-400">
+                <p className="mt-5 text-center text-[13px] font-medium text-mute">
                   IMC estimé :{' '}
-                  <strong className="text-white">{(weight / (height / 100) ** 2).toFixed(1)}</strong>
+                  <strong className="num font-bold text-fg">{(weight / (height / 100) ** 2).toFixed(1)}</strong>
                 </p>
               </div>
             )}
@@ -118,25 +116,13 @@ export function BodyProfileView({
         </motion.div>
       </AnimatePresence>
 
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => setStep((s) => Math.max(0, s - 1))}
-          disabled={step === 0}
-          aria-label="Étape précédente"
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1A1F2A] text-white transition disabled:opacity-0"
-        >
-          <CaretLeft weight="bold" className="h-5 w-5" />
-        </button>
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={next}
-          disabled={!canNext}
-          className="font-hud flex items-center gap-2 rounded-full bg-[#C8FF00] px-6 py-3.5 text-xs font-bold text-black transition disabled:bg-white/10 disabled:text-slate-500"
-        >
-          {step === STEPS.length - 1 ? 'Valider' : 'Suivant'}
-          <ArrowRight weight="bold" className="h-4 w-4" />
-        </motion.button>
-      </div>
+      <StepFooter
+        showBack={step > 0}
+        onBack={() => setStep((s) => Math.max(0, s - 1))}
+        onNext={next}
+        nextDisabled={!canNext}
+        nextLabel={step === STEPS.length - 1 ? 'Valider' : 'Suivant'}
+      />
     </div>
   );
 }

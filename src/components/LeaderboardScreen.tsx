@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, TrendDown, TrendUp } from './DekIcons';
+import { TrendDown, TrendUp, Trophy } from './DekIcons';
 import type { AvatarPresetId, UserProfile } from '../types/dek';
 import { currentWeekDays, getRankInfo, SEASON_RANKS } from '../utils/progression';
 import { useDekNav } from '../context/DekNav';
-import { TrophyShine } from './ui/AnimatedIcons';
-import { ChipTabs, CountUp, ScreenHeader } from './ui/kit';
+import { Card, ChipTabs, CountUp, IconButton, ProgressBar, ScreenHeader } from './ui/kit';
 import { RankEmblem } from './ui/RankEmblem';
 import { RANK_STYLES } from './ui/rankStyles';
 import { UserAvatar } from './UserAvatar';
@@ -73,18 +72,18 @@ export function LeaderboardScreen({ user, onBack }: { user: UserProfile; onBack:
   const myRank = getRankInfo(user.xp);
 
   return (
-    <div className="no-scrollbar h-full overflow-y-auto bg-[#080A0E] px-3.5 pb-8 pt-3">
+    <div className="no-scrollbar h-full overflow-y-auto bg-ink px-5 pb-8 pt-4">
       <ScreenHeader
-        title="CLASSEMENT"
+        title="Classement"
         onBack={onBack}
         right={
-          <button onClick={nav.openTrophies} aria-label="Voir mes trophées" className="rounded-xl p-1 active:scale-90">
-            <TrophyShine className="h-6 w-6" />
-          </button>
+          <IconButton label="Voir mes trophées" onClick={nav.openTrophies}>
+            <Trophy className="h-5 w-5" />
+          </IconButton>
         }
       />
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <ChipTabs
           items={[
             { id: 'week', label: 'Cette semaine' },
@@ -94,67 +93,51 @@ export function LeaderboardScreen({ user, onBack }: { user: UserProfile; onBack:
           onChange={setPeriod}
           layoutId="ladderPeriodPill"
         />
-        <div className="grid grid-cols-2 gap-1 rounded-2xl bg-[#11151D] p-1">
-          {(['world', 'city'] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setScope(s)}
-              className={`font-hud rounded-xl py-1.5 text-[11px] font-bold transition ${
-                scope === s ? 'bg-white/15 text-white' : 'text-slate-400'
-              }`}
-            >
-              {s === 'world' ? 'Monde DEK' : user.city}
-            </button>
-          ))}
-        </div>
+        <ChipTabs
+          items={[
+            { id: 'world', label: 'Monde DEK' },
+            { id: 'city', label: user.city },
+          ]}
+          value={scope}
+          onChange={setScope}
+          layoutId="ladderScopePill"
+        />
       </div>
 
       {/* Podium */}
-      <div className="relative mt-5 flex items-end justify-center gap-2.5">
+      <div className="mt-6 flex items-end justify-center gap-2">
         {podiumOrder.map((a, col) => {
           const place = ranking.indexOf(a) + 1;
-          const rank = getRankInfo(a.seasonXp).rank;
-          const color = place === 1 ? '#F5C542' : place === 2 ? '#CBD5E1' : '#D97745';
+          const first = place === 1;
           return (
             <motion.div
               key={`${period}-${scope}-${a.id}`}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * col, type: 'spring', stiffness: 260, damping: 24 }}
-              className="flex w-[30%] flex-col items-center"
+              transition={{ delay: 0.08 * col, duration: 0.3, ease: 'easeOut' }}
+              className="flex w-[31%] flex-col items-center"
             >
-              {place === 1 && (
-                <motion.div animate={{ y: [0, -4, 0], rotate: [-4, 4, -4] }} transition={{ duration: 2.4, repeat: Infinity }}>
-                  <Crown weight="duotone" className="mb-1 h-6 w-6 text-[#F5C542]" />
-                </motion.div>
-              )}
-              <div className="relative">
-                <UserAvatar
-                  avatar={{ mode: 'preset', presetId: a.preset, diceStyle: 'lorelei', seed: a.name, bgColor: '0f172a', auraColor: a.isMe ? '#C8FF00' : color }}
-                  size={place === 1 ? 'lg' : 'md'}
-                />
-                <span
-                  className="font-hud absolute -bottom-2 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[10px] font-black text-black"
-                  style={{ backgroundColor: color }}
-                >
-                  {place}
-                </span>
-              </div>
-              <div className={`mt-3 max-w-full truncate text-[11px] font-bold ${a.isMe ? 'text-[#C8FF00]' : 'text-white'}`}>
+              <UserAvatar
+                avatar={{ mode: 'preset', presetId: a.preset, diceStyle: 'lorelei', seed: a.name, bgColor: '0f172a', auraColor: '#C8FF00' }}
+                size={first ? 'xl' : 'lg'}
+                ring={false}
+              />
+              <div className={`mt-2 max-w-full truncate text-[13px] font-bold ${a.isMe ? 'text-lime' : 'text-fg'}`}>
                 {a.isMe ? 'Toi' : a.name}
               </div>
-              <RankEmblem rank={rank} size={22} animated={place === 1} />
               <motion.div
                 initial={{ height: 0 }}
                 animate={{ height: heights[col] }}
-                transition={{ duration: 0.7, delay: 0.2 + col * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                className="mt-1 flex w-full flex-col items-center justify-start rounded-t-2xl pt-2"
-                style={{ background: `linear-gradient(180deg, ${color}55, ${color}0d)`, borderTop: `2px solid ${color}` }}
+                transition={{ duration: 0.5, delay: 0.15 + col * 0.08, ease: 'easeOut' }}
+                className={`mt-2 flex w-full flex-col items-center justify-start overflow-hidden rounded-t-[20px] pt-3 ${
+                  first ? 'bg-lime/15' : 'bg-card'
+                }`}
               >
-                <span className="font-hud text-sm font-bold text-white">
+                <span className={`num text-[28px] font-extrabold leading-none ${first ? 'text-lime' : 'text-fg'}`}>{place}</span>
+                <span className="num mt-1 text-[13px] font-bold text-fg">
                   <CountUp value={scoreOf(a)} />
                 </span>
-                <span className="text-[9px] text-slate-300">XP</span>
+                <span className="text-[11px] font-medium text-mute">XP</span>
               </motion.div>
             </motion.div>
           );
@@ -162,77 +145,68 @@ export function LeaderboardScreen({ user, onBack }: { user: UserProfile; onBack:
       </div>
 
       {/* Échelle */}
-      <div className="mt-1 space-y-1.5 rounded-t-[26px] border border-b-0 border-white/10 bg-[#11151D] p-2.5">
+      <div className="mt-4 space-y-2">
         {rest.map((a, i) => {
           const place = i + 4;
           const rank = getRankInfo(a.seasonXp).rank;
           return (
             <motion.div
               key={`${period}-${scope}-${a.id}`}
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.25 + i * 0.03 }}
-              className={`flex items-center gap-2.5 rounded-2xl px-2.5 py-2 ${
-                a.isMe ? 'border border-[#C8FF00]/50 bg-[#C8FF00]/10' : 'bg-[#0B0E14]'
-              }`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.03, duration: 0.25 }}
+              className={`flex items-center gap-3 rounded-[24px] p-3 ${a.isMe ? 'bg-lime/15' : 'bg-card'}`}
             >
-              <span className="font-hud w-5 text-center text-xs font-bold text-slate-400">{place}</span>
+              <span className="num w-6 text-center text-[16px] font-extrabold text-mute">{place}</span>
               <UserAvatar
                 avatar={{ mode: 'preset', presetId: a.preset, diceStyle: 'lorelei', seed: a.name, bgColor: '0f172a', auraColor: RANK_STYLES[rank]?.color ?? '#94A3B8' }}
-                size="xs"
+                size="md"
+                ring={false}
               />
               <div className="min-w-0 flex-1">
-                <div className={`truncate text-xs font-bold ${a.isMe ? 'text-[#C8FF00]' : 'text-white'}`}>
+                <div className={`truncate text-[15px] font-bold leading-5 ${a.isMe ? 'text-lime' : 'text-fg'}`}>
                   {a.isMe ? `${a.name} (toi)` : a.name}
                 </div>
-                <div className="text-[10px] text-slate-500">{a.city}</div>
+                <div className="truncate text-[12px] font-medium text-mute">{a.city} · {rank}</div>
               </div>
-              <RankEmblem rank={rank} size={20} animated={false} />
               <span
-                className={`flex w-7 items-center justify-end text-[10px] font-bold ${
-                  a.trend > 0 ? 'text-emerald-400' : a.trend < 0 ? 'text-[#FF2E54]' : 'text-slate-500'
+                className={`flex w-8 items-center justify-end gap-0.5 text-[12px] font-bold ${
+                  a.trend > 0 ? 'text-lime' : a.trend < 0 ? 'text-danger' : 'text-faint'
                 }`}
               >
-                {a.trend > 0 ? <TrendUp className="h-3 w-3" /> : a.trend < 0 ? <TrendDown className="h-3 w-3" /> : '–'}
+                {a.trend > 0 ? <TrendUp className="h-3.5 w-3.5" /> : a.trend < 0 ? <TrendDown className="h-3.5 w-3.5" /> : '–'}
                 {a.trend !== 0 && Math.abs(a.trend)}
               </span>
-              <span className="font-hud w-14 text-right text-xs font-bold text-white">{scoreOf(a).toLocaleString('fr-FR')}</span>
+              <span className="num w-14 text-right text-[15px] font-extrabold text-fg">{scoreOf(a).toLocaleString('fr-FR')}</span>
             </motion.div>
           );
         })}
       </div>
 
       {/* Ma carte de rang */}
-      <div className="rounded-b-[26px] border border-t-0 border-white/10 bg-gradient-to-br from-[#171D28] to-[#0B0E14] p-3.5">
-        <div className="flex items-center gap-3">
-          <RankEmblem rank={myRank.rank} size={52} />
+      <Card className="mt-4">
+        <div className="flex items-center gap-4">
+          <RankEmblem rank={myRank.rank} size={52} animated={false} />
           <div className="min-w-0 flex-1">
-            <div className="font-hud text-sm font-bold text-white">
-              #{myIndex + 1} • {myRank.rank}
+            <div className="text-[18px] font-bold leading-6 text-fg">
+              <span className="num">#{myIndex + 1}</span> · {myRank.rank}
             </div>
-            <div className="text-[10px] text-slate-400">
-              {myRank.nextRank ? `${myRank.nextRankXp - user.xp} XP avant ${myRank.nextRank}` : 'Rang maximum atteint 👑'}
-            </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/60">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#00E5FF] to-[#C8FF00]"
-                initial={{ width: 0 }}
-                animate={{ width: `${myRank.pct}%` }}
-                transition={{ duration: 0.9 }}
-              />
+            <div className="text-[13px] font-medium text-mute">
+              {myRank.nextRank ? `${myRank.nextRankXp - user.xp} XP avant ${myRank.nextRank}` : 'Rang maximum atteint'}
             </div>
           </div>
         </div>
-        <div className="no-scrollbar mt-3 flex justify-between gap-1 overflow-x-auto">
+        <ProgressBar value={myRank.pct} knob className="mt-4" />
+        <div className="no-scrollbar mt-4 flex justify-between gap-2 overflow-x-auto">
           {SEASON_RANKS.map((r) => (
             <div key={r.name} className={`flex shrink-0 flex-col items-center ${user.xp >= r.minXp ? '' : 'opacity-35 grayscale'}`}>
               <RankEmblem rank={r.name} size={30} animated={false} />
-              <span className="font-hud mt-0.5 text-[8px] font-bold text-slate-300">{r.name}</span>
-              <span className="text-[8px] text-slate-500">{r.minXp.toLocaleString('fr-FR')}</span>
+              <span className="mt-1 text-[11px] font-semibold text-fg">{r.name}</span>
+              <span className="num text-[11px] text-mute">{r.minXp.toLocaleString('fr-FR')}</span>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

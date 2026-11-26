@@ -1,19 +1,6 @@
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  Bell,
-  Calendar,
-  CheckCircle,
-  Flag,
-  Handshake,
-  MapPin,
-  Plus,
-  QrCode,
-  Sparkle,
-  Users,
-  X,
-} from './DekIcons';
+import { Bell, Calendar, MapPin, Plus, Users } from './DekIcons';
+import { BottomSheet, Button, Card, ChipTabs, ProgressBar } from './ui/kit';
 import { INITIAL_PACTS, INITIAL_RAIDS } from '../data/gamesData';
 import type { FriendPact, WeekendRaid } from '../types/dek';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
@@ -29,7 +16,7 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
   const [pacts, setPacts] = useState<FriendPact[]>(INITIAL_PACTS);
   const [nudgedIds, setNudgedIds] = useState<string[]>([]);
 
-  // Modal nouveau pacte
+  // Feuille nouveau pacte
   const [showNewPact, setShowNewPact] = useState(false);
   const [pactTitle, setPactTitle] = useState('');
   const [pactTarget, setPactTarget] = useState(3);
@@ -114,203 +101,68 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
     setShowNewPact(false);
   };
 
-  const overlayRoot =
-    typeof document !== 'undefined' ? document.getElementById('dek-overlay-root') : null;
-
-  const newPactSheet = (
-    <AnimatePresence>
-      {showNewPact && (
-        <motion.div
-          key="pact-create-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setShowNewPact(false)}
-          className="pointer-events-auto absolute inset-0 flex flex-col justify-end bg-black/70 backdrop-blur-xs"
-        >
-          <motion.form
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={handleCreatePact}
-            className="space-y-3 rounded-t-3xl border-t border-[#C8FF00]/30 bg-[#121722] p-4 pb-6 shadow-2xl"
-          >
-            <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />
-            <div className="flex items-center justify-between">
-              <h3 className="font-hud text-sm font-bold text-[#C8FF00]">
-                CRÉER UN PACTE ENTRE AMIS
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowNewPact(false)}
-                className="rounded-xl bg-white/5 p-1.5 text-slate-400"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <input
-              type="text"
-              required
-              placeholder="Ex : 4 séances cardio ou pompes cette semaine"
-              value={pactTitle}
-              onChange={(e) => setPactTitle(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-[#0B0E14] px-3 py-2.5 text-xs text-white outline-none focus:border-[#C8FF00]"
-            />
-
-            <div>
-              <div className="mb-1.5 text-[11px] text-slate-300">
-                Objectif hebdomadaire par membre :
-              </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {[2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setPactTarget(n)}
-                    className={`font-hud rounded-xl border py-2 text-xs font-bold ${
-                      pactTarget === n
-                        ? 'border-[#C8FF00] bg-[#C8FF00] text-black'
-                        : 'border-white/10 bg-[#0B0E14] text-slate-300'
-                    }`}
-                  >
-                    {n} / sem
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="font-hud w-full rounded-2xl bg-[#C8FF00] py-3 text-xs font-bold text-black"
-            >
-              SCELLER LE PACTE (+50 XP)
-            </button>
-          </motion.form>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-
   return (
-    <div className="space-y-3 pb-2">
-      {/* Header Univers 5 */}
-      <div className="rounded-3xl border border-white/15 bg-[#11151D] p-3.5">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <span className="font-hud inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[9px] font-bold text-amber-300">
-              <Flag weight="duotone" className="h-3 w-3" /> UNIVERS 5 • COMMUNAUTÉ &amp; ENGAGEMENT
+    <div className="space-y-5 pb-2">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[20px] font-bold leading-[26px] text-fg">
+          {subTab === 'raids' ? 'Raids week-end' : 'Pactes amis'}
+        </h2>
+        {subTab === 'pacts' && (
+          <Button size="md" onClick={() => setShowNewPact(true)}>
+            <span className="flex items-center gap-1.5">
+              <Plus weight="bold" className="h-4 w-4" /> Pacte
             </span>
-            <h2 className="font-hud mt-1 text-base font-bold text-white">
-              Raids Week-end &amp; Pactes Amis
-            </h2>
-          </div>
-          {subTab === 'pacts' && (
-            <button
-              onClick={() => setShowNewPact(true)}
-              className="font-hud flex items-center gap-1 rounded-xl bg-[#C8FF00] px-3 py-2 text-[11px] font-bold text-black"
-            >
-              <Plus weight="bold" className="h-3.5 w-3.5" /> Pacte
-            </button>
-          )}
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-[#0B0E14] p-1">
-          {(
-            [
-              { id: 'raids', label: 'Raids Week-end', Icon: Flag },
-              { id: 'pacts', label: 'Pactes Amis', Icon: Handshake },
-            ] as const
-          ).map(({ id, label, Icon }) => {
-            const active = subTab === id;
-            return (
-              <button
-                key={id}
-                onClick={() => setSubTab(id)}
-                className={`font-hud relative flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-bold transition ${
-                  active ? 'text-black' : 'text-slate-300'
-                }`}
-              >
-                {active && (
-                  <motion.div
-                    layoutId="raidsPactsPill"
-                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                    className="absolute inset-0 rounded-xl bg-[#C8FF00]"
-                  />
-                )}
-                <Icon weight="duotone" className="relative z-10 h-3.5 w-3.5" />
-                <span className="relative z-10">{label}</span>
-              </button>
-            );
-          })}
-        </div>
+          </Button>
+        )}
       </div>
+
+      <ChipTabs
+        items={[
+          { id: 'raids', label: 'Raids Week-end' },
+          { id: 'pacts', label: 'Pactes Amis' },
+        ]}
+        value={subTab}
+        onChange={setSubTab}
+        layoutId="raidsPactsPill"
+      />
 
       {/* RAIDS WEEK-END */}
       {subTab === 'raids' && (
-        <div className="space-y-2.5">
+        <div className="space-y-4">
           {raids.map((raid) => (
-            <div
-              key={raid.id}
-              className="rounded-3xl border border-white/10 bg-[#11151D] p-3.5"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#C8FF00]/15 px-2 py-0.5 text-[10px] font-bold text-[#C8FF00]">
-                    <Sparkle weight="duotone" className="h-3 w-3" /> Badge : {raid.badgeName}
-                  </span>
-                  <h3 className="font-hud mt-1.5 text-sm font-bold text-white">{raid.title}</h3>
-                  <p className="text-[11px] text-slate-400">Encadré par {raid.host}</p>
+            <div key={raid.id} className="overflow-hidden rounded-[28px] bg-card">
+              <div className="relative h-36">
+                <img src="/images/banner-house.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <span className="num absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-[13px] font-bold text-white">
+                  <Users className="h-4 w-4" /> {raid.participants}
+                </span>
+                <div className="absolute inset-x-4 bottom-3">
+                  <h3 className="text-[18px] font-bold leading-6 text-white">{raid.title}</h3>
+                  <p className="text-[13px] font-medium text-white/80">Encadré par {raid.host}</p>
                 </div>
-                <span className="font-hud flex items-center gap-1 rounded-xl border border-white/10 bg-[#0B0E14] px-2.5 py-1 text-[11px] font-bold text-[#00E5FF]">
-                  <Users weight="duotone" className="h-3.5 w-3.5" /> {raid.participants}
-                </span>
               </div>
+              <div className="p-4">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] font-medium text-mute">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4" />
+                    {raid.dateLabel}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4" />
+                    {raid.location}
+                  </span>
+                </div>
+                <div className="mt-1 text-[13px] font-medium text-faint">Badge : {raid.badgeName}</div>
 
-              <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-300">
-                <span className="flex items-center gap-1">
-                  <Calendar weight="duotone" className="h-3.5 w-3.5 text-[#C8FF00]" />
-                  {raid.dateLabel}
-                </span>
-                <span className="flex items-center gap-1">
-                  <MapPin weight="duotone" className="h-3.5 w-3.5 text-[#00E5FF]" />
-                  {raid.location}
-                </span>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleToggleRaidJoin(raid.id)}
-                  className={`font-hud rounded-2xl py-2.5 text-[11px] font-bold transition ${
-                    raid.joined
-                      ? 'border border-[#C8FF00]/40 bg-[#C8FF00]/12 text-[#C8FF00]'
-                      : 'border border-white/15 bg-white/5 text-white'
-                  }`}
-                >
-                  {raid.joined ? 'Inscrit ✓' : 'Rejoindre le Raid'}
-                </button>
-
-                <button
-                  disabled={raid.checkedIn}
-                  onClick={() => handleRaidCheckin(raid)}
-                  className={`font-hud flex items-center justify-center gap-1 rounded-2xl py-2.5 text-[11px] font-bold transition ${
-                    raid.checkedIn
-                      ? 'border border-emerald-400/40 bg-emerald-500/15 text-emerald-300'
-                      : 'bg-[#C8FF00] text-black'
-                  }`}
-                >
-                  {raid.checkedIn ? (
-                    <>
-                      <CheckCircle weight="duotone" className="h-3.5 w-3.5" /> Badge débloqué !
-                    </>
-                  ) : (
-                    <>
-                      <QrCode weight="duotone" className="h-3.5 w-3.5" /> Check-in QR (+120 XP)
-                    </>
-                  )}
-                </button>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Button variant="secondary" size="md" onClick={() => handleToggleRaidJoin(raid.id)}>
+                    {raid.joined ? 'Inscrit' : 'Rejoindre le Raid'}
+                  </Button>
+                  <Button size="md" disabled={raid.checkedIn} onClick={() => handleRaidCheckin(raid)}>
+                    {raid.checkedIn ? 'Badge débloqué' : 'Check-in (+120 XP)'}
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
@@ -319,38 +171,20 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
 
       {/* PACTES AMIS */}
       {subTab === 'pacts' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {pacts.map((pact) => {
             const me = pact.members.find((m) => m.isMe);
             const myDone = me?.done ?? 0;
             const myComplete = myDone >= pact.targetPerWeek;
 
             return (
-              <div
-                key={pact.id}
-                className="rounded-3xl border border-white/10 bg-[#11151D] p-3.5"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase text-[#00E5FF]">
-                      Pacte Hebdo • Objectif {pact.targetPerWeek}/sem
-                    </span>
-                    <h3 className="font-hud mt-0.5 text-sm font-bold text-white">{pact.title}</h3>
-                  </div>
-                  <button
-                    disabled={myComplete}
-                    onClick={() => handlePactMyCheckin(pact.id)}
-                    className={`font-hud shrink-0 rounded-full px-3 py-1.5 text-[10px] font-bold ${
-                      myComplete
-                        ? 'bg-emerald-500/20 text-emerald-300'
-                        : 'bg-[#C8FF00] text-black'
-                    }`}
-                  >
-                    {myComplete ? 'Objectif tenu ✓' : 'Valider (+1)'}
-                  </button>
+              <Card key={pact.id}>
+                <div className="text-[12px] font-medium text-mute">
+                  Pacte hebdo · Objectif <span className="num">{pact.targetPerWeek}</span>/sem
                 </div>
+                <h3 className="mt-0.5 text-[16px] font-bold leading-[22px] text-fg">{pact.title}</h3>
 
-                <div className="mt-3 space-y-2">
+                <div className="mt-4 space-y-4">
                   {pact.members.map((m) => {
                     const pct = Math.min(100, Math.round((m.done / pact.targetPerWeek) * 100));
                     const nudgeKey = `${pact.id}:${m.id}`;
@@ -358,53 +192,81 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
                     const lagging = !m.isMe && m.done < pact.targetPerWeek;
 
                     return (
-                      <div key={m.id} className="rounded-2xl bg-[#0B0E14] p-2.5">
-                        <div className="flex items-center justify-between gap-2 text-xs">
-                          <span className="font-semibold text-white">
-                            {m.name} {m.isMe && <span className="text-[#C8FF00]">(Toi)</span>}
+                      <div key={m.id}>
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="truncate text-[14px] font-semibold text-fg">
+                            {m.name} {m.isMe && <span className="text-lime">(Toi)</span>}
                           </span>
                           <div className="flex items-center gap-2">
-                            <span className="font-hud text-[11px] font-bold text-slate-300">
+                            <span className="num text-[13px] font-bold text-mute">
                               {m.done}/{pact.targetPerWeek}
                             </span>
                             {lagging && (
                               <button
                                 onClick={() => handleNudgeFriend(nudgeKey, m.name, pact.title)}
-                                className={`font-hud flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                                  alreadyNudged
-                                    ? 'bg-white/10 text-slate-400'
-                                    : 'bg-amber-400/20 text-amber-300'
+                                className={`flex h-8 items-center gap-1 rounded-full px-3 text-[12px] font-semibold ${
+                                  alreadyNudged ? 'text-faint' : 'text-mute'
                                 }`}
                               >
-                                <Bell weight="duotone" className="h-3 w-3" />
-                                {alreadyNudged ? 'Relancé ✓' : 'Réveiller'}
+                                <Bell className="h-3.5 w-3.5" />
+                                {alreadyNudged ? 'Relancé' : 'Relancer'}
                               </button>
                             )}
                           </div>
                         </div>
-                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              pct >= 100
-                                ? 'bg-emerald-400'
-                                : m.isMe
-                                  ? 'bg-[#C8FF00]'
-                                  : 'bg-[#00E5FF]'
-                            }`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
+                        <ProgressBar value={pct} />
                       </div>
                     );
                   })}
                 </div>
-              </div>
+
+                <Button
+                  className="mt-5"
+                  fullWidth
+                  size="md"
+                  disabled={myComplete}
+                  onClick={() => handlePactMyCheckin(pact.id)}
+                >
+                  {myComplete ? 'Objectif tenu' : 'Valider (+1)'}
+                </Button>
+              </Card>
             );
           })}
         </div>
       )}
 
-      {overlayRoot ? createPortal(newPactSheet, overlayRoot) : newPactSheet}
+      <BottomSheet open={showNewPact} onClose={() => setShowNewPact(false)} title="Créer un pacte entre amis">
+        <form onSubmit={handleCreatePact} className="space-y-4">
+          <input
+            type="text"
+            required
+            placeholder="Ex : 4 séances cardio ou pompes cette semaine"
+            value={pactTitle}
+            onChange={(e) => setPactTitle(e.target.value)}
+            className="h-12 w-full rounded-2xl bg-tile px-4 text-[14px] font-medium text-fg outline-none placeholder:text-faint focus:ring-1 focus:ring-lime"
+          />
+          <div>
+            <div className="mb-2 text-[13px] font-medium text-mute">Objectif hebdomadaire par membre</div>
+            <div className="grid grid-cols-4 gap-2">
+              {[2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPactTarget(n)}
+                  className={`h-10 rounded-full text-[13px] font-semibold ${
+                    pactTarget === n ? 'bg-lime text-on-lime' : 'bg-tile text-mute'
+                  }`}
+                >
+                  <span className="num">{n}</span> / sem
+                </button>
+              ))}
+            </div>
+          </div>
+          <Button type="submit" fullWidth>
+            Sceller le pacte (+50 XP)
+          </Button>
+        </form>
+      </BottomSheet>
     </div>
   );
 }

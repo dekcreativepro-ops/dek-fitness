@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Dumbbell, Sword } from './DekIcons';
 import type { MissionDifficulty, UserAvatarConfig } from '../types/dek';
 import { DefiHouseView } from './DefiHouseView';
 import { GymBuddyView } from './GymBuddyView';
@@ -33,32 +32,38 @@ export function ArenaHubView({
   const [subTab, setSubTab] = useState<'house' | 'gym'>(initialSubTab);
 
   return (
-    <div className="space-y-3">
-      {/* Switcher Arène : Défi House IA vs Gym Buddy */}
-      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-[#11151D] p-1">
+    <div className="space-y-5 pb-2">
+      <header>
+        <h1 className="text-[26px] font-bold leading-8 text-fg">Arène</h1>
+        <p className="text-[13px] font-medium leading-[18px] text-mute">Défis caméra IA et salle</p>
+      </header>
+
+      {/* Segmented : Défi House IA vs Gym Buddy */}
+      <div role="tablist" className="grid grid-cols-2 gap-1 rounded-full bg-card p-1">
         {(
           [
-            { id: 'house', label: 'Défi House IA', Icon: Sword },
-            { id: 'gym', label: 'Gym Buddy (Salle)', Icon: Dumbbell },
+            { id: 'house', label: 'Défi House IA' },
+            { id: 'gym', label: 'Gym Buddy' },
           ] as const
-        ).map(({ id, label, Icon }) => {
+        ).map(({ id, label }) => {
           const active = subTab === id;
           return (
             <button
               key={id}
+              role="tab"
+              aria-selected={active}
               onClick={() => setSubTab(id)}
-              className={`font-hud relative flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-bold transition ${
-                active ? 'text-black' : 'text-slate-300'
+              className={`relative h-10 rounded-full text-[14px] font-semibold transition-colors ${
+                active ? 'text-on-lime' : 'text-mute'
               }`}
             >
               {active && (
                 <motion.div
                   layoutId="arenaSubTabPill"
                   transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                  className="absolute inset-0 rounded-xl bg-[#C8FF00]"
+                  className="absolute inset-0 rounded-full bg-lime"
                 />
               )}
-              <Icon weight="duotone" className="relative z-10 h-4 w-4" />
               <span className="relative z-10">{label}</span>
             </button>
           );

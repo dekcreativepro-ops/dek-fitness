@@ -7,6 +7,7 @@ import { ProfilFeedView } from './ProfilFeedView';
 import { RaidsPactsView } from './RaidsPactsView';
 import { SanteView } from './SanteView';
 import { UserAvatar } from './UserAvatar';
+import { ChipTabs } from './ui/kit';
 
 export type NetworkSubTab = 'sante' | 'raids' | 'coachs' | 'profil';
 
@@ -148,58 +149,41 @@ export function NetworkHubView({
   };
 
   return (
-    <div className="space-y-3 pb-2">
-      {/* Rangée Stories / Athlètes Actifs en direct */}
-      <div className="rounded-2xl border border-white/10 bg-[#11151D] p-2.5">
-        <div className="no-scrollbar flex items-center gap-3 overflow-x-auto px-1">
-          {ACTIVE_STORIES.map((st) => (
+    <div className="space-y-5 pb-2">
+      {/* En-tête de page */}
+      <header>
+        <h1 className="text-[26px] font-bold leading-8 text-fg">Réseau</h1>
+        <p className="text-[14px] font-medium leading-5 text-mute">
+          Ta communauté, tes rendez-vous et tes coachs.
+        </p>
+      </header>
+
+      {/* Stories : avatars ronds, anneau lime si live */}
+      <div className="no-scrollbar -mx-5 flex items-start gap-4 overflow-x-auto px-5">
+        {ACTIVE_STORIES.map((st) => {
+          const live = st.tag === 'LIVE';
+          return (
             <motion.button
               key={st.id}
-              whileTap={{ scale: 0.92 }}
+              whileTap={{ scale: 0.94 }}
               onClick={() => handleStoryTap(st.target)}
-              className="flex shrink-0 flex-col items-center gap-1"
+              title={st.label}
+              aria-label={st.label}
+              className="flex w-14 shrink-0 flex-col items-center gap-1.5"
             >
-              <div className="relative">
-                <UserAvatar avatar={st.avatar} size="md" />
-                <span
-                  className="font-hud absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-px text-[8px] font-black text-black"
-                  style={{ backgroundColor: st.avatar.auraColor }}
-                >
-                  {st.tag}
-                </span>
-              </div>
-              <span className="mt-0.5 max-w-[68px] truncate text-[10px] font-medium text-slate-300">
-                {st.label}
+              <span className={`flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 ${live ? 'border-lime' : 'border-rim'}`}>
+                <UserAvatar avatar={st.avatar} size="lg" ring={false} />
+              </span>
+              <span className="w-full truncate text-center text-[12px] font-medium leading-4 text-mute">
+                {st.label.split(' • ')[0]}
               </span>
             </motion.button>
-          ))}
-        </div>
-      </div>
-
-      {/* Switch pilule 4 sous-onglets */}
-      <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-[#11151D] p-1">
-        {SUB_TABS.map((t) => {
-          const active = subTab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setSubTab(t.id)}
-              className={`font-hud relative rounded-xl px-1 py-2 text-[10px] font-bold transition ${
-                active ? 'text-black' : 'text-slate-300'
-              }`}
-            >
-              {active && (
-                <motion.div
-                  layoutId="networkHubSubTab"
-                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                  className="absolute inset-0 rounded-xl bg-[#C8FF00]"
-                />
-              )}
-              <span className="relative z-10 block truncate">{t.label}</span>
-            </button>
           );
         })}
       </div>
+
+      {/* Segmented en pilules défilantes */}
+      <ChipTabs items={SUB_TABS} value={subTab} onChange={setSubTab} layoutId="networkHubSubTab" />
 
       {subTab === 'sante' && (
         <SanteView

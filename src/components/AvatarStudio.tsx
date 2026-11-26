@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shuffle, Sparkle } from './DekIcons';
+import { Shuffle } from './DekIcons';
 import type { AvatarPresetId, DiceBearStyleId, UserAvatarConfig } from '../types/dek';
 import { UserAvatar } from './UserAvatar';
 
@@ -10,6 +10,7 @@ interface AvatarStudioProps {
   compact?: boolean;
 }
 
+// Les couleurs d'aura / fond sont des DONNÉES de configuration d'avatar (stockées), pas du style d'interface.
 const PRESET_AVATARS: { id: AvatarPresetId; label: string; tag: string; aura: string }[] = [
   { id: 'manga-sprint', label: 'Kuro 5AM', tag: 'Manga', aura: '#C8FF00' },
   { id: 'manga-fighter', label: 'Akira KO', tag: 'Manga', aura: '#00E5FF' },
@@ -50,45 +51,41 @@ export function AvatarStudio({ value, onChange, compact = false }: AvatarStudioP
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#11151D] p-3">
-      {/* Aperçu Avatar + Onglets Manga & Fantaisie / Personnaliser */}
-      <div className="flex items-center gap-3">
+    <div className="rounded-[28px] bg-card p-4">
+      {/* Aperçu + onglets */}
+      <div className="flex items-center gap-4">
         <UserAvatar avatar={value} size={compact ? 'lg' : 'xl'} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1 text-xs font-bold text-white">
-            <Sparkle weight="duotone" className="h-4 w-4 text-[#C8FF00]" />
-            <span>Ton Avatar DEK</span>
-          </div>
-          <p className="mt-0.5 text-[10px] text-slate-400">
+          <div className="text-[16px] font-bold leading-5 text-fg">Ton Avatar DEK</div>
+          <p className="mt-0.5 text-[12px] font-medium leading-4 text-mute">
             Style Manga, Fantaisie ou création sur mesure
           </p>
-
-          <div className="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-[#080A0E] p-1">
-            <button
-              type="button"
-              onClick={() => switchMode('preset')}
-              className={`font-hud relative rounded-lg py-1 text-[10px] font-bold transition ${
-                studioTab === 'preset' ? 'bg-[#C8FF00] text-black' : 'text-slate-300'
-              }`}
-            >
-              Manga & Fantaisie
-            </button>
-            <button
-              type="button"
-              onClick={() => switchMode('custom')}
-              className={`font-hud relative rounded-lg py-1 text-[10px] font-bold transition ${
-                studioTab === 'custom' ? 'bg-[#C8FF00] text-black' : 'text-slate-300'
-              }`}
-            >
-              Personnaliser
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Mode 1 : 4 Avatars illustrés exclusifs */}
+      <div className="mt-4 grid grid-cols-2 gap-1 rounded-full bg-tile p-1">
+        {(
+          [
+            { id: 'preset', label: 'Manga & Fantaisie' },
+            { id: 'custom', label: 'Personnaliser' },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => switchMode(t.id)}
+            className={`h-9 rounded-full text-[13px] font-semibold transition-colors ${
+              studioTab === t.id ? 'bg-lime text-on-lime' : 'text-mute'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Mode 1 : 4 avatars illustrés */}
       {studioTab === 'preset' ? (
-        <div className="mt-3 grid grid-cols-4 gap-2">
+        <div className="mt-4 grid grid-cols-4 gap-2">
           {PRESET_AVATARS.map((item) => {
             const active = value.mode === 'preset' && value.presetId === item.id;
             return (
@@ -104,30 +101,23 @@ export function AvatarStudio({ value, onChange, compact = false }: AvatarStudioP
                     auraColor: item.aura,
                   })
                 }
-                className={`flex flex-col items-center rounded-2xl border p-1.5 transition ${
-                  active
-                    ? 'border-[#C8FF00] bg-[#C8FF00]/12'
-                    : 'border-white/10 bg-[#0B0E14]'
+                className={`flex flex-col items-center rounded-[20px] border p-1.5 transition-colors ${
+                  active ? 'border-lime bg-tile' : 'border-transparent bg-tile'
                 }`}
               >
-                <img
-                  src={`/avatars/${item.id}.jpg`}
-                  alt={item.label}
-                  className="h-12 w-12 rounded-xl object-cover"
-                />
-                <span className="font-hud mt-1 truncate text-[10px] font-bold text-white">
+                <img src={`/avatars/${item.id}.jpg`} alt={item.label} className="h-12 w-12 rounded-2xl object-cover" />
+                <span className={`mt-1 w-full truncate text-center text-[11px] font-semibold ${active ? 'text-fg' : 'text-mute'}`}>
                   {item.label}
                 </span>
-                <span className="text-[8px] text-slate-400">{item.tag}</span>
+                <span className="text-[11px] font-medium text-faint">{item.tag}</span>
               </motion.button>
             );
           })}
         </div>
       ) : (
-        /* Mode 2 : Personnalisation DiceBear */
-        <div className="mt-3 space-y-2.5">
-          {/* Choix du style */}
-          <div className="grid grid-cols-3 gap-1.5">
+        /* Mode 2 : personnalisation DiceBear */
+        <div className="mt-4 space-y-3">
+          <div className="grid grid-cols-3 gap-2">
             {DICE_STYLES.map((st) => {
               const active = value.diceStyle === st.id;
               return (
@@ -135,10 +125,8 @@ export function AvatarStudio({ value, onChange, compact = false }: AvatarStudioP
                   key={st.id}
                   type="button"
                   onClick={() => onChange({ ...value, mode: 'custom', diceStyle: st.id })}
-                  className={`font-hud rounded-xl border py-1.5 text-[10px] font-bold transition ${
-                    active
-                      ? 'border-[#C8FF00] bg-[#C8FF00]/15 text-[#C8FF00]'
-                      : 'border-white/10 bg-[#0B0E14] text-slate-300'
+                  className={`h-9 rounded-full text-[13px] font-semibold transition-colors ${
+                    active ? 'bg-lime text-on-lime' : 'bg-tile text-mute'
                   }`}
                 >
                   {st.label}
@@ -147,34 +135,31 @@ export function AvatarStudio({ value, onChange, compact = false }: AvatarStudioP
             })}
           </div>
 
-          {/* Saisie seed + bouton Aléatoire + 6 visages rapides */}
-          <div className="flex gap-1.5">
+          <div className="flex gap-2">
             <input
               type="text"
               value={value.seed}
               onChange={(e) => onChange({ ...value, mode: 'custom', seed: e.target.value })}
               placeholder="Nom du perso (ex: Naruto)"
-              className="flex-1 rounded-xl border border-white/10 bg-[#080A0E] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#C8FF00]"
+              className="h-10 min-w-0 flex-1 rounded-2xl bg-tile px-3.5 text-[14px] text-fg outline-none transition placeholder:text-faint focus:ring-1 focus:ring-lime"
             />
             <button
               type="button"
               onClick={randomize}
-              className="font-hud flex items-center gap-1 rounded-xl bg-white/10 px-3 py-1.5 text-[10px] font-bold text-[#C8FF00] hover:bg-white/15"
+              className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-tile px-4 text-[13px] font-semibold text-fg transition active:scale-95"
             >
-              <Shuffle weight="duotone" className="h-3.5 w-3.5" /> Aléatoire
+              <Shuffle className="h-4 w-4" /> Aléatoire
             </button>
           </div>
 
-          <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
+          <div className="no-scrollbar flex gap-2 overflow-x-auto">
             {FACE_SEEDS.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => onChange({ ...value, mode: 'custom', seed: s })}
-                className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-medium ${
-                  value.seed === s
-                    ? 'border-[#00E5FF] bg-[#00E5FF]/15 text-[#00E5FF]'
-                    : 'border-white/10 bg-[#080A0E] text-slate-400'
+                className={`h-8 shrink-0 rounded-full px-3.5 text-[13px] font-semibold transition-colors ${
+                  value.seed === s ? 'bg-lime text-on-lime' : 'bg-tile text-mute'
                 }`}
               >
                 {s}
@@ -182,18 +167,16 @@ export function AvatarStudio({ value, onChange, compact = false }: AvatarStudioP
             ))}
           </div>
 
-          {/* Couleur de fond */}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] text-slate-400">Fond :</span>
-            <div className="flex gap-1.5">
+            <span className="text-[13px] font-medium text-mute">Fond</span>
+            <div className="flex gap-2">
               {BG_COLORS.map((hex) => (
                 <button
                   key={hex}
                   type="button"
+                  aria-label={`Fond ${hex}`}
                   onClick={() => onChange({ ...value, mode: 'custom', bgColor: hex })}
-                  className={`h-5 w-5 rounded-full border-2 ${
-                    value.bgColor === hex ? 'border-[#C8FF00]' : 'border-white/20'
-                  }`}
+                  className={`h-6 w-6 rounded-full border-2 ${value.bgColor === hex ? 'border-lime' : 'border-rim'}`}
                   style={{ backgroundColor: `#${hex}` }}
                 />
               ))}
@@ -202,17 +185,18 @@ export function AvatarStudio({ value, onChange, compact = false }: AvatarStudioP
         </div>
       )}
 
-      {/* Choix d'Aura néon (valable pour Preset et Personnalisé) */}
-      <div className="mt-2.5 flex items-center justify-between border-t border-white/5 pt-2">
-        <span className="text-[10px] font-medium text-slate-400">Aura lumineuse :</span>
+      {/* Couleur d'aura (preset et personnalisé) */}
+      <div className="mt-4 flex items-center justify-between border-t border-rim pt-3">
+        <span className="text-[13px] font-medium text-mute">Aura lumineuse</span>
         <div className="flex gap-2">
           {AURA_COLORS.map((aura) => (
             <button
               key={aura}
               type="button"
+              aria-label={`Aura ${aura}`}
               onClick={() => onChange({ ...value, auraColor: aura })}
-              className={`h-5 w-5 rounded-full border-2 transition ${
-                value.auraColor === aura ? 'scale-110 border-white' : 'border-transparent opacity-65'
+              className={`h-6 w-6 rounded-full border-2 transition ${
+                value.auraColor === aura ? 'border-fg' : 'border-transparent opacity-60'
               }`}
               style={{ backgroundColor: aura }}
             />

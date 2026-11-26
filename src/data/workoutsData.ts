@@ -6,9 +6,9 @@ export type WorkoutLevel = 'Débutant' | 'Intermédiaire' | 'Avancé';
 export type WorkoutCategory = 'force' | 'cardio' | 'core' | 'mobilite';
 
 export interface FormTip {
-  /** Erreur fréquente (affichée en rouge ✗) */
+  /** Erreur fréquente (affichée en rouge) */
   bad: string;
-  /** Bonne exécution (affichée en vert ✓) */
+  /** Bonne exécution (affichée en vert) */
   good: string;
 }
 
@@ -59,7 +59,7 @@ export interface WorkoutProgram {
 export interface WorkoutResult {
   durationSec: number;
   kcal: number;
-  /** Exercices réellement validés (« Fait ✓ » ou chrono allé au bout) */
+  /** Exercices réellement validés (« Fait » ou chrono allé au bout) */
   exercisesDone: number;
   totalSteps: number;
 }

@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { ArrowsClockwise, Warning } from './DekIcons';
+import { Button } from './ui/kit';
 
 interface ViewBoundaryProps {
   children: ReactNode;
@@ -40,22 +40,22 @@ export class ViewBoundary extends Component<ViewBoundaryProps, ViewBoundaryState
       this.state.error.message,
     );
     return (
-      <div className="mt-6 rounded-3xl border border-[#FF2E54]/40 bg-[#19080C] p-4 text-center">
-        <Warning weight="duotone" className="mx-auto h-9 w-9 text-[#FF2E54]" />
-        <h3 className="font-hud mt-2 text-sm font-bold text-white">
-          {isChunkError ? 'MODULE NON CHARGÉ' : 'OUPS, UN PROBLÈME'}
+      <div className="mt-6 flex flex-col items-center rounded-[28px] bg-card p-6 text-center">
+        <h3 className="text-[20px] font-bold leading-[26px] text-fg">
+          {isChunkError ? 'Module non chargé' : 'Un problème est survenu'}
         </h3>
-        <p className="mt-1 text-[11px] text-slate-300">
+        <p className="mt-2 text-[14px] font-medium leading-5 text-mute">
           {isChunkError
             ? 'Vérifie ta connexion internet puis réessaie.'
             : 'Cette section a rencontré une erreur. Ta progression est sauvegardée.'}
         </p>
-        <button
+        <Button
+          size="md"
+          className="mt-5"
           onClick={() => (isChunkError ? window.location.reload() : this.setState({ error: null }))}
-          className="font-hud mx-auto mt-3 flex items-center gap-1.5 rounded-full bg-[#C8FF00] px-4 py-2 text-xs font-bold text-black"
         >
-          <ArrowsClockwise weight="duotone" className="h-4 w-4" /> Réessayer
-        </button>
+          Réessayer
+        </Button>
       </div>
     );
   }
