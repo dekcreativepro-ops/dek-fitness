@@ -38,9 +38,9 @@ export function WorkoutCard({
         alt=""
         loading="lazy"
         decoding="async"
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover opacity-25"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/5" />
+      <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
 
       {onToggleSave && (
         <button

@@ -106,8 +106,8 @@ export function HomeView({
           draggable={false}
           className="absolute inset-0 h-full w-full select-none object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-transparent to-transparent" />
         <div className="absolute left-5 top-5">
           <div className="text-[13px] font-medium text-white/80">Rang de saison</div>
           <div className="text-[34px] font-extrabold leading-9 text-white">{rankInfo.rank}</div>
