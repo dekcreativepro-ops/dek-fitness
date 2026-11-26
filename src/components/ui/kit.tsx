@@ -54,7 +54,7 @@ export function BottomSheet({
             }}
             onClick={(e) => e.stopPropagation()}
             style={{ maxHeight }}
-            className="no-scrollbar flex flex-col overflow-hidden rounded-t-[32px] bg-card shadow-2xl"
+            className="no-scrollbar flex flex-col overflow-hidden rounded-t-[32px] glass-strong shadow-2xl"
           >
             <div className="flex shrink-0 cursor-grab flex-col items-center px-5 pb-2 pt-3 active:cursor-grabbing">
               <div className="h-[5px] w-10 rounded-full bg-rim" />
@@ -270,7 +270,7 @@ export function IconButton({
   className?: string;
   disabled?: boolean;
 }) {
-  const tone = variant === 'glass' ? 'bg-black/40 text-white' : variant === 'lime' ? 'bg-lime text-on-lime' : 'bg-tile text-fg';
+  const tone = variant === 'glass' ? 'bg-black/30 text-white backdrop-blur-md' : variant === 'lime' ? 'bg-lime text-on-lime' : 'bg-tile text-fg';
   return (
     <button
       type="button"
@@ -385,8 +385,9 @@ export function Button({
 }
 
 /** Carte principale : `bg-card`, rayon 28, padding 20. */
-export function Card({ children, className = '', onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
-  const cls = `rounded-[28px] bg-card p-5 ${className}`;
+export function Card({ children, className = '', onClick, glass = false }: { children: ReactNode; className?: string; onClick?: () => void; glass?: boolean }) {
+  // `glass` : verre dépoli + reflet, réservé aux cartes importantes
+  const cls = `rounded-[28px] ${glass ? 'glass' : 'bg-card'} p-5 ${className}`;
   return onClick ? (
     <button type="button" onClick={onClick} className={`block w-full text-left transition active:scale-[0.99] ${cls}`}>
       {children}
@@ -448,6 +449,22 @@ export function ListRow({
     </button>
   ) : (
     <div className={cls}>{body}</div>
+  );
+}
+
+/** Pastille d'icône ronde (icône en trait) pour les lignes de liste et les tuiles. */
+export function IconBadge({ children, tone = 'neutral', size = 48 }: { children: ReactNode; tone?: 'neutral' | 'lime' | 'aqua' | 'ember' | 'danger'; size?: number }) {
+  const tones = {
+    neutral: 'bg-white/10 text-fg',
+    lime: 'bg-lime/15 text-lime',
+    aqua: 'bg-aqua/15 text-aqua',
+    ember: 'bg-ember/15 text-ember',
+    danger: 'bg-danger/15 text-danger',
+  } as const;
+  return (
+    <span className={`flex shrink-0 items-center justify-center rounded-full ${tones[tone]}`} style={{ width: size, height: size }}>
+      {children}
+    </span>
   );
 }
 

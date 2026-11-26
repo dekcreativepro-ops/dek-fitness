@@ -4,6 +4,7 @@ import { ArrowLeft, BookmarkSimple, Clock, Fire } from '../DekIcons';
 import { INITIAL_COACHS } from '../../data/mockData';
 import {
   EXERCISES,
+  FORM_COMPARE_DEMOS,
   type ExerciseDef,
   type WorkoutProgram,
   type WorkoutStep,
@@ -12,6 +13,7 @@ import type { MuscleGroup } from '../../types/dek';
 import { MUSCLE_LABELS } from '../../utils/programsAndNutrition';
 import { UserAvatar } from '../UserAvatar';
 import { BottomSheet, Button, Card, CinematicImage, IconButton, ListRow, SectionHeader, StarRow, StatTiles } from '../ui/kit';
+import { FormCompare } from '../ui/FormCompare';
 import { MuscleMap } from '../ui/MuscleMap';
 import { fadeUpItem, staggerContainer } from '../ui/motion';
 
@@ -52,6 +54,7 @@ export function ExerciseSheetContent({ exercise, step }: { exercise: ExerciseDef
 
       <div className="space-y-2">
         <h3 className="text-[16px] font-bold text-fg">Erreurs à éviter</h3>
+        {FORM_COMPARE_DEMOS.includes(exercise.demo) && <FormCompare demo={exercise.demo} />}
         {exercise.tips.map((t, i) => (
           <motion.div
             key={i}

@@ -373,3 +373,6 @@ export function getRecommendedProgram(goal: string | undefined, tierIdx: number)
   if (id === 'hiit-terrain' && tierIdx < 1) id = 'cardio-5am';
   return getProgram(id) ?? WORKOUT_PROGRAMS[0];
 }
+
+/** Exercices disposant d'une démo animée « erreur / bonne forme » (voir ui/FormCompare). */
+export const FORM_COMPARE_DEMOS: DemoExercise[] = ['pompes', 'squats', 'gainage'];

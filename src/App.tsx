@@ -1,13 +1,13 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { BodyProfileView } from './components/BodyProfileView';
-import { ArrowRight, Compass, House, Sword, UsersThree } from './components/DekIcons';
+import { ArrowRight, Compass, House, PaperPlaneRight, Play, SoccerBall, Sword, UsersThree } from './components/DekIcons';
 import { HomeView } from './components/HomeView';
 import type { NetworkSubTab } from './components/NetworkHubView';
 import { OnboardingAuthView } from './components/OnboardingAuthView';
 import { OnboardingIntro } from './components/OnboardingIntro';
 import { PhoneSimulatorFrame } from './components/PhoneSimulatorFrame';
-import { PlusMorph } from './components/ui/AnimatedIcons';
+import { DropWave, DumbbellLift, PlusMorph, TrophyShine } from './components/ui/AnimatedIcons';
 import { BottomSheet, ScreenHeader } from './components/ui/kit';
 import { pushScreen, riseScreen } from './components/ui/motion';
 import { ViewBoundary } from './components/ViewBoundary';
@@ -213,6 +213,46 @@ export default function App() {
     () => ({ ...user, rank: rankInfo.rank, nextRankXp: rankInfo.nextRankXp, streakDays }),
     [user, rankInfo.rank, rankInfo.nextRankXp, streakDays],
   );
+
+  // Fond « verre » dynamique : la lumière suit le doigt, le défilement et l'inclinaison du téléphone
+  useEffect(() => {
+    const root = document.documentElement;
+    let frame = 0;
+    const next = { x: 0, y: 0 };
+    const apply = () => {
+      frame = 0;
+      root.style.setProperty('--dek-px', next.x.toFixed(3));
+      root.style.setProperty('--dek-py', next.y.toFixed(3));
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(apply);
+    };
+    const onPointer = (e: PointerEvent) => {
+      next.x = (e.clientX / window.innerWidth - 0.5) * 2;
+      schedule();
+    };
+    const onScroll = (e: Event) => {
+      const el = e.target as HTMLElement | null;
+      if (el && typeof el.scrollTop === 'number') {
+        next.y = Math.max(-1, Math.min(1, el.scrollTop / 700 - 0.2));
+        schedule();
+      }
+    };
+    const onTilt = (e: DeviceOrientationEvent) => {
+      if (e.gamma == null) return;
+      next.x = Math.max(-1, Math.min(1, e.gamma / 35));
+      schedule();
+    };
+    window.addEventListener('pointermove', onPointer, { passive: true });
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('deviceorientation', onTilt);
+    return () => {
+      window.removeEventListener('pointermove', onPointer);
+      document.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('deviceorientation', onTilt);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setShowSplash(false), 1050);
@@ -901,15 +941,15 @@ export default function App() {
 
   const todayProgram = getRecommendedProgram(user.goals[0], getTierIndex(user.category));
   type QuickId = 'today' | 'library' | 'outdoor' | 'house' | 'water' | 'thursday' | 'ladder' | 'post';
-  const QUICK_ACTIONS: { id: QuickId; label: string; sub: string }[] = [
-    { id: 'today', label: 'Séance du jour', sub: `${todayProgram.durationMin} min • ${todayProgram.level}` },
-    { id: 'library', label: 'Séances guidées', sub: '6 programmes' },
-    { id: 'outdoor', label: 'Mission Outdoor', sub: 'Carte 3D & GPS' },
-    { id: 'house', label: 'Défi House IA', sub: 'Duel caméra' },
-    { id: 'water', label: '+250 ml d’eau', sub: `${user.waterGlasses} verre(s) aujourd’hui` },
-    { id: 'thursday', label: 'Terrain du Jeudi', sub: 'Check-in & live' },
-    { id: 'ladder', label: 'Classement', sub: 'Podium de la semaine' },
-    { id: 'post', label: 'Publier', sub: 'Actu ou défi' },
+  const QUICK_ACTIONS: { id: QuickId; label: string; sub: string; icon: React.ReactNode }[] = [
+    { id: 'today', label: 'Séance du jour', sub: `${todayProgram.durationMin} min • ${todayProgram.level}`, icon: <Play className="h-5 w-5" /> },
+    { id: 'library', label: 'Séances guidées', sub: '6 programmes', icon: <DumbbellLift className="h-5 w-5" /> },
+    { id: 'outdoor', label: 'Mission Outdoor', sub: 'Carte 3D & GPS', icon: <Compass className="h-5 w-5" /> },
+    { id: 'house', label: 'Défi House IA', sub: 'Duel caméra', icon: <Sword className="h-5 w-5" /> },
+    { id: 'water', label: '+250 ml d’eau', sub: `${user.waterGlasses} verre(s) aujourd’hui`, icon: <DropWave className="h-5 w-5" /> },
+    { id: 'thursday', label: 'Terrain du Jeudi', sub: 'Check-in & live', icon: <SoccerBall className="h-5 w-5" /> },
+    { id: 'ladder', label: 'Classement', sub: 'Podium de la semaine', icon: <TrophyShine className="h-5 w-5" /> },
+    { id: 'post', label: 'Publier', sub: 'Actu ou défi', icon: <PaperPlaneRight className="h-5 w-5" /> },
   ];
 
   const runQuickAction = (id: QuickId) => {
@@ -961,7 +1001,12 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <PhoneSimulatorFrame>
-        <div className="relative flex h-full w-full flex-col overflow-hidden bg-ink text-fg">
+        <div className="dek-ambient relative flex h-full w-full flex-col overflow-hidden bg-ink text-fg">
+          <div className="dek-aurora" aria-hidden>
+            <span className="b1"><i /></span>
+            <span className="b2"><i /></span>
+            <span className="b3"><i /></span>
+          </div>
           {/* Splash Screen animé */}
           <AnimatePresence>
             {showSplash && (
@@ -1025,7 +1070,7 @@ export default function App() {
             <DekNavContext.Provider value={navValue}>
               <div id="dek-overlay-root" className="pointer-events-none absolute inset-0 z-[750]" />
 
-              <main className="safe-top relative min-h-0 flex-1 overflow-y-auto no-scrollbar bg-ink px-5 pb-6 pt-4">
+              <main className="safe-top relative min-h-0 flex-1 overflow-y-auto no-scrollbar bg-transparent px-5 pb-6 pt-4">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
@@ -1109,7 +1154,7 @@ export default function App() {
               </main>
 
               {/* Barre du bas : bande card, 4 onglets + bouton « + » central surélevé */}
-              <nav className="safe-bottom relative shrink-0 rounded-t-[28px] bg-card px-3 pb-3 pt-2" aria-label="Navigation principale">
+              <nav className="safe-bottom relative shrink-0 rounded-t-[28px] glass-strong px-3 pb-3 pt-2" aria-label="Navigation principale">
                 <div className="grid grid-cols-5 items-end">
                   {[...NAV_LEFT, null, ...NAV_RIGHT].map((item) => {
                     if (!item) {
@@ -1139,7 +1184,14 @@ export default function App() {
                           active ? 'text-fg' : 'text-faint'
                         }`}
                       >
-                        <Icon className="h-[22px] w-[22px]" />
+                        <motion.span
+                          key={`${item.id}-${active}`}
+                          initial={active ? { y: 6, scale: 0.8 } : false}
+                          animate={{ y: 0, scale: 1 }}
+                          transition={{ type: 'spring', stiffness: 520, damping: 16 }}
+                        >
+                          <Icon className="h-[22px] w-[22px]" />
+                        </motion.span>
                         <span className="text-[11px] font-semibold leading-none">{item.label}</span>
                         <span className="flex h-1 items-center justify-center">
                           {active && (
@@ -1192,6 +1244,7 @@ export default function App() {
                         onClick={() => runQuickAction(a.id)}
                         className="min-w-0 rounded-[20px] bg-tile p-4 text-left"
                       >
+                        <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-lime">{a.icon}</span>
                         <span className="block truncate text-[14px] font-bold leading-5 text-fg">{a.label}</span>
                         <span className="mt-0.5 block truncate text-[12px] font-medium leading-4 text-mute">{a.sub}</span>
                       </motion.button>
@@ -1235,7 +1288,7 @@ export default function App() {
                 transition={{ duration: 0.22, ease: 'easeOut' }}
                 className="pointer-events-none absolute left-5 right-5 top-12 z-[760] flex items-center justify-center"
               >
-                <div className="rounded-full bg-fg px-4 py-2.5 text-center text-[13px] font-semibold leading-[18px] text-ink">
+                <div className="glass-strong rounded-full px-4 py-2.5 text-center text-[13px] font-semibold leading-[18px] text-fg">
                   {toast}
                 </div>
               </motion.div>

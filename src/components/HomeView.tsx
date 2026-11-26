@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Play, SlidersHorizontal, Trophy } from './DekIcons';
+import { BowlFood, Compass, Dumbbell, Flag, NavigationArrow, Play, SlidersHorizontal, SoccerBall, Sword, Trophy } from './DekIcons';
 import { useDekNav } from '../context/DekNav';
 import { INITIAL_COACHS } from '../data/mockData';
 import { getProgram, getRecommendedProgram, WORKOUT_PROGRAMS } from '../data/workoutsData';
@@ -7,7 +7,9 @@ import type { TabId, UserProfile } from '../types/dek';
 import { getTierIndex } from '../utils/categorization';
 import { getAdventurePlan, getNutritionPlan } from '../utils/programsAndNutrition';
 import { currentWeekDays, dayKey, getRankInfo } from '../utils/progression';
-import { ActivityRings, Card, CinematicImage, CountUp, IconButton, ListRow, ProgressBar, SectionHeader, StatTiles } from './ui/kit';
+import { ActivityRings, Card, CinematicImage, CountUp, IconBadge, IconButton, ListRow, ProgressBar, SectionHeader, StatTiles } from './ui/kit';
+import { BoltPulse, DropWave, FlameAnimated } from './ui/AnimatedIcons';
+import { FloatingHero } from './ui/FloatingHero';
 import { fadeUpItem, staggerContainer } from './ui/motion';
 import { UserAvatar } from './UserAvatar';
 import { ResumeCard } from './workouts/ResumeCard';
@@ -66,12 +68,12 @@ export function HomeView({
     .slice(0, 3);
 
   const universes = [
-    { label: 'Outdoor', sub: '5 modes GPS', onClick: () => onNavigate('missions') },
-    { label: 'Défi House', sub: 'Caméra IA', onClick: () => onOpenArena('house') },
-    { label: 'Terrains', sub: 'Jeudi & Tournoi', onClick: onOpenThursday },
-    { label: 'Gym Buddy', sub: 'Salle & Duo', onClick: () => onOpenArena('gym') },
-    { label: 'Raids', sub: 'Badges & Pactes', onClick: onOpenRaids },
-    { label: 'Nutrition', sub: 'Repas & Eau', onClick: () => onNavigate('nutrition') },
+    { label: 'Outdoor', sub: '5 modes GPS', icon: <Compass className="h-5 w-5" />, onClick: () => onNavigate('missions') },
+    { label: 'Défi House', sub: 'Caméra IA', icon: <Sword className="h-5 w-5" />, onClick: () => onOpenArena('house') },
+    { label: 'Terrains', sub: 'Jeudi & Tournoi', icon: <SoccerBall className="h-5 w-5" />, onClick: onOpenThursday },
+    { label: 'Gym Buddy', sub: 'Salle & Duo', icon: <Dumbbell className="h-5 w-5" />, onClick: () => onOpenArena('gym') },
+    { label: 'Raids', sub: 'Badges & Pactes', icon: <Flag className="h-5 w-5" />, onClick: onOpenRaids },
+    { label: 'Nutrition', sub: 'Repas & Eau', icon: <BowlFood className="h-5 w-5" />, onClick: () => onNavigate('nutrition') },
   ];
 
   return (
@@ -92,8 +94,9 @@ export function HomeView({
       </motion.div>
 
       {/* Statut de saison */}
-      <motion.div variants={fadeUpItem}>
-        <Card onClick={() => nav.openLeaderboard()}>
+      <motion.div variants={fadeUpItem} className="relative pt-44">
+        <FloatingHero className="top-0 right-[-10px] z-0 h-[236px] w-[236px]" />
+        <Card glass onClick={() => nav.openLeaderboard()} className="relative z-10">
           <div className="flex items-end justify-between gap-3">
             <div>
               <div className="text-[13px] font-medium text-mute">Rang de saison</div>
@@ -132,26 +135,26 @@ export function HomeView({
 
       {/* Activité du jour */}
       <motion.div variants={fadeUpItem}>
-        <Card>
+        <Card glass>
           <SectionHeader title="Activité du jour" action="Nutrition" onAction={() => onNavigate('nutrition')} />
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-3">
               <div>
-                <div className="text-[13px] font-medium text-mute">Séances</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-medium text-mute"><BoltPulse className="h-4 w-4" />Séances</div>
                 <div className="num text-[22px] font-extrabold leading-7 text-lime">
                   {sessionsToday}
                   <span className="text-[13px] font-medium text-mute"> / {DAILY_SESSION_GOAL}</span>
                 </div>
               </div>
               <div>
-                <div className="text-[13px] font-medium text-mute">Calories</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-medium text-mute"><FlameAnimated className="h-4 w-4" />Calories</div>
                 <div className="num text-[22px] font-extrabold leading-7 text-ember">
                   <CountUp value={kcalToday} />
                   <span className="text-[13px] font-medium text-mute"> / {DAILY_KCAL_GOAL} kcal</span>
                 </div>
               </div>
               <div>
-                <div className="text-[13px] font-medium text-mute">Eau</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-medium text-mute"><DropWave className="h-4 w-4" />Eau</div>
                 <div className="num text-[22px] font-extrabold leading-7 text-aqua">
                   {(user.waterGlasses * 0.25).toFixed(2).replace('.', ',')}
                   <span className="text-[13px] font-medium text-mute"> / {(plan.waterTargetGlasses * 0.25).toFixed(1).replace('.', ',')} L</span>
@@ -230,11 +233,12 @@ export function HomeView({
           ))}
           <ListRow
             onClick={() => onNavigate('missions')}
+            leading={<IconBadge tone="lime"><NavigationArrow className="h-5 w-5" /></IconBadge>}
             title="Missions"
             subtitle={`${user.missionsCompleted} réussies · ${user.houseWins} victoires House`}
           />
           {universes.map((u) => (
-            <ListRow key={u.label} onClick={u.onClick} title={u.label} subtitle={u.sub} />
+            <ListRow key={u.label} onClick={u.onClick} leading={<IconBadge>{u.icon}</IconBadge>} title={u.label} subtitle={u.sub} />
           ))}
         </div>
       </motion.section>
