@@ -1,4 +1,5 @@
 import type { DemoExercise, MuscleGroup } from '../types/dek';
+import type { PhotoCategory } from './photos';
 
 // Catalogue des Séances Guidées (lecteur pas-à-pas avec démos HD, chrono et repos).
 
@@ -42,7 +43,9 @@ export interface WorkoutProgram {
   durationMin: number;
   kcal: number;
   xp: number;
+  /** Photo par défaut (publications du fil) ; l'affichage tourne parmi les photos de `photoCat`. */
   image: string;
+  photoCat: PhotoCategory;
   /** Cadrage de la photo (object-position) pour varier les visuels */
   imagePosition: string;
   /** Teinte duotone appliquée sur la photo */
@@ -192,8 +195,9 @@ export const WORKOUT_PROGRAMS: WorkoutProgram[] = [
     durationMin: 18,
     kcal: 165,
     xp: 140,
-    image: '/images/w-pecs-bw.jpg',
-    imagePosition: '50% 30%',
+    image: '/images/ph/torso-pecs-card.jpg',
+    photoCat: 'pecs',
+    imagePosition: '50% 40%',
     tint: '#C8FF00',
     coachId: 'c2',
     rating: 4.8,
@@ -219,8 +223,9 @@ export const WORKOUT_PROGRAMS: WorkoutProgram[] = [
     durationMin: 20,
     kcal: 210,
     xp: 150,
-    image: '/images/w-legs.jpg',
-    imagePosition: '45% 55%',
+    image: '/images/ph/squat-card.jpg',
+    photoCat: 'legs',
+    imagePosition: '55% 50%',
     tint: '#FF8A00',
     coachId: 'c3',
     rating: 4.9,
@@ -246,8 +251,9 @@ export const WORKOUT_PROGRAMS: WorkoutProgram[] = [
     durationMin: 15,
     kcal: 185,
     xp: 120,
-    image: '/images/w-cardio.jpg',
-    imagePosition: '50% 48%',
+    image: '/images/ph/runner-card.jpg',
+    photoCat: 'cardio',
+    imagePosition: '50% 35%',
     tint: '#A855F7',
     coachId: 'c1',
     rating: 4.7,
@@ -271,8 +277,9 @@ export const WORKOUT_PROGRAMS: WorkoutProgram[] = [
     durationMin: 10,
     kcal: 80,
     xp: 90,
-    image: '/images/w-abs-bw.jpg',
-    imagePosition: '50% 30%',
+    image: '/images/ph/torso-abs-card.jpg',
+    photoCat: 'abs',
+    imagePosition: '50% 50%',
     tint: '#00E5FF',
     coachId: 'c2',
     rating: 4.6,
@@ -296,7 +303,8 @@ export const WORKOUT_PROGRAMS: WorkoutProgram[] = [
     durationMin: 22,
     kcal: 290,
     xp: 190,
-    image: '/images/match.jpg',
+    image: '/images/ph/match-card.jpg',
+    photoCat: 'hiit',
     imagePosition: '45% 58%',
     tint: '#FF2E54',
     coachId: 'c1',
@@ -322,7 +330,8 @@ export const WORKOUT_PROGRAMS: WorkoutProgram[] = [
     durationMin: 14,
     kcal: 120,
     xp: 100,
-    image: '/images/w-full-bw.jpg',
+    image: '/images/ph/back-card.jpg',
+    photoCat: 'fullbody',
     imagePosition: '50% 36%',
     tint: '#38BDF8',
     coachId: 'c3',

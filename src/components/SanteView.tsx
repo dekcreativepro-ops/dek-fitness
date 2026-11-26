@@ -9,6 +9,7 @@ import {
 import { INITIAL_SANTE_MATCHES, INITIAL_TOURNAMENT } from '../data/mockData';
 import type { SanteMatch, ThursdayFormat, ThursdayPlayer } from '../types/dek';
 import { getTierIndex, TIER_COLORS } from '../utils/categorization';
+import { usePhoto } from '../utils/usePhoto';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 
 interface SanteViewProps {
@@ -53,7 +54,14 @@ function formatClock(totalSec: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+/** Photo d'un match : basket ou football (le hook vit ici pour pouvoir servir dans une liste). */
+function SportPhoto({ basket }: { basket: boolean }) {
+  const src = usePhoto(basket ? 'basket' : 'football', 'wide');
+  return <img src={src} alt="" loading="lazy" draggable={false} className="h-full w-full select-none object-cover" />;
+}
+
 export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
+  const bannerPhoto = usePhoto('football', 'wide');
   const [subTab, setSubTab] = useState<SanteMainTab>('jeudi');
 
   // --- JEUDI LIVE (4 PHASES) ---
@@ -359,7 +367,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
       {/* Bandeau photo sobre */}
       <div className="relative h-36 overflow-hidden rounded-[24px]">
         <img
-          src="/images/match.jpg"
+          src={bannerPhoto}
           alt="Terrain du Jeudi & La Santé DEK"
           className="absolute inset-0 h-full w-full object-cover"
         />
@@ -883,6 +891,10 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
         <div className="space-y-4">
           {matches.map((m) => (
             <Card key={m.id}>
+              {/* Photo adaptée au sport : basket en noir et blanc, football en couleur */}
+              <div className="-mx-5 -mt-5 mb-4 h-32 overflow-hidden rounded-t-[28px]">
+                <SportPhoto basket={m.sport === 'Basket 3v3'} />
+              </div>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[12px] font-medium text-mute">

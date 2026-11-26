@@ -3,11 +3,17 @@ import { Bell, Calendar, MapPin, Plus, Users } from './DekIcons';
 import { BottomSheet, Button, Card, ChipTabs, ProgressBar } from './ui/kit';
 import { INITIAL_PACTS, INITIAL_RAIDS } from '../data/gamesData';
 import type { FriendPact, WeekendRaid } from '../types/dek';
+import { usePhoto } from '../utils/usePhoto';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 
 interface RaidsPactsViewProps {
   onRaidCheckin: (raidTitle: string, badgeName: string) => void;
   onPactAction: (kind: 'checkin' | 'nudge' | 'create', label: string) => boolean;
+}
+
+function TeamPhoto() {
+  const src = usePhoto('team', 'wide');
+  return <img src={src} alt="" loading="lazy" draggable={false} className="absolute inset-0 h-full w-full select-none object-cover" />;
 }
 
 export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewProps) {
@@ -132,7 +138,7 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
           {raids.map((raid) => (
             <div key={raid.id} className="overflow-hidden rounded-[28px] bg-card">
               <div className="relative h-36">
-                <img src="/images/team.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <TeamPhoto />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <span className="num absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-[13px] font-bold text-white">
                   <Users className="h-4 w-4" /> {raid.participants}

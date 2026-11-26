@@ -15,6 +15,7 @@ import { UserAvatar } from '../UserAvatar';
 import { BottomSheet, Button, Card, CinematicImage, IconButton, ListRow, SectionHeader, StarRow, StatTiles } from '../ui/kit';
 import { FormCompare } from '../ui/FormCompare';
 import { MuscleMap } from '../ui/MuscleMap';
+import { usePhoto } from '../../utils/usePhoto';
 import { fadeUpItem, staggerContainer } from '../ui/motion';
 
 function stepLabel(step: WorkoutStep) {
@@ -95,6 +96,7 @@ export function WorkoutDetailScreen({
   onStart: () => void;
   onOpenCoach: (id: string) => void;
 }) {
+  const detailPhoto = usePhoto(program.photoCat, 'detail');
   const [openStep, setOpenStep] = useState<WorkoutStep | null>(null);
   const coach = INITIAL_COACHS.find((c) => c.id === program.coachId) ?? INITIAL_COACHS[0];
   const review = coach.reviews?.[0];
@@ -122,7 +124,7 @@ export function WorkoutDetailScreen({
     <div className="flex h-full flex-col bg-ink">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
         {/* Photo + retour / signet */}
-        <CinematicImage src={program.image} position={program.imagePosition} className="h-[320px]" intensity={0.6}>
+        <CinematicImage src={detailPhoto} position="50% 40%" className="h-[320px]" intensity={0.6}>
           <div className="absolute inset-0 bg-gradient-to-t from-ink via-black/10 to-black/30" />
           <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
             <IconButton label="Retour" variant="glass" onClick={onBack}>

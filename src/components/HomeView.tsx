@@ -11,6 +11,8 @@ import { ActivityRings, Card, CinematicImage, CountUp, IconBadge, IconButton, Li
 import { BoltPulse, DropWave, FlameAnimated } from './ui/AnimatedIcons';
 import { fadeUpItem, staggerContainer } from './ui/motion';
 import { UserAvatar } from './UserAvatar';
+import { usePhoto } from '../utils/usePhoto';
+import { ProgramPhoto } from './workouts/ProgramPhoto';
 import { ResumeCard } from './workouts/ResumeCard';
 import { WorkoutCard } from './workouts/WorkoutCard';
 
@@ -43,7 +45,10 @@ export function HomeView({
   const nav = useDekNav();
   const adventure = getAdventurePlan(user.goals, user.category);
   const coach = INITIAL_COACHS.find((c) => c.id === adventure.recommendedCoachId) ?? INITIAL_COACHS[0];
+  const heroPhoto = usePhoto('hero', 'card');
+  const thursdayPhoto = usePhoto('football', 'wide');
   const today = getRecommendedProgram(user.goals[0], getTierIndex(user.category));
+  const todayPhoto = usePhoto(today.photoCat, 'detail');
   const plan = getNutritionPlan(user.goals, user.category, user.body);
   const rankInfo = getRankInfo(user.xp);
 
@@ -96,11 +101,10 @@ export function HomeView({
       <motion.div variants={fadeUpItem} className="relative h-[430px] overflow-hidden rounded-[28px] bg-card">
         {/* Photo d'athlète plein cadre (fixe), comme dans les maquettes */}
         <img
-          src="/images/hero-runner-bw.jpg"
+          src={heroPhoto}
           alt=""
           draggable={false}
           className="absolute inset-0 h-full w-full select-none object-cover"
-          style={{ objectPosition: '50% 12%' }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/30" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-transparent to-transparent" />
@@ -112,7 +116,7 @@ export function HomeView({
         <button
           type="button"
           onClick={() => nav.openLeaderboard()}
-          className="glass absolute inset-x-3 bottom-3 rounded-[24px] p-4 text-left transition active:scale-[0.99]"
+          className="glass sheen absolute inset-x-3 bottom-3 rounded-[24px] p-4 text-left transition active:scale-[0.99]"
         >
           <div className="flex items-end justify-between gap-3">
             <div className="text-[13px] font-medium text-fg">XP de la saison</div>
@@ -149,7 +153,7 @@ export function HomeView({
 
       {/* Activité du jour */}
       <motion.div variants={fadeUpItem}>
-        <Card glass>
+        <Card glass className="sheen">
           <SectionHeader title="Activité du jour" action="Nutrition" onAction={() => onNavigate('nutrition')} />
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-3">
@@ -188,7 +192,7 @@ export function HomeView({
 
       {/* Séance du jour */}
       <motion.div variants={fadeUpItem} whileTap={{ scale: 0.985 }} onClick={() => nav.openWorkout(today.id)} className="cursor-pointer">
-        <CinematicImage src={today.image} position={today.imagePosition} className="h-60 rounded-[24px]">
+        <CinematicImage src={todayPhoto} position="50% 40%" className="h-60 rounded-[24px]">
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/10" />
           <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
             <div className="min-w-0">
@@ -239,7 +243,7 @@ export function HomeView({
             <ListRow
               key={program.id}
               onClick={() => nav.openWorkout(program.id)}
-              leading={<img src={program.image} alt="" className="h-full w-full object-cover" style={{ objectPosition: program.imagePosition }} />}
+              leading={<ProgramPhoto program={program} />}
               title={program.title}
               subtitle={`${program.durationMin} min · ${program.level}`}
               meta={`Faite ${n}×`}
@@ -265,7 +269,7 @@ export function HomeView({
         onClick={onOpenThursday}
         className="relative flex w-full items-center gap-3 overflow-hidden rounded-[24px] bg-card p-4 text-left"
       >
-        <img src="/images/match.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: '60% 40%' }} />
+        <img src={thursdayPhoto} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-black/70" />
         <div className="relative min-w-0 flex-1">
           <div className="text-[12px] font-semibold text-lime">Rendez-vous hebdo · Check-in QR</div>

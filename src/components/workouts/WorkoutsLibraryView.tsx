@@ -13,6 +13,7 @@ import type { UserProfile } from '../../types/dek';
 import { getTierIndex } from '../../utils/categorization';
 import { ChipTabs, CinematicImage, ScreenHeader } from '../ui/kit';
 import { fadeUpItem, staggerContainer } from '../ui/motion';
+import { usePhoto } from '../../utils/usePhoto';
 import { ResumeCard } from './ResumeCard';
 import { WorkoutCard } from './WorkoutCard';
 
@@ -49,6 +50,7 @@ export function WorkoutsLibraryView({
   const [showFilters, setShowFilters] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
 
+  const recommendedPhoto = usePhoto(getRecommendedProgram(user.goals[0], getTierIndex(user.category)).photoCat, 'detail');
   const recommended = getRecommendedProgram(user.goals[0], getTierIndex(user.category));
 
   const filtered = useMemo(() => {
@@ -125,7 +127,7 @@ export function WorkoutsLibraryView({
 
       {/* Recommandation */}
       <motion.div whileTap={{ scale: 0.98 }} onClick={() => nav.openWorkout(recommended.id)} className="cursor-pointer">
-        <CinematicImage src={recommended.image} position={recommended.imagePosition} className="h-44 rounded-[24px]">
+        <CinematicImage src={recommendedPhoto} position="50% 40%" className="h-44 rounded-[24px]">
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
             <div className="min-w-0">

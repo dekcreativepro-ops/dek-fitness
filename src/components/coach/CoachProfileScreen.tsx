@@ -7,6 +7,7 @@ import { CheckDraw } from '../ui/AnimatedIcons';
 import { BottomSheet, Button, Card, CinematicImage, CountUp, IconButton, ListRow, SectionHeader, StarRow, StatTiles } from '../ui/kit';
 import { fadeUpItem, staggerContainer } from '../ui/motion';
 import { UserAvatar } from '../UserAvatar';
+import { ProgramPhoto } from '../workouts/ProgramPhoto';
 
 const SLOTS = ['07:00', '08:30', '12:30', '18:00', '19:30'];
 
@@ -102,7 +103,7 @@ export function CoachProfileScreen({
                   <ListRow
                     key={p.id}
                     onClick={() => onOpenWorkout(p.id)}
-                    leading={<img src={p.image} alt="" className="h-full w-full object-cover" style={{ objectPosition: p.imagePosition }} />}
+                    leading={<ProgramPhoto program={p} />}
                     title={p.title}
                     subtitle={`${p.durationMin} min · ${p.level}`}
                   />

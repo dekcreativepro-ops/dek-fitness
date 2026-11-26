@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { BookmarkSimple, Play } from '../DekIcons';
 import type { WorkoutProgram } from '../../data/workoutsData';
+import { usePhoto } from '../../utils/usePhoto';
 
 /** Carte photo d'une séance guidée (PhotoCard : grille Browse, carrousel). */
 export function WorkoutCard({
@@ -20,6 +21,7 @@ export function WorkoutCard({
   className?: string;
   tall?: boolean;
 }) {
+  const photo = usePhoto(program.photoCat, 'card');
   return (
     <motion.div
       whileTap={{ scale: 0.97 }}
@@ -32,12 +34,11 @@ export function WorkoutCard({
       className={`relative cursor-pointer overflow-hidden rounded-[24px] bg-card ${tall ? 'h-60' : 'h-52'} ${className}`}
     >
       <img
-        src={program.image}
+        src={photo}
         alt=""
         loading="lazy"
         decoding="async"
         className="absolute inset-0 h-full w-full object-cover"
-        style={{ objectPosition: program.imagePosition }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/5" />
 

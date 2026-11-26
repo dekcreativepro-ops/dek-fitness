@@ -16,6 +16,7 @@ import type {
   UserAvatarConfig,
 } from '../types/dek';
 import { TIER_COLORS } from '../utils/categorization';
+import { usePhoto } from '../utils/usePhoto';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { UserAvatar } from './UserAvatar';
 
@@ -58,6 +59,8 @@ export function GymBuddyView({
   onDuoComplete,
   onSpotJoin,
 }: GymBuddyViewProps) {
+  const duoPhoto = usePhoto('duo', 'wide');
+  const gymPhoto = usePhoto('gym', 'wide');
   const [subTab, setSubTab] = useState<GymSubTab>('spot');
 
   // Spot Me state
@@ -249,6 +252,12 @@ export function GymBuddyView({
       {/* SOUS-ONGLET 1 : SPOT ME */}
       {subTab === 'spot' && (
         <div className="space-y-4">
+          {/* Photo de salle : une autre à chaque ouverture */}
+          <div className="relative h-36 overflow-hidden rounded-[24px] bg-card">
+            <img src={gymPhoto} alt="" draggable={false} className="absolute inset-0 h-full w-full select-none object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+            <div className="absolute inset-x-4 bottom-3 text-[20px] font-bold leading-6 text-white">Trouve ton partenaire</div>
+          </div>
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-[18px] font-bold leading-6 text-fg">Lieux actifs autour</h3>
@@ -338,7 +347,7 @@ export function GymBuddyView({
         <div className="space-y-4">
           {/* Photo du duo : deux partenaires, même rythme */}
           <div className="relative h-40 overflow-hidden rounded-[24px] bg-card">
-            <img src="/images/duo.jpg" alt="" draggable={false} className="absolute inset-0 h-full w-full select-none object-cover" style={{ objectPosition: '50% 30%' }} />
+            <img src={duoPhoto} alt="" draggable={false} className="absolute inset-0 h-full w-full select-none object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
             <div className="absolute inset-x-4 bottom-3">
               <div className="text-[20px] font-bold leading-6 text-white">Séance en duo</div>

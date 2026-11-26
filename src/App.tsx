@@ -216,13 +216,14 @@ export default function App() {
 
   // Fond « verre » dynamique : la lumière suit le doigt, le défilement et l'inclinaison du téléphone
   useEffect(() => {
-    const root = document.documentElement;
     let frame = 0;
     const next = { x: 0, y: 0 };
     const apply = () => {
       frame = 0;
-      root.style.setProperty('--dek-px', next.x.toFixed(3));
-      root.style.setProperty('--dek-py', next.y.toFixed(3));
+      // Variables posées sur le fond uniquement : évite de recalculer le style de toute la page
+      const aurora = document.querySelector<HTMLElement>('.dek-aurora');
+      aurora?.style.setProperty('--dek-px', next.x.toFixed(3));
+      aurora?.style.setProperty('--dek-py', next.y.toFixed(3));
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(apply);
@@ -544,7 +545,7 @@ export default function App() {
     );
 
     pushFeedPost({
-      bannerImage: '/images/w-cardio.jpg',
+      bannerImage: '/images/ph/marathon-wide.jpg',
       type: 'mission',
       badge: `${modeLabel.toUpperCase()} • ${tier.toUpperCase()}`,
       content: `Sortie ${modeLabel} validée ! Parcours de ${distanceKm} km terminé à la position #${rankPos}.`,
@@ -583,7 +584,7 @@ export default function App() {
       return;
     }
     pushFeedPost({
-      bannerImage: '/images/w-cardio.jpg',
+      bannerImage: '/images/ph/runner-wide.jpg',
       type: 'mission',
       badge: 'TERRITOIRE CONQUIS',
       content: `Prise de contrôle de ${zoneName} pour DEK Warriors ! Badge « ${badgeName} » débloqué.`,
@@ -609,7 +610,7 @@ export default function App() {
       kcal: 60,
     });
     pushFeedPost({
-      bannerImage: '/images/w-legs.jpg',
+      bannerImage: '/images/ph/dunk-wide.jpg',
       type: 'house',
       badge: `DÉFI HOUSE • ${modeLabel.toUpperCase()}`,
       content: `Victoire en mode ${modeLabel} sur ${exercise} ! ${reps} validées devant l'IA DEK.`,
@@ -633,7 +634,7 @@ export default function App() {
       return false;
     }
     pushFeedPost({
-      bannerImage: '/images/duo.jpg',
+      bannerImage: '/images/ph/duo-wide.jpg',
       type: 'house',
       badge: 'GYM BUDDY • DUO LIVE',
       content: `Séance synchronisée « ${routineTitle} » bouclée en duo (${totalSets} séries validées).`,
@@ -686,7 +687,7 @@ export default function App() {
       return false;
     }
     pushFeedPost({
-      bannerImage: '/images/match.jpg',
+      bannerImage: '/images/ph/match-wide.jpg',
       type: 'sante',
       badge: 'TERRAIN DU JEUDI • OFFICIEL',
       content: `${summaryText} MVP élu : ${mvpName} (+50 XP).`,
@@ -717,7 +718,7 @@ export default function App() {
       return;
     }
     pushFeedPost({
-      bannerImage: '/images/team.jpg',
+      bannerImage: '/images/ph/feet-wide.jpg',
       type: 'mission',
       badge: `RAID WEEK-END • ${badgeName.toUpperCase()}`,
       content: `Check-in QR validé sur place pour « ${raidTitle} » ! Badge exclusif débloqué.`,
@@ -1001,7 +1002,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <PhoneSimulatorFrame>
-        <div className="dek-ambient relative flex h-full w-full flex-col overflow-hidden bg-ink text-fg">
+        <div className="relative flex h-full w-full flex-col overflow-hidden bg-ink text-fg">
           <div className="dek-aurora" aria-hidden>
             <span className="b1"><i /></span>
             <span className="b2"><i /></span>

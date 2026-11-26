@@ -12,6 +12,7 @@ import type {
   UserAvatarConfig,
 } from '../types/dek';
 import { HOUSE_OPPONENTS_BY_TIER, TIER_COLORS } from '../utils/categorization';
+import { usePhoto } from '../utils/usePhoto';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { ExerciseDemoCanvas } from './ExerciseDemoCanvas';
 import { UserAvatar } from './UserAvatar';
@@ -130,6 +131,7 @@ export function DefiHouseView({
   userAvatar,
   onWinDuel,
 }: DefiHouseViewProps) {
+  const housePhoto = usePhoto('house', 'card');
   const opponent = HOUSE_OPPONENTS_BY_TIER[userCategory];
   const oppAvatar = OPPONENT_AVATARS[userCategory];
 
@@ -777,7 +779,7 @@ export function DefiHouseView({
         {!cameraActive && (
           <>
             <img
-              src="/images/banner-house.jpg"
+              src={housePhoto}
               alt="Studio Défi House"
               className="absolute inset-0 h-full w-full object-cover"
             />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Check } from './DekIcons';
 import type { AuthProvider, UserAvatarConfig } from '../types/dek';
+import { usePhoto } from '../utils/usePhoto';
 import { AvatarStudio } from './AvatarStudio';
 import { ChipTabs } from './ui/kit';
 
@@ -28,6 +29,7 @@ const FIELD = 'h-11 w-full border-b border-rim bg-transparent text-[15px] font-m
 const LABEL = 'block text-[12px] font-medium leading-4 text-mute';
 
 export function OnboardingAuthView({ onAuthComplete }: OnboardingAuthViewProps) {
+  const authPhoto = usePhoto('cardio', 'detail');
   const [provider, setProvider] = useState<AuthProvider>('gmail');
   const [gmailInput, setGmailInput] = useState('');
   const [countryCode, setCountryCode] = useState('+225');
@@ -113,11 +115,10 @@ export function OnboardingAuthView({ onAuthComplete }: OnboardingAuthViewProps) 
         {/* Photo + titre */}
         <div className="relative h-[240px] overflow-hidden">
           <img
-            src="/images/w-cardio.jpg"
+            src={authPhoto}
             alt=""
             draggable={false}
             className="absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition: '40% 30%' }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-black/20" />
           <div className="relative flex h-full flex-col justify-end px-5 pb-4">
