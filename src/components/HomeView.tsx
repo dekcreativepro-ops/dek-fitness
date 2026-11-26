@@ -96,11 +96,11 @@ export function HomeView({
       <motion.div variants={fadeUpItem} className="relative h-[360px] overflow-hidden rounded-[28px] bg-card">
         {/* Photo d'athlète plein cadre (fixe), comme dans les maquettes */}
         <img
-          src="/images/banner-home.jpg"
+          src="/images/photo-runner-track.jpg"
           alt=""
           draggable={false}
           className="absolute inset-0 h-full w-full select-none object-cover"
-          style={{ objectPosition: '72% 30%' }}
+          style={{ objectPosition: '50% 42%' }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/30" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-transparent to-transparent" />
@@ -265,7 +265,7 @@ export function HomeView({
         onClick={onOpenThursday}
         className="relative flex w-full items-center gap-3 overflow-hidden rounded-[24px] bg-card p-4 text-left"
       >
-        <img src="/images/banner-sante.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: '60% 40%' }} />
+        <img src="/images/photo-night-match.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: '60% 40%' }} />
         <div className="absolute inset-0 bg-black/70" />
         <div className="relative min-w-0 flex-1">
           <div className="text-[12px] font-semibold text-lime">Rendez-vous hebdo · Check-in QR</div>

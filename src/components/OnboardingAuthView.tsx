@@ -113,7 +113,7 @@ export function OnboardingAuthView({ onAuthComplete }: OnboardingAuthViewProps) 
         {/* Photo + titre */}
         <div className="relative h-[240px] overflow-hidden">
           <img
-            src="/images/banner-coach.jpg"
+            src="/images/photo-dunk.jpg"
             alt=""
             draggable={false}
             className="absolute inset-0 h-full w-full object-cover"

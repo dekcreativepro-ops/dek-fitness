@@ -301,7 +301,7 @@ export const INITIAL_FEED: FeedPost[] = [
     author: 'DEK Warriors',
     initials: 'DW',
     avatarPreset: 'fantasy-paladin',
-    bannerImage: '/images/banner-sante.jpg',
+    bannerImage: '/images/photo-night-match.jpg',
     timeAgo: 'Il y a 3 h',
     type: 'sante',
     badge: 'LA SANTÉ • VICTOIRE',

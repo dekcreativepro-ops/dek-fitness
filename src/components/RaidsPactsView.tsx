@@ -132,7 +132,7 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
           {raids.map((raid) => (
             <div key={raid.id} className="overflow-hidden rounded-[28px] bg-card">
               <div className="relative h-36">
-                <img src="/images/banner-house.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img src="/images/photo-feet-circle.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <span className="num absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-[13px] font-bold text-white">
                   <Users className="h-4 w-4" /> {raid.participants}
