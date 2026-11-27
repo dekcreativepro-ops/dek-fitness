@@ -5,10 +5,23 @@ import { INITIAL_PACTS, INITIAL_RAIDS } from '../data/gamesData';
 import type { FriendPact, WeekendRaid } from '../types/dek';
 import { usePhoto } from '../utils/usePhoto';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
+import { LEVEL_COLORS, levelFromScore } from '../utils/gameFx';
 
 interface RaidsPactsViewProps {
   onRaidCheckin: (raidTitle: string, badgeName: string) => void;
   onPactAction: (kind: 'checkin' | 'nudge' | 'create', label: string) => boolean;
+}
+
+/** Légende d'un raid : description et difficulté déduites du titre (km, pompes), de l'horaire et du nombre d'inscrits. */
+function raidInfo(raid: WeekendRaid) {
+  const km = Number(/(\d+)\s*km/i.exec(raid.title)?.[1] ?? 4);
+  const reps = Number(/(\d+)\s*pompes/i.exec(raid.title)?.[1] ?? 0);
+  const night = /nocturne|nuit/i.test(raid.title) || /\b(1[89]|2\d):\d\d/.test(raid.dateLabel);
+  const score = km + reps / 25 + (night ? 1.5 : 0) + (raid.participants > 30 ? 0.5 : 0);
+  const level = levelFromScore(score);
+  const parts = [km ? `${km} km` : '', reps ? `${reps} pompes` : ''].filter(Boolean).join(' + ');
+  const description = `${parts || 'Effort collectif'} en groupe de ${raid.participants} · ${night ? 'sortie nocturne, reste visible' : 'départ matinal'} · rendez-vous ${raid.location}.`;
+  return { level, description };
 }
 
 function TeamPhoto() {
@@ -160,6 +173,15 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
                   </span>
                 </div>
                 <div className="mt-1 text-[13px] font-medium text-faint">Badge : {raid.badgeName}</div>
+                <div className="mt-3 rounded-[18px] bg-tile p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[12px] font-semibold text-mute">Légende du raid</span>
+                    <span className="text-[12px] font-bold" style={{ color: LEVEL_COLORS[raidInfo(raid).level] }}>
+                      {raidInfo(raid).level}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[13px] font-medium leading-5 text-mute">{raidInfo(raid).description}</p>
+                </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <Button variant="secondary" size="md" onClick={() => handleToggleRaidJoin(raid.id)}>

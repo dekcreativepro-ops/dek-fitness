@@ -11,6 +11,7 @@ import type { SanteMatch, ThursdayFormat, ThursdayPlayer } from '../types/dek';
 import { getTierIndex, TIER_COLORS } from '../utils/categorization';
 import { usePhoto } from '../utils/usePhoto';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
+import { LEVEL_COLORS, levelFromScore } from '../utils/gameFx';
 
 interface SanteViewProps {
   onJoinSante: (matchTitle: string) => void;
@@ -58,6 +59,17 @@ function formatClock(totalSec: number) {
 function SportPhoto({ basket }: { basket: boolean }) {
   const src = usePhoto(basket ? 'basket' : 'matchfoot', 'wide');
   return <img src={src} alt="" loading="lazy" draggable={false} className="h-full w-full select-none object-cover" />;
+}
+
+/** Légende d'un match : difficulté selon le niveau et la taille du terrain, description courte. */
+function matchInfo(m: SanteMatch) {
+  const size = m.sport.includes('11v11') ? 11 : m.sport.includes('7v7') ? 7 : m.sport.includes('5v5') ? 5 : 3;
+  const base = m.level === 'Intensif' ? 6 : m.level === 'Compétitif' ? 4 : 2;
+  const score = base + (size >= 11 ? 3 : size >= 7 ? 1.5 : 0.5);
+  const level = levelFromScore(score, [2.5, 4.5, 6.5]);
+  const left = Math.max(0, m.playersMax - m.playersJoined);
+  const description = `${m.sport} ${m.level.toLowerCase()} · ${m.playersMax} joueurs sur ${size >= 11 ? 'grand terrain' : size >= 7 ? 'terrain moyen' : 'terrain réduit'} · ${left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'complet'}.`;
+  return { level, description };
 }
 
 export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
@@ -931,6 +943,16 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
                 <span className="flex items-center gap-1.5">
                   <Clock className="h-4 w-4" /> {m.time}
                 </span>
+              </div>
+
+              <div className="mt-3 rounded-[18px] bg-tile p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[12px] font-semibold text-mute">Légende du match</span>
+                  <span className="text-[12px] font-bold" style={{ color: LEVEL_COLORS[matchInfo(m).level] }}>
+                    {matchInfo(m).level}
+                  </span>
+                </div>
+                <p className="mt-1 text-[13px] font-medium leading-5 text-mute">{matchInfo(m).description}</p>
               </div>
 
               <div className="mt-4 flex items-center justify-between gap-3">

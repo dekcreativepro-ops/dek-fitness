@@ -19,11 +19,14 @@ import { TIER_COLORS } from '../utils/categorization';
 import { usePhoto } from '../utils/usePhoto';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { UserAvatar } from './UserAvatar';
+import { AlertGlow, BestMedal, BonusPill, GameLegend, GameOptionsCard } from './ui/GameKit';
+import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
+import { levelFromScore, loadGameRecord, saveGameRecord } from '../utils/gameFx';
 
 interface GymBuddyViewProps {
   userCategory: MissionDifficulty;
   userName: string;
-  onDuoComplete: (routineTitle: string, totalSets: number) => boolean;
+  onDuoComplete: (routineTitle: string, totalSets: number, bonusXp?: number) => boolean;
   onSpotJoin?: (author: string, gymName: string) => void;
 }
 
@@ -87,6 +90,11 @@ export function GymBuddyView({
   const [newExName, setNewExName] = useState('Soulevé de terre (60 kg)');
   const [newNote, setNewNote] = useState('Mon bas du dos reste-t-il bien neutre au départ ?');
 
+  // Jeu : réglages, alertes (vibration + halo), bonus « série éclair » et records
+  const [prefs, setPrefs] = useGamePrefs('gym');
+  const { glowKey, glowOn, alert } = useAlertGlow(prefs.alerts);
+  const [recordTick, setRecordTick] = useState(0);
+
   // Switch Duo Routine
   const selectRoutine = (key: 'salle' | 'street') => {
     setRoutineKey(key);
@@ -105,13 +113,14 @@ export function GymBuddyView({
           setRestRunning(false);
           playGo();
           setDuoBanner('Repos terminé ! GO série suivante');
+          window.setTimeout(() => alert('near'), 0);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [restRunning, restRemaining]);
+  }, [restRunning, restRemaining, alert]);
 
   const startRest = (seconds: number) => {
     setRestDuration(seconds);
@@ -124,6 +133,7 @@ export function GymBuddyView({
     const target = exercises.find((ex) => ex.id === exId);
     if (!target || target.completedSets >= target.sets) return;
     playHit();
+    if (exercises.reduce((a, e) => a + e.completedSets, 0) + 1 === Math.ceil(exercises.reduce((a, e) => a + e.sets, 0) / 2)) alert('finish');
     setExercises((prev) =>
       prev.map((ex) =>
         ex.id === exId ? { ...ex, completedSets: Math.min(ex.sets, ex.completedSets + 1) } : ex,
@@ -202,9 +212,30 @@ export function GymBuddyView({
   const minSetsToClose = Math.ceil(totalSetsPlanned / 2);
   const canCloseDuo = totalSetsDone >= minSetsToClose;
 
+  // Bonus « série éclair » : valide une série dans les 30 s une fois le repos fini
+  const chrono = useChronoBonus({
+    enabled: prefs.bonus,
+    active: subTab === 'duo' && totalSetsDone < totalSetsPlanned,
+    spawnOk: !restRunning && restRemaining === 0,
+    progress: totalSetsDone,
+    need: 1,
+    base: 10,
+    label: 'Série éclair',
+    onWin: (xp) => setDuoBanner(`Série éclair ! +${xp} XP de bonus`),
+    onMiss: () => setDuoBanner('Bonus raté : trop lent !'),
+    onNear: () => alert('near'),
+  });
+  const duoLevel = levelFromScore(totalSetsPlanned * 0.5 + exercises.length * 0.5, [4.5, 6.5, 8.5]);
+  const duoRecord = recordTick >= 0 ? loadGameRecord(`gym:${routineKey}`) : null;
+
   const handleCloseDuo = () => {
     if (!canCloseDuo) return;
-    if (onDuoComplete(DUO_ROUTINES[routineKey].title, totalSetsDone)) playVictory();
+    if (onDuoComplete(DUO_ROUTINES[routineKey].title, totalSetsDone, chrono.getTotalXp())) {
+      playVictory();
+      saveGameRecord(`gym:${routineKey}`, totalSetsDone);
+      setRecordTick((t) => t + 1);
+    }
+    chrono.reset();
     setExercises(DUO_ROUTINES[routineKey].exercises.map((e) => ({ ...e })));
     setRestRunning(false);
     setRestRemaining(0);
@@ -405,6 +436,10 @@ export function GymBuddyView({
             </div>
           </Card>
 
+          {chrono.bonus && (
+            <BonusPill label="Série éclair" hint="Valide une série avant la fin du chrono" xp={10} secondsLeft={chrono.secondsLeft} />
+          )}
+
           {/* Exercices synchronisés */}
           <div className="space-y-2">
             {exercises.map((ex) => {
@@ -443,8 +478,22 @@ export function GymBuddyView({
               ? `Clôturer séance Duo (${totalSetsDone}/${totalSetsPlanned} séries) • +120 XP`
               : `Valide au moins ${minSetsToClose} séries (${totalSetsDone}/${totalSetsPlanned})`}
           </Button>
+
+          <GameLegend
+            title={DUO_ROUTINES[routineKey].title}
+            description={`${exercises.length} exercices en duo synchronisé avec ${'Mbarga_Iron'} : ${exercises.map((e) => e.name).join(', ')}. Bonus : une série validée en 30 s après le repos.`}
+            level={duoLevel}
+            stats={[
+              { label: 'Séries', value: totalSetsPlanned },
+              { label: 'Exercices', value: exercises.length },
+              { label: 'Récompense', value: '+120', unit: 'XP' },
+            ]}
+            extra={<BestMedal score={duoRecord ? duoRecord.best : null} goal={totalSetsPlanned} unit="séries" runs={duoRecord?.runs} />}
+          />
+          <GameOptionsCard prefs={prefs} onChange={setPrefs} />
         </div>
       )}
+      <AlertGlow glowKey={glowKey} glowOn={glowOn} />
 
       {/* SOUS-ONGLET 3 : FORM CHECK */}
       {subTab === 'form' && (

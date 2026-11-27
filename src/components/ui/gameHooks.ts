@@ -55,6 +55,7 @@ export interface ChronoBonus {
 interface ChronoBonusOptions {
   enabled: boolean;
   active: boolean; // la partie est en cours
+  spawnOk?: boolean; // un nouveau bonus peut apparaître (par défaut oui)
   progress: number; // reps, séries… : la valeur qui monte
   need: number; // progression demandée pour le bonus
   base: number; // XP de base ; le temps restant (s) s'ajoute
@@ -109,7 +110,7 @@ export function useChronoBonus(options: ChronoBonusOptions) {
           b.nearFired = true;
           o.onNear();
         }
-      } else if (spawnedRef.current < (o.maxSpawns ?? 3) && t - lastEndRef.current > (o.gapMs ?? 1500)) {
+      } else if (o.spawnOk !== false && spawnedRef.current < (o.maxSpawns ?? 3) && t - lastEndRef.current > (o.gapMs ?? 1500)) {
         seqRef.current += 1;
         spawnedRef.current += 1;
         bonusRef.current = { id: seqRef.current, target: o.progress + o.need, expiresAt: t + BONUS_LIMIT_SEC * 1000, nearFired: false };

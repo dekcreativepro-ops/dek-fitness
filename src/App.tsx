@@ -623,9 +623,9 @@ export default function App() {
     showToast(`Victoire Défi House (${modeLabel}) ! +${xpEarned} XP.`);
   };
 
-  const handleGymDuoComplete = (routineTitle: string, totalSets: number): boolean => {
+  const handleGymDuoComplete = (routineTitle: string, totalSets: number, bonusXp = 0): boolean => {
     const rewarded = commitProgress(
-      (u) => ({ ...u, xp: u.xp + 120, disciplineScore: Math.min(100, u.disciplineScore + 1) }),
+      (u) => ({ ...u, xp: u.xp + 120 + bonusXp, disciplineScore: Math.min(100, u.disciplineScore + 1) }),
       { claimKey: `duo:${routineTitle}:${dayKey()}`, session: true },
     );
     if (!rewarded) {
@@ -639,11 +639,11 @@ export default function App() {
       stats: [
         { label: 'Séries', value: String(totalSets) },
         { label: 'Duo', value: 'Synchro' },
-        { label: 'Gain', value: '+120 XP' },
+        { label: 'Gain', value: `+${120 + bonusXp} XP` },
       ],
       reactions: { feu: 1, force: 2, respect: 1 },
     });
-    showToast('Séance Gym Buddy validée (+120 XP) !');
+    showToast(`Séance Gym Buddy validée (+${120 + bonusXp} XP) !`);
     return true;
   };
 
