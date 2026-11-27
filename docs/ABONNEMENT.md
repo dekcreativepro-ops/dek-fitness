@@ -29,10 +29,12 @@ Le code est écrit d'après la [documentation développeur de Chariow](https://h
 3. L'app ouvre cette page (navigateur intégré sur mobile) ; le client y choisit Mobile Money et paie.
 4. Chariow prévient notre serveur (`POST /webhook/chariow`, événement `successful.sale`, signature HMAC-SHA256 vérifiée) ; l'app, qui interroge `/status`, active Premium. Si le webhook n'arrive pas, le serveur redemande l'état à Chariow (`GET /v1/sales/{id}`).
 
+**Vérifié le 27/11/2026 avec le compte DEK GROUPE** : le produit « DEK Premium - abonnement mensuel » (`prd_6jdmeofl`, licence, 30 jours, 5 000 FCFA, promo 2 500 FCFA soit −50 %, devise XAF) est publié ; la clé API fonctionne ; une demande de paiement de test pour le Cameroun (`country_code: CM`) renvoie une page Chariow qui propose **Orange Money** et **MTN Mobile Money**. Aucun paiement réel n'a encore été fait.
+
 **Ce que tu dois faire côté Chariow**
-1. Créer un compte vendeur et vérifier avec leur support : le **Cameroun**, **MTN MoMo et Orange Money**, et la devise **FCFA (XAF)** sont-ils pris en charge ? (La documentation ne le confirme pas.)
-2. Créer un produit « DEK Premium » à 2 500 FCFA, de type **licence** (les autres types refusent un second achat : « already_purchased »). Noter son identifiant `prd_…`.
-3. Créer une clé API (droits `checkout.write` et `sales.read`) : `sk_…`.
+1. ~~Vérifier Cameroun, MTN/Orange, XAF~~ : fait, voir ci-dessus.
+2. ~~Créer le produit~~ : fait (`prd_6jdmeofl`).
+3. ~~Créer une clé API~~ : faite ; elle est dans `.env.local` (ignoré par git).
 4. Créer un **Pulse** (Automatisation → Pulses) vers `https://TON-SERVEUR/webhook/chariow` pour l'événement `successful.sale` ; noter son secret `whsec_…`.
 
 **Lancer le serveur**
@@ -45,6 +47,7 @@ Puis dans `.env.local` de l'app : `VITE_PAYMENT_API_URL=https://TON-SERVEUR` et 
 - Page de paiement hébergée : pas d'envoi direct de la demande sur le téléphone du client.
 - Pas d'abonnement récurrent documenté : chaque mois est un nouvel achat de 30 jours (c'est le modèle de l'app).
 - Pas de mode test documenté : tester avec une vraie vente (le produit peut être mis à 100 FCFA le temps du test).
+- La licence est générée par Chariow à chaque vente ; notre serveur n'a pas besoin de la lire, il active Premium sur la confirmation de paiement.
 - Commission annoncée : 15 % (10 % après 5 000 $ de ventes), soit environ 375 FCFA sur 2 500 FCFA.
 - Un autre agrégateur (Flutterwave, MeSomb, CinetPay…) coûte en général moins cher et peut envoyer la demande directement sur le téléphone : l'adaptateur se remplace dans `server/payments-proxy.mjs` sans toucher à l'app.
 
