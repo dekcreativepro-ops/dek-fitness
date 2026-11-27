@@ -10,6 +10,9 @@ import { formatTimeAgo, getRankInfo } from '../utils/progression';
 import { isSoundEnabled, setSoundEnabled, subscribeSound } from '../utils/soundFx';
 import { AvatarStudio } from './AvatarStudio';
 import { BottomSheet, Button, Card, ProgressBar, StatTiles } from './ui/kit';
+import { ImagePicker } from './ui/ImagePicker';
+import { ACCENTS, loadAccent, saveAccent } from '../utils/theme';
+import { getHeroImage, setHeroImage, subscribeHeroImage } from '../utils/customImage';
 import { UserAvatar } from './UserAvatar';
 
 interface ProfilFeedViewProps {
@@ -83,6 +86,8 @@ export function ProfilFeedView({
   const [newPostBadge, setNewPostBadge] = useState('DÉFI COMMUNAUTÉ');
   const soundOn = useSyncExternalStore(subscribeSound, isSoundEnabled);
   const nav = useDekNav();
+  const customHero = useSyncExternalStore(subscribeHeroImage, getHeroImage, getHeroImage);
+  const [accent, setAccent] = useState(loadAccent);
   const earnedCount = getEarnedAchievementIds(user).length;
 
   const handlePublish = (e: React.FormEvent) => {
@@ -146,6 +151,52 @@ export function ProfilFeedView({
               {rankInfo.nextRank} · Série <span className="num text-fg">{user.streakDays}</span> j
             </div>
           )}
+        </div>
+      </Card>
+
+      {/* Personnaliser l'essentiel */}
+      <Card className="space-y-4">
+        <div>
+          <div className="text-[16px] font-bold leading-[22px] text-fg">Personnaliser</div>
+          <div className="text-[12px] font-medium text-mute">Ta photo d’accueil, ta couleur, ton avatar et ton coach.</div>
+        </div>
+        <div>
+          <div className="mb-2 text-[13px] font-semibold text-fg">Photo de l’accueil</div>
+          <div className="flex items-center gap-3">
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[16px] bg-tile">
+              {customHero ? <img src={customHero} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-mute">Défaut</span>}
+            </div>
+            <div className="flex flex-1 flex-wrap gap-2">
+              <ImagePicker onPick={setHeroImage} maxWidth={1100} className="h-9 rounded-full bg-lime px-4 text-[13px] font-bold text-on-lime transition active:scale-95">
+                Choisir une photo
+              </ImagePicker>
+              {customHero && (
+                <button type="button" onClick={() => setHeroImage(null)} className="h-9 rounded-full bg-tile px-4 text-[13px] font-semibold text-mute transition active:scale-95">
+                  Remettre par défaut
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="mb-2 text-[13px] font-semibold text-fg">Couleur de l’app</div>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Couleur d’accentuation">
+            {ACCENTS.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                role="radio"
+                aria-checked={accent === a.id}
+                aria-label={a.label}
+                onClick={() => {
+                  saveAccent(a.id);
+                  setAccent(a.id);
+                }}
+                className={`h-9 w-9 rounded-full border-2 transition active:scale-90 ${accent === a.id ? 'border-fg' : 'border-transparent'}`}
+                style={{ backgroundColor: a.color }}
+              />
+            ))}
+          </div>
         </div>
       </Card>
 

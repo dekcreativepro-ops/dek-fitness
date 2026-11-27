@@ -1,6 +1,7 @@
+import { useSyncExternalStore } from 'react';
 import { motion } from 'framer-motion';
 import { coachPortrait } from '../data/coachPortraits';
-import { BowlFood, Compass, Sparkle, Dumbbell, Flag, NavigationArrow, Play, SlidersHorizontal, SoccerBall, Sword, Trophy } from './DekIcons';
+import { BowlFood, CameraIcon, Compass, Sparkle, Dumbbell, Flag, NavigationArrow, Play, SlidersHorizontal, SoccerBall, Sword, Trophy } from './DekIcons';
 import { useDekNav } from '../context/DekNav';
 import { INITIAL_COACHS } from '../data/mockData';
 import { getProgram, getRecommendedProgram, WORKOUT_PROGRAMS } from '../data/workoutsData';
@@ -15,6 +16,8 @@ import { UserAvatar } from './UserAvatar';
 import { usePhoto } from '../utils/usePhoto';
 import { ProgramPhoto } from './workouts/ProgramPhoto';
 import { useCoach } from './coach/coachHooks';
+import { ImagePicker } from './ui/ImagePicker';
+import { getHeroImage, setHeroImage, subscribeHeroImage } from '../utils/customImage';
 import { ResumeCard } from './workouts/ResumeCard';
 import { WorkoutCard } from './workouts/WorkoutCard';
 
@@ -48,7 +51,9 @@ export function HomeView({
   const coachName = useCoach().name;
   const adventure = getAdventurePlan(user.goals, user.category);
   const coach = INITIAL_COACHS.find((c) => c.id === adventure.recommendedCoachId) ?? INITIAL_COACHS[0];
-  const heroPhoto = usePhoto('hero', 'card');
+  const defaultHero = usePhoto('hero', 'card');
+  const customHero = useSyncExternalStore(subscribeHeroImage, getHeroImage, getHeroImage);
+  const heroPhoto = customHero ?? defaultHero;
   const today = getRecommendedProgram(user.goals[0], getTierIndex(user.category));
   const todayPhoto = usePhoto(today.photoCat, 'detail');
   const plan = getNutritionPlan(user.goals, user.category, user.body);
@@ -110,6 +115,24 @@ export function HomeView({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-transparent to-transparent" />
+        <div className="absolute right-4 top-4 z-10 flex gap-2">
+          <ImagePicker
+            onPick={setHeroImage}
+            maxWidth={1100}
+            className="flex h-9 items-center gap-1.5 rounded-full bg-black/45 px-3 text-[12px] font-semibold text-white backdrop-blur-md transition active:scale-95"
+          >
+            <CameraIcon className="h-4 w-4" /> Ma photo
+          </ImagePicker>
+          {customHero && (
+            <button
+              type="button"
+              onClick={() => setHeroImage(null)}
+              className="flex h-9 items-center rounded-full bg-black/45 px-3 text-[12px] font-semibold text-white backdrop-blur-md transition active:scale-95"
+            >
+              Par défaut
+            </button>
+          )}
+        </div>
         <div className="absolute left-5 top-5">
           <div className="text-[13px] font-medium text-white/80">Rang de saison</div>
           <div className="text-[34px] font-extrabold leading-9 text-white">{rankInfo.rank}</div>

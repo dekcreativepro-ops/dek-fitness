@@ -174,6 +174,8 @@ export interface SanteMatch {
   level: 'Loisir' | 'Compétitif' | 'Intensif';
   feeLabel: string;
   isJoined?: boolean;
+  /** Image choisie par l'organisateur (affichée en bannière du match) */
+  image?: string;
 }
 
 export interface TournamentMatch {

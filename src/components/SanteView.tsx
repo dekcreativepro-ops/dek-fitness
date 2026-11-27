@@ -11,6 +11,7 @@ import { LEVEL_COLORS, levelFromScore } from '../utils/gameFx';
 import { SPORTS, SPORT_GROUPS, sportMeta, type SportGroup } from '../data/sports';
 import { getTournament } from '../data/tournaments';
 import { Slot3D } from './ui/Slot3D';
+import { ImagePicker } from './ui/ImagePicker';
 import { Bike, Dumbbell, HandBall, Music, Sword, Swim, Timer, Trophy, Volley, Yoga } from './DekIcons';
 
 interface SanteViewProps {
@@ -142,6 +143,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
   const [title, setTitle] = useState('');
   const [sport, setSport] = useState<SanteMatch['sport']>('Football 7v7');
   const [sportGroup, setSportGroup] = useState<'Tous' | SportGroup>('Tous');
+  const [matchImage, setMatchImage] = useState<string | null>(null);
   const [tourGroup, setTourGroup] = useState<SportGroup>('Foot');
   const tournament = getTournament(tourGroup);
   const [location, setLocation] = useState('');
@@ -334,9 +336,11 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
       level: 'Compétitif',
       feeLabel: '1 500 F / joueur',
       isJoined: true,
+      image: matchImage ?? undefined,
     };
     setMatches((prev) => [created, ...prev]);
     onJoinSante(created.title);
+    setMatchImage(null);
     setTitle('');
     setLocation('');
     setShowCreate(false);
@@ -359,6 +363,24 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
           onChange={(e) => setTitle(e.target.value)}
           className={FIELD}
         />
+        <div className="space-y-2">
+          <div className="text-[12px] font-medium text-mute">Image du match ou du tournoi (facultatif)</div>
+          {matchImage && <img src={matchImage} alt="Aperçu de l'image du match" className="h-32 w-full rounded-[18px] object-cover" />}
+          <div className="flex gap-2">
+            <ImagePicker
+              onPick={setMatchImage}
+              maxWidth={1000}
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-tile px-4 text-[13px] font-semibold text-fg transition active:scale-95"
+            >
+              {matchImage ? 'Changer l’image' : 'Choisir une image'}
+            </ImagePicker>
+            {matchImage && (
+              <button type="button" onClick={() => setMatchImage(null)} className="h-10 rounded-full bg-tile px-4 text-[13px] font-semibold text-mute transition active:scale-95">
+                Retirer
+              </button>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <select
             value={sport}
@@ -960,7 +982,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
             <Card key={m.id}>
               {/* Photo adaptée au sport : basket en noir et blanc, football en couleur */}
               <div className="-mx-5 -mt-5 mb-4 h-32 overflow-hidden rounded-t-[28px]">
-                <SportBanner sport={m.sport} />
+                {m.image ? <img src={m.image} alt="" className="h-full w-full object-cover" /> : <SportBanner sport={m.sport} />}
               </div>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
