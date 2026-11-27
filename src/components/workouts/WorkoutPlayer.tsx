@@ -13,6 +13,7 @@ import { clearWorkoutResume, getWorkoutResume, saveWorkoutResume } from '../../u
 import { CheckDraw, ConfettiBurst } from '../ui/AnimatedIcons';
 import { useWakeLock } from '../ui/hooks';
 import { CountUp, IconButton, ProgressBar, TimerRing } from '../ui/kit';
+import { ExerciseMedia } from './ExerciseMedia';
 
 type Phase = 'ready' | 'work' | 'rest' | 'done';
 
@@ -296,12 +297,8 @@ export function WorkoutPlayer({
             className="flex min-h-0 flex-1 flex-col px-5 pb-4 pt-4"
           >
             {/* Média + énorme chiffre */}
-            <div className="relative min-h-0 flex-1 overflow-hidden rounded-[28px] bg-white">
-              <img
-                src={`/demos/${exercise.demo}.gif`}
-                alt={exercise.name}
-                className="relative h-full w-full object-contain p-4 mix-blend-multiply"
-              />
+            <div className={`relative min-h-0 flex-1 overflow-hidden rounded-[28px] ${exercise.video ? 'bg-black' : 'bg-white'}`}>
+              <ExerciseMedia exercise={exercise} fill className="relative" />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-5 pb-4 pt-16">
                 <motion.div
                   key={`${idx}-${step.mode === 'reps' ? step.target : remaining}`}
@@ -417,7 +414,7 @@ export function WorkoutPlayer({
               <div className="mb-2 px-1 text-[13px] font-semibold text-mute">À suivre</div>
               <div className="flex items-center gap-3">
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[18px] bg-white">
-                  <img src={`/demos/${exercise.demo}.gif`} alt="" className="h-full w-full object-contain" />
+                  {exercise.video ? <ExerciseMedia exercise={exercise} still /> : <img src={`/demos/${exercise.demo}.gif`} alt="" className="h-full w-full object-contain" />}
                 </div>
                 <div className="min-w-0">
                   <div className="truncate text-[15px] font-bold text-fg">{exercise.name}</div>

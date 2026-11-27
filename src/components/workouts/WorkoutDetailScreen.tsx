@@ -14,6 +14,7 @@ import { MUSCLE_LABELS } from '../../utils/programsAndNutrition';
 import { UserAvatar } from '../UserAvatar';
 import { BottomSheet, Button, Card, CinematicImage, IconButton, ListRow, SectionHeader, StarRow, StatTiles } from '../ui/kit';
 import { FormCompare } from '../ui/FormCompare';
+import { ExerciseMedia } from './ExerciseMedia';
 import { MuscleMap } from '../ui/MuscleMap';
 import { usePhoto } from '../../utils/usePhoto';
 import { fadeUpItem, staggerContainer } from '../ui/motion';
@@ -26,8 +27,8 @@ function stepLabel(step: WorkoutStep) {
 export function ExerciseSheetContent({ exercise, step }: { exercise: ExerciseDef; step?: WorkoutStep }) {
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-[24px] bg-white">
-        <img src={`/demos/${exercise.demo}.gif`} alt={exercise.name} className="mx-auto h-48 object-contain" />
+      <div className={`relative overflow-hidden rounded-[24px] ${exercise.video ? 'bg-black' : 'bg-white'}`}>
+        <ExerciseMedia exercise={exercise} />
         {step && (
           <span className="num absolute left-3 top-3 rounded-full bg-ink px-3 py-1 text-[12px] font-bold text-lime">
             {stepLabel(step)}
@@ -35,6 +36,19 @@ export function ExerciseSheetContent({ exercise, step }: { exercise: ExerciseDef
         )}
       </div>
       <p className="text-[14px] font-medium leading-5 text-mute">{exercise.cue}</p>
+      {exercise.variants && (
+        <div className="rounded-[24px] bg-tile p-4">
+          <div className="mb-2 text-[13px] font-semibold text-mute">Dans la vidéo</div>
+          <ul className="space-y-1.5">
+            {exercise.variants.map((v) => (
+              <li key={v} className="flex items-start gap-2 text-[13px] font-medium leading-5 text-fg">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-lime" />
+                {v}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="rounded-[24px] bg-tile p-4">
         <div className="mb-2 text-[13px] font-semibold text-mute">Muscles sollicités</div>
@@ -55,7 +69,7 @@ export function ExerciseSheetContent({ exercise, step }: { exercise: ExerciseDef
 
       <div className="space-y-2">
         <h3 className="text-[16px] font-bold text-fg">Erreurs à éviter</h3>
-        {FORM_COMPARE_DEMOS.includes(exercise.demo) && <FormCompare demo={exercise.demo} />}
+        {FORM_COMPARE_DEMOS.includes(exercise.demo) && !exercise.variants && <FormCompare demo={exercise.demo} />}
         {exercise.tips.map((t, i) => (
           <motion.div
             key={i}
@@ -266,7 +280,7 @@ export function WorkoutDetailScreen({
                   <ListRow
                     key={`${step.exerciseId}-${i}`}
                     onClick={() => setOpenStep(step)}
-                    leading={<img src={`/demos/${ex.demo}.gif`} alt="" loading="lazy" className="h-full w-full bg-white object-contain" />}
+                    leading={ex.video ? <ExerciseMedia exercise={ex} still /> : <img src={`/demos/${ex.demo}.gif`} alt="" loading="lazy" className="h-full w-full bg-white object-contain" />}
                     title={ex.name}
                     subtitle={step.restSec > 0 ? `Repos ${step.restSec} s` : undefined}
                     meta={stepLabel(step)}

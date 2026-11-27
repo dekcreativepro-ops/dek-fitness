@@ -20,6 +20,7 @@ import {
   getProgram,
   getRecommendedProgram,
   MIN_VALIDATED_RATIO,
+  WORKOUT_PROGRAMS,
   type WorkoutResult,
 } from './data/workoutsData';
 import type {
@@ -955,7 +956,7 @@ export default function App() {
   const QUICK_ACTIONS: { id: QuickId; label: string; sub: string; icon: React.ReactNode }[] = [
     { id: 'coachai', label: `Coach ${coachProfile.name}`, sub: 'Conseils & suivi IA', icon: <Sparkle className="h-5 w-5" /> },
     { id: 'today', label: 'Séance du jour', sub: `${todayProgram.durationMin} min • ${todayProgram.level}`, icon: <Play className="h-5 w-5" /> },
-    { id: 'library', label: 'Séances guidées', sub: '6 programmes', icon: <DumbbellLift className="h-5 w-5" /> },
+    { id: 'library', label: 'Séances guidées', sub: `${WORKOUT_PROGRAMS.length} programmes`, icon: <DumbbellLift className="h-5 w-5" /> },
     { id: 'outdoor', label: 'Mission Outdoor', sub: 'Carte 3D & GPS', icon: <Compass className="h-5 w-5" /> },
     { id: 'house', label: 'Défi House IA', sub: 'Duel caméra', icon: <Sword className="h-5 w-5" /> },
     { id: 'water', label: '+250 ml d’eau', sub: `${user.waterGlasses} verre(s) aujourd’hui`, icon: <DropWave className="h-5 w-5" /> },

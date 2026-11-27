@@ -14,6 +14,11 @@ export const PHOTO_CATEGORIES = {
   abs: ['s-abs'],
   hiit: ['s-hiit'],
   fullbody: ['s-fullbody'],
+  // séances à vidéo (affiche = image de la vidéo, public/videos/exo)
+  vidpompes: ['v-pompes-variantes'],
+  vidabdos: ['v-abdos-sol'],
+  vidjambes: ['v-squats-halteres'],
+  vidmobilite: ['v-mobilite'],
   // terrains
   football: ['3d-terrain-bandeau'],
   matchfoot: ['3d-terrain-foot'],
@@ -37,6 +42,7 @@ export const LIGHT_PHOTO_CATEGORIES: PhotoCategory[] = ['coach'];
 
 export function photoUrl(id: string, format: PhotoFormat): string {
   // images 3D (préfixe 3d-) : public/images/3d ; séances (préfixe s-) : public/images/seance ; photos : public/images/ph
+  if (id.startsWith('v-')) return `/videos/exo/${id.slice(2)}.jpg`;
   if (id.startsWith('3d-')) return `/images/3d/${id.slice(3)}.jpg`;
   if (id.startsWith('s-')) return `/images/seance/${id.slice(2)}-${format}.jpg`;
   return `/images/ph/${id}-${format}.jpg`;
