@@ -61,6 +61,7 @@ interface ChronoBonusOptions {
   base: number; // XP de base ; le temps restant (s) s'ajoute
   label: string;
   maxSpawns?: number;
+  limitSec?: number; // durée du chrono (30 s par défaut, 20 s en mode à fond)
   gapMs?: number;
   onWin: (xp: number, label: string) => void;
   onMiss: () => void;
@@ -113,7 +114,7 @@ export function useChronoBonus(options: ChronoBonusOptions) {
       } else if (o.spawnOk !== false && spawnedRef.current < (o.maxSpawns ?? 3) && t - lastEndRef.current > (o.gapMs ?? 1500)) {
         seqRef.current += 1;
         spawnedRef.current += 1;
-        bonusRef.current = { id: seqRef.current, target: o.progress + o.need, expiresAt: t + BONUS_LIMIT_SEC * 1000, nearFired: false };
+        bonusRef.current = { id: seqRef.current, target: o.progress + o.need, expiresAt: t + (o.limitSec ?? BONUS_LIMIT_SEC) * 1000, nearFired: false };
       }
       setBonus(bonusRef.current ? { ...bonusRef.current } : null);
       setNow(t);

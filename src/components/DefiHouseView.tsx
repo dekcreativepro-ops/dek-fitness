@@ -19,7 +19,9 @@ import { UserAvatar } from './UserAvatar';
 
 import { AlertGlow, BestMedal, BonusPill, GameLegend, GameOptionsCard } from './ui/GameKit';
 import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
-import { levelFromScore, loadGameRecord, saveGameRecord, vibrate } from '../utils/gameFx';
+import { levelFromScore, loadGameRecord, loadStreak, saveGameRecord, saveStreak, streakMultiplier, vibrate } from '../utils/gameFx';
+import { HouseTournamentBoard } from './HouseTournamentBoard';
+import { loadChallenges, winChallenge, type HouseChallenge } from '../utils/houseTournament';
 
 interface DefiHouseViewProps {
   userCategory: MissionDifficulty;
@@ -57,10 +59,11 @@ const HOUSE_MODES: {
   { id: 'first_to_20', label: '1er à 20', shortDesc: 'Sprint technique jusqu’à 20 reps', xpReward: 260 },
   { id: 'survie_maison', label: 'Survie', shortDesc: 'Ne laisse pas ta jauge tomber (4.5s)', xpReward: 300 },
   { id: 'equipe_4v4', label: 'Équipe 4v4', shortDesc: 'DEK Squad vs Iron Crew (80 reps)', xpReward: 320 },
+  { id: 'tournoi', label: 'Tournoi', shortDesc: 'Bats le record du champion en 60 s', xpReward: 300 },
 ];
 
 /** Difficulté d'un défi : mode + exercice + force de l'adversaire. */
-const MODE_BASE: Record<HouseGameMode, number> = { ko_60s: 4.5, first_to_20: 5, survie_maison: 6.5, equipe_4v4: 6 };
+const MODE_BASE: Record<HouseGameMode, number> = { ko_60s: 4.5, first_to_20: 5, survie_maison: 6.5, equipe_4v4: 6, tournoi: 7 };
 const EXERCISE_LOAD: Record<HouseExercise, number> = { pompes: 1.5, squats: 1, jumping_jacks: 0, corde: 1.5, gainage: 1, burpees: 2.5 };
 const BONUS_NEED: Record<MissionDifficulty, number> = { Amateur: 6, Standard: 8, Pro: 10, Expert: 12 };
 
@@ -146,8 +149,12 @@ export function DefiHouseView({
 
   const [gameMode, setGameMode] = useState<HouseGameMode>('ko_60s');
   const [exercise, setExercise] = useState<HouseExercise>('pompes');
+  const [view, setView] = useState<'duel' | 'tournoi'>('duel');
+  const [challenges, setChallenges] = useState<HouseChallenge[]>(() => loadChallenges());
+  const [activeChallenge, setActiveChallenge] = useState<HouseChallenge | null>(null);
   const [showDemo, setShowDemo] = useState(false);
   const [matchState, setMatchState] = useState<'idle' | 'fighting' | 'win' | 'lose'>('idle');
+  const fightingNow = matchState === 'fighting';
   const [endReason, setEndReason] = useState<string>('');
 
   const [myHp, setMyHp] = useState(100);
@@ -238,14 +245,37 @@ export function DefiHouseView({
   // Jeu : réglages, alertes (vibration + halo), bonus chrono et records
   const [prefs, setPrefs] = useGamePrefs('house');
   const { glowKey, glowOn, alert } = useAlertGlow(prefs.alerts);
-  const alertFlagsRef = useRef({ win: false, time: false, stamina: false });
+  const alertFlagsRef = useRef({ win: false, time: false, stamina: false, half: false, ten: false });
+  const updateCueRef = useRef<(cue: string) => void>(() => {});
+  const prefsRef = useRef(prefs);
+  useEffect(() => {
+    prefsRef.current = prefs;
+  }, [prefs]);
+  const challengeRef = useRef<HouseChallenge | null>(null);
+  const targetRef = useRef(FIRST_TO_TARGET);
+  const launchRef = useRef(false);
+  useEffect(() => {
+    challengeRef.current = activeChallenge;
+    targetRef.current = gameMode === 'tournoi' && activeChallenge ? activeChallenge.score + 1 : FIRST_TO_TARGET;
+  }, [activeChallenge, gameMode]);
+  const [streak, setStreak] = useState(() => loadStreak('house'));
+  // Rythme & rapidité : régularité des reps et enchaînements rapides
+  const repTimesRef = useRef<number[]>([]);
+  const speedStreakRef = useRef(0);
+  const sinceRhythmRef = useRef(5);
+  const skillXpRef = useRef(0);
+  const [skillXp, setSkillXp] = useState(0);
+  const [speedStreak, setSpeedStreak] = useState(0);
   const [recordTick, setRecordTick] = useState(0);
+  const adaptiveBest = prefs.adaptive ? (loadGameRecord(`house:${gameMode}:${exercise}`)?.best ?? 0) : 0;
+  const bonusNeed = Math.min(25, Math.max(BONUS_NEED[userCategory] ?? 8, Math.round(adaptiveBest * 0.5)));
   const chrono = useChronoBonus({
     enabled: prefs.bonus,
     active: matchState === 'fighting',
     progress: myReps,
-    need: BONUS_NEED[userCategory] ?? 8,
-    base: 15,
+    need: bonusNeed,
+    base: prefs.hardcore ? 22 : 15,
+    limitSec: prefs.hardcore ? 20 : 30,
     label: 'Défi chrono',
     onWin: (xp) => {
       spawnPopup(`Bonus +${xp} XP`, 'opp');
@@ -262,8 +292,8 @@ export function DefiHouseView({
     const nearWin =
       gameMode === 'ko_60s' || gameMode === 'survie_maison'
         ? oppHp <= 15
-        : gameMode === 'first_to_20'
-          ? myReps >= FIRST_TO_TARGET - 3
+        : gameMode === 'first_to_20' || gameMode === 'tournoi'
+          ? myReps >= targetRef.current - 3
           : mySquadReps >= SQUAD_TARGET_REPS - 8;
     if (nearWin && !f.win) {
       f.win = true;
@@ -273,6 +303,18 @@ export function DefiHouseView({
       f.time = true;
       alert('near');
     }
+    if (prefsRef.current.coach) {
+      if (timeLeft === 30 && !f.half) {
+        f.half = true;
+        updateCueRef.current('Mi-parcours ! Pousse à fond');
+        alert('near');
+      }
+      if (timeLeft === 10 && !f.ten) {
+        f.ten = true;
+        updateCueRef.current(oppReps > myReps ? '10 secondes : il te dépasse, accélère !' : '10 secondes : sors tout, garde l’avance !');
+        alert('near');
+      }
+    }
     if (gameMode === 'survie_maison') {
       if (staminaMs < 1200 && !f.stamina) {
         f.stamina = true;
@@ -281,7 +323,8 @@ export function DefiHouseView({
         f.stamina = false;
       }
     }
-  }, [matchState, gameMode, oppHp, myReps, mySquadReps, timeLeft, staminaMs, alert]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchState, gameMode, oppHp, myReps, mySquadReps, timeLeft, staminaMs, alert, oppReps]);
 
   /** Limite les re-rendus : on ne met à jour la jauge / le conseil que s'ils changent. */
   const updateDepth = (pct: number) => {
@@ -295,6 +338,10 @@ export function DefiHouseView({
     setLiveCue(cue);
   };
 
+  useEffect(() => {
+    updateCueRef.current = updateCue;
+  });
+
   const registerMyRep = () => {
     if (matchStateRef.current !== 'fighting') return;
     playHit();
@@ -303,12 +350,43 @@ export function DefiHouseView({
 
     setMyReps((prev) => {
       const next = prev + step;
-      if (mode === 'first_to_20' && next >= FIRST_TO_TARGET) {
-        setEndReason(`Premier à ${FIRST_TO_TARGET} reps !`);
+      if ((mode === 'first_to_20' || mode === 'tournoi') && next >= targetRef.current) {
+        setEndReason(mode === 'tournoi' ? `Titre conquis : ${targetRef.current} reps !` : `Premier à ${FIRST_TO_TARGET} reps !`);
         setMatchState('win');
       }
       return next;
     });
+
+    // Rythme & rapidité : bonus d'XP pour les reps rapides et régulières
+    if (prefsRef.current.rhythm) {
+      const t = Date.now();
+      const arr = repTimesRef.current;
+      arr.push(t);
+      if (arr.length > 6) arr.shift();
+      const award = (label: string, xp: number) => {
+        skillXpRef.current += xp;
+        setSkillXp(skillXpRef.current);
+        spawnPopup(`${label} +${xp} XP`, 'opp');
+        if (prefsRef.current.alerts) vibrate(40);
+      };
+      const gap = arr.length >= 2 ? t - arr[arr.length - 2] : 0;
+      if (gap > 0 && gap <= 1400) {
+        speedStreakRef.current += 1;
+        if (speedStreakRef.current % 5 === 0) award('Rapidité', 10);
+      } else if (gap > 3000) {
+        speedStreakRef.current = 0;
+      }
+      setSpeedStreak(speedStreakRef.current);
+      sinceRhythmRef.current += 1;
+      if (arr.length >= 5 && sinceRhythmRef.current >= 5) {
+        const gaps = arr.slice(1).map((v, i) => v - arr[i]).slice(-4);
+        const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+        if (mean >= 700 && mean <= 3500 && gaps.every((g) => Math.abs(g - mean) <= mean * 0.25)) {
+          sinceRhythmRef.current = 0;
+          award('Rythme parfait', 12);
+        }
+      }
+    }
 
     updateDepth(88);
     updateCue(
@@ -326,7 +404,7 @@ export function DefiHouseView({
         spawnPopup(`+${step} Squad`, 'opp');
       } else if (mode === 'survie_maison') {
         spawnPopup(`Survie +4.5s`, 'opp');
-      } else if (mode === 'first_to_20') {
+      } else if (mode === 'first_to_20' || mode === 'tournoi') {
         spawnPopup(`+${step} rep`, 'opp');
       } else {
         spawnPopup(next >= 3 ? `-5 HP • x${next}` : '-5 HP', 'opp');
@@ -372,6 +450,16 @@ export function DefiHouseView({
   useEffect(() => {
     winInfoRef.current = { exercise, gameMode, onWinDuel, getBonusXp: chrono.getTotalXp };
   });
+  const matchPrevRef = useRef(matchState);
+
+  useEffect(() => {
+    // une défaite casse la série de victoires
+    if (matchState === 'lose' && matchPrevRef.current !== 'lose') {
+      saveStreak('house', 0);
+      window.setTimeout(() => setStreak(0), 0);
+    }
+    matchPrevRef.current = matchState;
+  }, [matchState]);
 
   useEffect(() => {
     if (matchState !== 'win') return;
@@ -379,10 +467,25 @@ export function DefiHouseView({
     playVictory();
     const exLabel = EXERCISES.find((e) => e.id === info.exercise)?.label ?? 'Pompes';
     const modeObj = HOUSE_MODES.find((m) => m.id === info.gameMode) ?? HOUSE_MODES[0];
-    info.onWinDuel(modeObj.xpReward + info.getBonusXp(), exLabel, myRepsRef.current, modeObj.label);
+    const ch = challengeRef.current;
+    const isTournoi = info.gameMode === 'tournoi' && ch;
+    const baseXp = isTournoi ? ch.rewardXp + ch.level * 40 : modeObj.xpReward;
+    const newStreak = loadStreak('house') + 1;
+    const mult = (prefsRef.current.streak ? streakMultiplier(newStreak) : 1) * (prefsRef.current.hardcore ? 1.25 : 1);
+    const totalXp = Math.round((baseXp + info.getBonusXp() + skillXpRef.current) * mult);
+    const label = isTournoi ? `Tournoi Défi House · ${ch.zone}` : modeObj.label;
+    info.onWinDuel(totalXp, exLabel, myRepsRef.current, label);
     saveGameRecord(`house:${info.gameMode}:${info.exercise}`, myRepsRef.current);
-    window.setTimeout(() => setRecordTick((t) => t + 1), 0);
+    saveStreak('house', newStreak);
+    window.setTimeout(() => {
+      setRecordTick((t) => t + 1);
+      setStreak(newStreak);
+      if (isTournoi) setChallenges((list) => winChallenge(list, ch.id, myRepsRef.current, 'Toi'));
+    }, 0);
   }, [matchState]);
+
+  // Cadence du champion en tournoi : ses reps répartis sur les 60 s
+  const matchOppIntervalMs = gameMode === 'tournoi' && activeChallenge ? Math.max(400, Math.round(60000 / activeChallenge.score)) : opponent.intervalMs;
 
   useEffect(() => {
     if (matchState !== 'fighting') return;
@@ -399,8 +502,8 @@ export function DefiHouseView({
               setEndReason('Tu as tenu les 45s de Survie !');
               return 'win';
             }
-            if (mode === 'first_to_20') {
-              const won = myRepsRef.current >= oppRepsRef.current;
+            if (mode === 'first_to_20' || mode === 'tournoi') {
+              const won = mode === 'tournoi' ? myRepsRef.current > oppRepsRef.current : myRepsRef.current >= oppRepsRef.current;
               setEndReason(won ? 'En tête à la fin du chrono !' : 'Adversaire devant au chrono');
               return won ? 'win' : 'lose';
             }
@@ -452,11 +555,12 @@ export function DefiHouseView({
         return;
       }
 
-      if (Math.random() < opponent.hitChance) {
+      if (Math.random() < (mode === 'tournoi' ? 0.97 : opponent.hitChance)) {
         setOppReps((prev) => {
           const next = prev + 1;
-          if (mode === 'first_to_20' && next >= FIRST_TO_TARGET) {
-            setEndReason(`${opponent.name} atteint ${FIRST_TO_TARGET} reps en premier`);
+          const oppTarget = mode === 'tournoi' ? (challengeRef.current?.score ?? FIRST_TO_TARGET) : FIRST_TO_TARGET;
+          if ((mode === 'first_to_20' || mode === 'tournoi') && next >= oppTarget && !(mode === 'tournoi' && myRepsRef.current > next)) {
+            setEndReason(`${mode === 'tournoi' ? (challengeRef.current?.champion ?? opponent.name) : opponent.name} atteint ${oppTarget} reps en premier`);
             setMatchState('lose');
           }
           return next;
@@ -474,7 +578,7 @@ export function DefiHouseView({
           });
         }
       }
-    }, opponent.intervalMs);
+    }, matchOppIntervalMs);
 
     // Survival stamina drain loop (100ms tick)
     const survivalInterval =
@@ -497,7 +601,7 @@ export function DefiHouseView({
       clearInterval(oppInterval);
       if (survivalInterval) clearInterval(survivalInterval);
     };
-  }, [matchState, gameMode, opponent.hitChance, opponent.intervalMs, opponent.name]);
+  }, [matchState, gameMode, opponent.hitChance, opponent.intervalMs, opponent.name, matchOppIntervalMs]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -732,9 +836,36 @@ export function DefiHouseView({
     setCombo(0);
     setTimeLeft(gameMode === 'survie_maison' ? 45 : 60);
     chrono.reset();
-    alertFlagsRef.current = { win: false, time: false, stamina: false };
+    alertFlagsRef.current = { win: false, time: false, stamina: false, half: false, ten: false };
+    repTimesRef.current = [];
+    speedStreakRef.current = 0;
+    sinceRhythmRef.current = 5;
+    skillXpRef.current = 0;
+    setSkillXp(0);
+    setSpeedStreak(0);
     updateCue('C’est parti !');
     setMatchState('fighting');
+  };
+
+  const launchChallenge = (c: HouseChallenge) => {
+    launchRef.current = true;
+    setActiveChallenge(c);
+    setExercise(c.exercise);
+    setGameMode('tournoi');
+  };
+  useEffect(() => {
+    if (launchRef.current && gameMode === 'tournoi' && activeChallenge && exercise === activeChallenge.exercise) {
+      launchRef.current = false;
+      startDuel();
+    }
+  });
+
+  const switchView = (v: 'duel' | 'tournoi') => {
+    if (fightingNow) return;
+    setView(v);
+    setActiveChallenge(null);
+    setMatchState('idle');
+    setGameMode(v === 'duel' ? 'ko_60s' : 'tournoi');
   };
 
   const activeEx = EXERCISES.find((e) => e.id === exercise) ?? EXERCISES[0];
@@ -748,7 +879,7 @@ export function DefiHouseView({
   const fighting = matchState === 'fighting';
 
   // Deux lignes HUD (adversaire / toi) selon le mode actif
-  const oppName = gameMode === 'equipe_4v4' ? 'Iron Crew (4)' : opponent.name;
+  const oppName = gameMode === 'equipe_4v4' ? 'Iron Crew (4)' : gameMode === 'tournoi' && activeChallenge ? activeChallenge.champion : opponent.name;
   const hud: {
     opp: { sub: string; value: string; pct: number; trail?: number };
     me: { name: string; sub: string; value: string; pct: number; danger?: boolean };
@@ -758,18 +889,18 @@ export function DefiHouseView({
           opp: { sub: `${oppReps} reps adv.`, value: `${oppHp}%`, pct: oppHp, trail: oppTrailHp },
           me: { name: 'Toi', sub: 'Ta vie', value: `${myHp}%`, pct: myHp },
         }
-      : gameMode === 'first_to_20'
+      : gameMode === 'first_to_20' || gameMode === 'tournoi'
         ? {
             opp: {
               sub: `${oppReps} reps adv.`,
-              value: `${oppReps}/${FIRST_TO_TARGET}`,
-              pct: Math.min(100, (oppReps / FIRST_TO_TARGET) * 100),
+              value: `${oppReps}/${gameMode === 'tournoi' ? (activeChallenge?.score ?? FIRST_TO_TARGET) : FIRST_TO_TARGET}`,
+              pct: Math.min(100, (oppReps / (gameMode === 'tournoi' ? (activeChallenge?.score ?? FIRST_TO_TARGET) : FIRST_TO_TARGET)) * 100),
             },
             me: {
               name: 'Toi',
               sub: `${myReps} reps`,
-              value: `${myReps}/${FIRST_TO_TARGET}`,
-              pct: Math.min(100, (myReps / FIRST_TO_TARGET) * 100),
+              value: `${myReps}/${gameMode === 'tournoi' ? (activeChallenge ? activeChallenge.score + 1 : FIRST_TO_TARGET) : FIRST_TO_TARGET}`,
+              pct: Math.min(100, (myReps / (gameMode === 'tournoi' ? (activeChallenge ? activeChallenge.score + 1 : FIRST_TO_TARGET) : FIRST_TO_TARGET)) * 100),
             },
           }
         : gameMode === 'survie_maison'
@@ -799,47 +930,72 @@ export function DefiHouseView({
 
   return (
     <div className="space-y-4 pb-2">
-      {/* Sélecteur de mode de combat (4 modes) */}
+      {/* Défi 1v1 ou Tournoi */}
       <div className={fighting ? 'pointer-events-none opacity-50' : ''}>
         <ChipTabs
-          items={HOUSE_MODES.map((m) => ({ id: m.id, label: m.label }))}
-          value={gameMode}
-          onChange={(id) => {
-            if (!fighting) setGameMode(id);
-          }}
-          layoutId="houseModePill"
+          items={[
+            { id: 'duel', label: 'Défi 1v1' },
+            { id: 'tournoi', label: 'Tournoi' },
+          ]}
+          value={view}
+          onChange={(id) => switchView(id as 'duel' | 'tournoi')}
+          layoutId="houseViewPill"
         />
       </div>
 
-      {/* Pilules des 6 exercices + bouton Démo */}
-      <div className="flex items-center gap-2">
-        <div className="no-scrollbar flex flex-1 gap-2 overflow-x-auto">
-          {EXERCISES.map((ex) => {
-            const active = exercise === ex.id;
-            return (
-              <button
-                key={ex.id}
-                disabled={fighting}
-                onClick={() => setExercise(ex.id)}
-                className={`h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
-                  active ? 'bg-fg text-ink' : 'bg-tile text-mute'
-                }`}
-              >
-                {ex.label}
-              </button>
-            );
-          })}
-        </div>
-        <button
-          onClick={() => setShowDemo((v) => !v)}
-          className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors ${
-            showDemo ? 'bg-lime text-on-lime' : 'bg-tile text-fg'
-          }`}
-        >
-          <PlayCircle className="h-4 w-4" /> Démo
-        </button>
-      </div>
+      {view === 'duel' && (
+        <>
+          {/* Sélecteur de mode de combat */}
+          <div className={fighting ? 'pointer-events-none opacity-50' : ''}>
+            <ChipTabs
+              items={HOUSE_MODES.filter((m) => m.id !== 'tournoi').map((m) => ({ id: m.id, label: m.label }))}
+              value={gameMode}
+              onChange={(id) => {
+                if (!fighting) setGameMode(id);
+              }}
+              layoutId="houseModePill"
+            />
+          </div>
 
+          {/* Exercices + Démo : retour à la ligne pour que rien ne soit coupé */}
+          <div className="flex flex-wrap items-center gap-2">
+            {EXERCISES.map((ex) => {
+              const active = exercise === ex.id;
+              return (
+                <button
+                  key={ex.id}
+                  disabled={fighting}
+                  onClick={() => setExercise(ex.id)}
+                  className={`h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
+                    active ? 'bg-fg text-ink' : 'bg-tile text-mute'
+                  }`}
+                >
+                  {ex.label}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setShowDemo((v) => !v)}
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-colors ${
+                showDemo ? 'bg-lime text-on-lime' : 'bg-tile text-fg'
+              }`}
+            >
+              <PlayCircle className="h-4 w-4" /> Démo
+            </button>
+          </div>
+        </>
+      )}
+
+      {view === 'tournoi' && matchState === 'idle' && (
+        <HouseTournamentBoard
+          challenges={challenges}
+          labelOf={(c) => `${EXERCISES.find((e) => e.id === c.exercise)?.label ?? c.exercise} · 60 s`}
+          onChallenge={launchChallenge}
+        />
+      )}
+
+      {!(view === 'tournoi' && matchState === 'idle') && (
+        <>
       {/* Scène caméra : grande carte média */}
       <div className="relative flex h-[440px] w-full flex-col justify-between overflow-hidden rounded-[28px] bg-card">
         {!cameraActive && (
@@ -1005,13 +1161,22 @@ export function DefiHouseView({
                   <h3 className="mt-3 text-[22px] font-extrabold leading-7">Victoire • {activeMode.label}</h3>
                   <p className="mt-1 text-[13px] font-medium">
                     {endReason || `${myReps} ${activeEx.label}`} •{' '}
-                    <strong className="font-bold">+{activeMode.xpReward + chrono.totalXp} XP</strong>
-                    {chrono.totalXp > 0 && ` (dont ${chrono.totalXp} de bonus)`}
+                    <strong className="font-bold">
+                      +{Math.round(((gameMode === 'tournoi' && activeChallenge ? activeChallenge.rewardXp + activeChallenge.level * 40 : activeMode.xpReward) + chrono.totalXp + skillXp) * (prefs.streak ? streakMultiplier(streak) : 1) * (prefs.hardcore ? 1.25 : 1))} XP
+                    </strong>
+                    {(chrono.totalXp > 0 || skillXp > 0) && ` (dont ${chrono.totalXp + skillXp} de bonus)`}
                   </p>
                   <div className="mt-4">
                     <Button variant="secondary" fullWidth onClick={startDuel}>
                       Revanche immédiate
                     </Button>
+                    {gameMode === 'tournoi' && (
+                      <div className="mt-2">
+                        <Button variant="secondary" fullWidth onClick={() => switchView('tournoi')}>
+                          Retour au tournoi
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -1024,6 +1189,13 @@ export function DefiHouseView({
                     <Button fullWidth onClick={startDuel}>
                       Revanche immédiate
                     </Button>
+                    {gameMode === 'tournoi' && (
+                      <div className="mt-2">
+                        <Button variant="secondary" fullWidth onClick={() => switchView('tournoi')}>
+                          Retour au tournoi
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1032,13 +1204,24 @@ export function DefiHouseView({
         </AnimatePresence>
       </div>
 
+        </>
+      )}
+
       {/* Actions au pouce */}
       {matchState === 'idle' ? (
-        <Button fullWidth onClick={startDuel}>
-          Lancer • {activeMode.label}
-        </Button>
+        view === 'duel' ? (
+          <Button fullWidth onClick={startDuel}>
+            Lancer • {activeMode.label}
+          </Button>
+        ) : null
       ) : fighting ? (
         <div className="space-y-2">
+          {prefs.rhythm && (speedStreak > 0 || skillXp > 0) && (
+            <div className="flex flex-wrap items-center gap-2 text-[12px] font-bold">
+              <span className="rounded-full bg-tile px-3 py-1 text-lime">Rapidité ×{speedStreak}</span>
+              <span className="rounded-full bg-tile px-3 py-1 text-fg">Rythme & vitesse +{skillXp} XP</span>
+            </div>
+          )}
           {chrono.bonus && (
             <BonusPill
               label="Défi chrono"
@@ -1064,16 +1247,16 @@ export function DefiHouseView({
 
       <GameLegend
         title={`${activeMode.label} · ${activeEx.label}`}
-        description={`${activeMode.shortDesc}. ${activeEx.tip} Adversaire : ${opponent.name} (${userCategory}). Bonus : ${BONUS_NEED[userCategory] ?? 8} reps de plus en 30 s.`}
+        description={`${activeMode.shortDesc}. ${activeEx.tip} Adversaire : ${opponent.name} (${userCategory}). Bonus : ${bonusNeed} reps de plus en ${prefs.hardcore ? 20 : 30} s. Série de victoires : ${streak}${prefs.streak && streak > 0 ? ` (+${Math.round((streakMultiplier(streak) - 1) * 100)} % d’XP)` : ''}.`}
         level={level}
         stats={[
           { label: 'Durée', value: gameMode === 'survie_maison' ? 45 : 60, unit: 's' },
           { label: 'Récompense', value: `+${activeMode.xpReward}`, unit: 'XP' },
-          { label: 'Bonus', value: BONUS_NEED[userCategory] ?? 8, unit: 'reps' },
+          { label: 'Bonus', value: bonusNeed, unit: 'reps' },
         ]}
         extra={<BestMedal score={record ? record.best : null} goal={FIRST_TO_TARGET} unit="reps" runs={record?.runs} />}
       />
-      <GameOptionsCard prefs={prefs} onChange={setPrefs} />
+      <GameOptionsCard prefs={prefs} onChange={setPrefs} show={['bonus', 'alerts', 'hardcore', 'rhythm', 'streak', 'adaptive', 'coach']} />
       <AlertGlow glowKey={glowKey} glowOn={glowOn} />
     </div>
   );

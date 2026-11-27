@@ -100,12 +100,27 @@ export function BestMedal({ score, goal, unit, runs }: { score: number | null; g
 }
 
 /** Réglages dépliables d'un jeu : vibration & lueur, bonus chrono. */
-export function GameOptionsCard({ prefs, onChange }: { prefs: GamePrefs; onChange: (patch: Partial<GamePrefs>) => void }) {
+const ALL_TOGGLES: { key: keyof GamePrefs; label: string; hint: string }[] = [
+  { key: 'bonus', label: 'Bonus chrono', hint: '30 s pour relever le défi, le temps restant ajoute de l’XP' },
+  { key: 'alerts', label: 'Vibration & lueur verte', hint: 'Quand un bonus ou la victoire approche' },
+  { key: 'hardcore', label: 'Mode à fond', hint: 'Chrono de 20 s au lieu de 30 s, XP +25 %' },
+  { key: 'rhythm', label: 'Rythme & rapidité', hint: 'Bonus XP si tu enchaînes vite et régulier' },
+  { key: 'streak', label: 'Série de victoires', hint: '+10 % d’XP par victoire d’affilée (jusqu’à +50 %)' },
+  { key: 'adaptive', label: 'Défi adaptatif', hint: 'Les bonus montent avec ton record pour te pousser' },
+  { key: 'coach', label: 'Coach motivation', hint: 'Consignes et alertes à mi-parcours et dans le dur' },
+];
+
+export function GameOptionsCard({
+  prefs,
+  onChange,
+  show = ['bonus', 'alerts'],
+}: {
+  prefs: GamePrefs;
+  onChange: (patch: Partial<GamePrefs>) => void;
+  show?: (keyof GamePrefs)[];
+}) {
   const [open, setOpen] = useState(false);
-  const toggles: { key: keyof GamePrefs; label: string; hint: string }[] = [
-    { key: 'bonus', label: 'Bonus chrono', hint: '30 s pour relever le défi, le temps restant ajoute de l’XP' },
-    { key: 'alerts', label: 'Vibration & lueur verte', hint: 'Quand un bonus ou la victoire approche' },
-  ];
+  const toggles = ALL_TOGGLES.filter((t) => show.includes(t.key));
   return (
     <Card>
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center justify-between gap-3 text-left">
@@ -114,7 +129,7 @@ export function GameOptionsCard({ prefs, onChange }: { prefs: GamePrefs; onChang
           <div>
             <div className="text-[15px] font-bold text-fg">Réglages du jeu</div>
             <div className="text-[12px] font-medium text-mute">
-              Bonus {prefs.bonus ? 'activés' : 'coupés'} · Alertes {prefs.alerts ? 'activées' : 'coupées'}
+              {toggles.filter((t) => prefs[t.key]).length}/{toggles.length} réglages actifs
             </div>
           </div>
         </div>

@@ -28,11 +28,16 @@ export const BONUS_LIMIT_SEC = 30;
 
 // ---------- Réglages par jeu (vibration & lueur, bonus chrono) ----------
 export interface GamePrefs {
-  alerts: boolean;
-  bonus: boolean;
+  alerts: boolean; // vibration + lueur verte
+  bonus: boolean; // bonus chrono
+  hardcore: boolean; // chrono 20 s, XP +25 %
+  streak: boolean; // multiplicateur de série de victoires
+  adaptive: boolean; // le défi s'ajuste à ton record
+  coach: boolean; // consignes motivantes en cours de partie
+  rhythm: boolean; // bonus de rythme et de rapidité
 }
 const PREFS_KEY = 'dek_game_prefs_v1';
-const DEFAULT_PREFS: GamePrefs = { alerts: true, bonus: true };
+const DEFAULT_PREFS: GamePrefs = { alerts: true, bonus: true, hardcore: false, streak: true, adaptive: true, coach: true, rhythm: true };
 
 export function loadGamePrefs(gameId: string): GamePrefs {
   try {
@@ -90,4 +95,33 @@ export function saveGameRecord(key: string, score: number): { record: GameRecord
     // record non conservé
   }
   return { record, isNew: score > (old?.best ?? 0) };
+}
+
+// ---------- Série de victoires ----------
+const STREAK_KEY = 'dek_game_streak_v1';
+
+export function loadStreak(gameId: string): number {
+  try {
+    const raw = window.localStorage.getItem(STREAK_KEY);
+    const all = raw ? (JSON.parse(raw) as Record<string, number>) : {};
+    return all[gameId] ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function saveStreak(gameId: string, n: number): void {
+  try {
+    const raw = window.localStorage.getItem(STREAK_KEY);
+    const all = raw ? (JSON.parse(raw) as Record<string, number>) : {};
+    all[gameId] = n;
+    window.localStorage.setItem(STREAK_KEY, JSON.stringify(all));
+  } catch {
+    // série non conservée
+  }
+}
+
+/** +10 % d'XP par victoire d'affilée, jusqu'à +50 %. */
+export function streakMultiplier(streak: number): number {
+  return 1 + 0.1 * Math.min(5, Math.max(0, streak));
 }

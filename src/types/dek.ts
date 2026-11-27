@@ -43,7 +43,7 @@ export type OutdoorGameMode =
   | 'conquete_territoire'
   | 'fantome';
 
-export type HouseGameMode = 'ko_60s' | 'first_to_20' | 'survie_maison' | 'equipe_4v4';
+export type HouseGameMode = 'ko_60s' | 'first_to_20' | 'survie_maison' | 'equipe_4v4' | 'tournoi';
 
 export interface TerritoryZone {
   id: string;
