@@ -25,6 +25,7 @@ import type {
   OutdoorGameMode,
   TerritoryZone,
 } from '../types/dek';
+import { CAMEROON_CITIES, CAMEROON_REGIONS } from '../data/cities';
 import { getTierIndex, TIER_COLORS, TIER_REQUIREMENTS } from '../utils/categorization';
 import { generateLoopRoute, type GeneratedRoute } from '../utils/routeGenerator';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
@@ -32,6 +33,8 @@ import { CheckDraw } from './ui/AnimatedIcons';
 import { BottomSheet, Button, Card, ChipTabs, IconButton, ListRow, ProgressBar, StatTiles, Tile } from './ui/kit';
 
 interface MissionsViewProps {
+  /** Ville du profil : la carte s'ouvre dessus si elle fait partie de la liste */
+  userCity?: string;
   userCategory: MissionDifficulty;
   missionsInCurrentTier: number;
   onRequestRetakeTest: () => void;
@@ -46,12 +49,7 @@ interface MissionsViewProps {
   onTerritoryCapture: (zoneName: string) => void;
 }
 
-const PRESET_CITIES = [
-  { name: 'Douala', lat: 4.0511, lng: 9.7679 },
-  { name: 'Yaoundé', lat: 3.848, lng: 11.5021 },
-  { name: 'Bafoussam', lat: 5.4737, lng: 10.4179 },
-  { name: 'Kribi', lat: 2.94, lng: 9.91 },
-];
+const PRESET_CITIES = CAMEROON_CITIES;
 
 const TIME_SLOTS = ['05:00', '06:00', '07:00', '18:30', '20:00'];
 
@@ -98,6 +96,7 @@ function computeBearing(from: [number, number], to: [number, number]): number {
 }
 
 export function MissionsView({
+  userCity,
   userCategory,
   missionsInCurrentTier,
   onRequestRetakeTest,
@@ -111,11 +110,11 @@ export function MissionsView({
   const [selectedTier, setSelectedTier] = useState<MissionDifficulty>(userCategory);
   const [lockedTierModal, setLockedTierModal] = useState<MissionDifficulty | null>(null);
   const [geoMode, setGeoMode] = useState<'global' | 'local'>('global');
-  const [cityIdx, setCityIdx] = useState(0);
-  const [coords, setCoords] = useState<[number, number]>([
-    PRESET_CITIES[0].lat,
-    PRESET_CITIES[0].lng,
-  ]);
+  const [cityIdx, setCityIdx] = useState(() => Math.max(0, PRESET_CITIES.findIndex((c) => c.name === userCity)));
+  const [coords, setCoords] = useState<[number, number]>(() => {
+    const c = PRESET_CITIES[Math.max(0, PRESET_CITIES.findIndex((x) => x.name === userCity))];
+    return [c.lat, c.lng];
+  });
   const [route, setRoute] = useState<GeneratedRoute | null>(null);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [is3D, setIs3D] = useState(true);
@@ -149,7 +148,7 @@ export function MissionsView({
   );
 
   // État Relais Escouade (4 équipiers)
-  const [relayLeg, setRelayLeg] = useState(1); // 1: Koffi, 2: Toi, 3: Sarah, 4: Moussa
+  const [relayLeg, setRelayLeg] = useState(1); // 1: Ngando, 2: Toi, 3: Estelle, 4: Mbarga
   const [relayTeammatePct, setRelayTeammatePct] = useState(0);
 
   // Après une promotion de palier, on présélectionne automatiquement le nouveau palier
@@ -572,7 +571,7 @@ export function MissionsView({
 
   // Timers selon les phases & modes
   useEffect(() => {
-    // Phase spéciale Relais : le Joueur 1 (Koffi) court avant de nous passer le témoin
+    // Phase spéciale Relais : le Joueur 1 (Ngando) court avant de nous passer le témoin
     if (phase === 'relay_wait') {
       let pct = 0;
       const t = setInterval(() => {
@@ -786,7 +785,7 @@ export function MissionsView({
             ? `+${ghostDeltaMeters} m d’avance sur le Fantôme`
             : `${ghostDeltaMeters} m derrière le Fantôme`
           : gameMode === 'relais_escouade'
-            ? 'Relais #2 en cours • Passe le témoin à Sarah !'
+            ? 'Relais #2 en cours • Passe le témoin à Estelle !'
             : progressRatio < 0.5
               ? 'Dans 250 m • Tourne à droite'
               : 'Dernière ligne droite • Garde l’allure'
@@ -1040,10 +1039,16 @@ export function MissionsView({
               }}
               className="h-10 rounded-full bg-black/50 px-4 text-[13px] font-semibold text-fg outline-none backdrop-blur-md"
             >
-              {PRESET_CITIES.map((c, i) => (
-                <option key={c.name} value={i} className="bg-card text-fg">
-                  {c.name}
-                </option>
+              {CAMEROON_REGIONS.map((region) => (
+                <optgroup key={region} label={region} className="bg-card text-fg">
+                  {PRESET_CITIES.map((c, i) =>
+                    c.region === region ? (
+                      <option key={c.name} value={i} className="bg-card text-fg">
+                        {c.name}
+                      </option>
+                    ) : null,
+                  )}
+                </optgroup>
               ))}
             </select>
 
@@ -1121,7 +1126,7 @@ export function MissionsView({
               className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-ink/85 p-6 text-center backdrop-blur-sm"
             >
               <span className="text-[13px] font-medium text-mute">Relais escouade · étape 1/4</span>
-              <h3 className="mt-1 text-[20px] font-bold text-fg">Koffi_Sprint court vers toi…</h3>
+              <h3 className="mt-1 text-[20px] font-bold text-fg">Ngando_Sprint court vers toi…</h3>
               <ProgressBar value={relayTeammatePct} className="mt-4 w-48" />
               <p className="mt-3 text-[13px] font-medium text-mute">
                 Tiens-toi prêt à prendre le témoin dans la fenêtre stricte.
@@ -1329,7 +1334,7 @@ export function MissionsView({
 
         {gameMode === 'relais_escouade' && (
           <div className="grid grid-cols-4 gap-2">
-            {['Koffi', 'Toi', 'Sarah', 'Moussa'].map((name, i) => {
+            {['Ngando', 'Toi', 'Estelle', 'Mbarga'].map((name, i) => {
               const idx = i + 1;
               const active = phase !== 'lobby' && relayLeg === idx;
               const done = phase === 'completed' || (phase !== 'lobby' && idx < relayLeg);

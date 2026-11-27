@@ -90,7 +90,7 @@ export const MISSION_TIERS: MissionTier[] = [
 export const INITIAL_RUNNERS: LobbyRunner[] = [
   {
     id: 'r1',
-    name: 'Koffi_Sprint',
+    name: 'Ngando_Sprint',
     city: 'Douala',
     disciplineScore: 98,
     rank: 'Élite I',
@@ -100,7 +100,7 @@ export const INITIAL_RUNNERS: LobbyRunner[] = [
   },
   {
     id: 'r2',
-    name: 'Sarah_5h',
+    name: 'Estelle_5h',
     city: 'Yaoundé',
     disciplineScore: 96,
     rank: 'Pro III',
@@ -110,7 +110,7 @@ export const INITIAL_RUNNERS: LobbyRunner[] = [
   },
   {
     id: 'r3',
-    name: 'Moussa_Iron',
+    name: 'Mbarga_Iron',
     city: 'Bafoussam',
     disciplineScore: 91,
     rank: 'Pro I',
@@ -120,7 +120,7 @@ export const INITIAL_RUNNERS: LobbyRunner[] = [
   },
   {
     id: 'r4',
-    name: 'Lucas_Pace',
+    name: 'Nkeng_Pace',
     city: 'Kribi',
     disciplineScore: 87,
     rank: 'Challenger III',
@@ -206,9 +206,9 @@ export const INITIAL_COACHS: CoachProfile[] = [
     completedSessions: 1240,
     ratingBreakdown: [118, 18, 4, 1, 1],
     reviews: [
-      { id: 'rv1', author: 'Moussa_Iron', avatarPreset: 'manga-sprint', rating: 5, timeAgo: 'Il y a 2 j', text: 'Ses circuits HIIT ont changé mes matchs : je finis les matchs sans être cramé. Toujours bienveillant et précis.' },
-      { id: 'rv2', author: 'Awa_Speed', avatarPreset: 'manga-fighter', rating: 5, timeAgo: 'Il y a 1 sem.', text: 'Séances adaptées à mon niveau Amateur, il corrige la posture en direct. Top coach.' },
-      { id: 'rv3', author: 'Lucas_7', avatarPreset: 'fantasy-shadow', rating: 4, timeAgo: 'Il y a 3 sem.', text: 'Très efficace pour les appuis. Les raids du dimanche sont exigeants mais motivants.' },
+      { id: 'rv1', author: 'Mbarga_Iron', avatarPreset: 'manga-sprint', rating: 5, timeAgo: 'Il y a 2 j', text: 'Ses circuits HIIT ont changé mes matchs : je finis les matchs sans être cramé. Toujours bienveillant et précis.' },
+      { id: 'rv2', author: 'Mireille_Speed', avatarPreset: 'manga-fighter', rating: 5, timeAgo: 'Il y a 1 sem.', text: 'Séances adaptées à mon niveau Amateur, il corrige la posture en direct. Top coach.' },
+      { id: 'rv3', author: 'Atangana_7', avatarPreset: 'fantasy-shadow', rating: 4, timeAgo: 'Il y a 3 sem.', text: 'Très efficace pour les appuis. Les raids du dimanche sont exigeants mais motivants.' },
     ],
   },
   {
@@ -230,8 +230,8 @@ export const INITIAL_COACHS: CoachProfile[] = [
     completedSessions: 880,
     ratingBreakdown: [79, 15, 3, 1, 0],
     reviews: [
-      { id: 'rv4', author: 'Sarah_5h', avatarPreset: 'manga-sprint', rating: 5, timeAgo: 'Il y a 3 j', text: 'Grâce à son programme pompes, je suis passée de 8 à 25 reps propres en 6 semaines !' },
-      { id: 'rv5', author: 'Koffi_Sprint', avatarPreset: 'fantasy-paladin', rating: 5, timeAgo: 'Il y a 2 sem.', text: 'Le live 200 pompes du soir est devenu un rituel. Ambiance incroyable.' },
+      { id: 'rv4', author: 'Estelle_5h', avatarPreset: 'manga-sprint', rating: 5, timeAgo: 'Il y a 3 j', text: 'Grâce à son programme pompes, je suis passée de 8 à 25 reps propres en 6 semaines !' },
+      { id: 'rv5', author: 'Ngando_Sprint', avatarPreset: 'fantasy-paladin', rating: 5, timeAgo: 'Il y a 2 sem.', text: 'Le live 200 pompes du soir est devenu un rituel. Ambiance incroyable.' },
       { id: 'rv6', author: 'Cédric_K', avatarPreset: 'fantasy-shadow', rating: 4, timeAgo: 'Il y a 1 mois', text: 'Exigeante sur la technique, et c’est ce qu’il faut. Mes épaules la remercient.' },
     ],
   },
@@ -254,9 +254,9 @@ export const INITIAL_COACHS: CoachProfile[] = [
     completedSessions: 2150,
     ratingBreakdown: [201, 12, 2, 0, 0],
     reviews: [
-      { id: 'rv7', author: 'Lucas_Pace', avatarPreset: 'fantasy-shadow', rating: 5, timeAgo: 'Il y a 1 j', text: 'Premier 10 km sous les 50 min grâce à son plan. Les missions 05h00 en groupe sont addictives.' },
-      { id: 'rv8', author: 'Yann_Pace', avatarPreset: 'manga-sprint', rating: 5, timeAgo: 'Il y a 5 j', text: 'Il m’a fait reprendre en douceur après une blessure. Aucune douleur depuis.' },
-      { id: 'rv9', author: 'Awa_Init', avatarPreset: 'manga-fighter', rating: 5, timeAgo: 'Il y a 2 sem.', text: 'Pédagogue et motivant, même à 5h du matin !' },
+      { id: 'rv7', author: 'Nkeng_Pace', avatarPreset: 'fantasy-shadow', rating: 5, timeAgo: 'Il y a 1 j', text: 'Premier 10 km sous les 50 min grâce à son plan. Les missions 05h00 en groupe sont addictives.' },
+      { id: 'rv8', author: 'Tchoua_Pace', avatarPreset: 'manga-sprint', rating: 5, timeAgo: 'Il y a 5 j', text: 'Il m’a fait reprendre en douceur après une blessure. Aucune douleur depuis.' },
+      { id: 'rv9', author: 'Mireille_Init', avatarPreset: 'manga-fighter', rating: 5, timeAgo: 'Il y a 2 sem.', text: 'Pédagogue et motivant, même à 5h du matin !' },
     ],
   },
 ];
@@ -264,7 +264,7 @@ export const INITIAL_COACHS: CoachProfile[] = [
 export const INITIAL_FEED: FeedPost[] = [
   {
     id: 'f1',
-    author: 'Koffi_Sprint',
+    author: 'Ngando_Sprint',
     initials: 'KS',
     avatarPreset: 'manga-sprint',
     timeAgo: 'Il y a 18 min',
@@ -305,7 +305,7 @@ export const INITIAL_FEED: FeedPost[] = [
     content: 'Gros match 7v7 ce matin ! Merci à FC Bonapriso pour l’intensité. Rendez-vous en demi-finale du Tournoi DEK.',
     stats: [
       { label: 'Score', value: '4 - 2' },
-      { label: 'MVP', value: 'Moussa_Iron' },
+      { label: 'MVP', value: 'Mbarga_Iron' },
       { label: 'Présence', value: '14/14' },
     ],
     reactions: { feu: 18, force: 22, respect: 31 },

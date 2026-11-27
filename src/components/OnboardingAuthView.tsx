@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Check } from './DekIcons';
 import type { AuthProvider, UserAvatarConfig } from '../types/dek';
+import { CAMEROON_CITIES } from '../data/cities';
 import { usePhoto } from '../utils/usePhoto';
 import { AvatarStudio } from './AvatarStudio';
 import { ChipTabs } from './ui/kit';
@@ -23,7 +24,7 @@ const PROVIDERS: { id: AuthProvider; label: string }[] = [
 ];
 
 const COUNTRY_CODES = ['+237', '+33', '+225', '+221', '+212'];
-const CITIES = ['Douala', 'Yaoundé', 'Bafoussam', 'Kribi', 'Autre'];
+const CITIES = [...CAMEROON_CITIES.map((c) => c.name), 'Autre'];
 
 const FIELD = 'h-11 w-full border-b border-rim bg-transparent text-[15px] font-medium text-fg outline-none transition-colors placeholder:text-faint focus:border-lime';
 const LABEL = 'block text-[12px] font-medium leading-4 text-mute';

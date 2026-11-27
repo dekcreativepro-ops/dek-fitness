@@ -127,19 +127,19 @@ export const HOUSE_OPPONENTS_BY_TIER: Record<
   { name: string; intervalMs: number; hitChance: number; label: string }
 > = {
   Amateur: {
-    name: 'Awa_Init',
+    name: 'Mireille_Init',
     intervalMs: 3300,
     hitChance: 0.72,
     label: 'Rythme doux • Initiation',
   },
   Standard: {
-    name: 'Moussa_Std',
+    name: 'Mbarga_Std',
     intervalMs: 2400,
     hitChance: 0.76,
     label: 'Rythme équilibré • Standard',
   },
   Pro: {
-    name: 'Koffi_Pro',
+    name: 'Ngando_Pro',
     intervalMs: 1800,
     hitChance: 0.82,
     label: 'Rythme soutenu • Pro',

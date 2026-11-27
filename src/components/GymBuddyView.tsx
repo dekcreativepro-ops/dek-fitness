@@ -79,7 +79,7 @@ export function GymBuddyView({
   const [restDuration, setRestDuration] = useState(60);
   const [restRemaining, setRestRemaining] = useState(0);
   const [restRunning, setRestRunning] = useState(false);
-  const [duoBanner, setDuoBanner] = useState('Synchronisé avec Moussa_Iron');
+  const [duoBanner, setDuoBanner] = useState('Synchronisé avec Mbarga_Iron');
 
   // Form Check state
   const [formChecks, setFormChecks] = useState<FormCheckItem[]>(INITIAL_FORM_CHECKS);
@@ -431,7 +431,7 @@ export function GymBuddyView({
 
                   <div className="mt-3 space-y-2">
                     <SetDots label="Toi" done={ex.completedSets} total={ex.sets} />
-                    <SetDots label="Moussa_Iron" done={ex.partnerSets} total={ex.sets} muted />
+                    <SetDots label="Mbarga_Iron" done={ex.partnerSets} total={ex.sets} muted />
                   </div>
                 </Card>
               );

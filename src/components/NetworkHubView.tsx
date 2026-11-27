@@ -44,7 +44,7 @@ const ACTIVE_STORIES: {
 }[] = [
   {
     id: 'st1',
-    label: 'Koffi • 05:00',
+    label: 'Ngando • 05:00',
     tag: 'LIVE',
     target: 'missions',
     avatar: {

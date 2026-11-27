@@ -23,16 +23,16 @@ interface Athlete {
 }
 
 const ATHLETES: Athlete[] = [
-  { id: 'a1', name: 'Koffi_Sprint', city: 'Douala', preset: 'manga-sprint', seasonXp: 7420, weekXp: 1340, trend: 0 },
-  { id: 'a2', name: 'Sarah_5h', city: 'Yaoundé', preset: 'manga-fighter', seasonXp: 6150, weekXp: 1180, trend: 2 },
-  { id: 'a3', name: 'Moussa_Iron', city: 'Bafoussam', preset: 'fantasy-paladin', seasonXp: 5480, weekXp: 990, trend: -1 },
+  { id: 'a1', name: 'Ngando_Sprint', city: 'Douala', preset: 'manga-sprint', seasonXp: 7420, weekXp: 1340, trend: 0 },
+  { id: 'a2', name: 'Estelle_5h', city: 'Yaoundé', preset: 'manga-fighter', seasonXp: 6150, weekXp: 1180, trend: 2 },
+  { id: 'a3', name: 'Mbarga_Iron', city: 'Bafoussam', preset: 'fantasy-paladin', seasonXp: 5480, weekXp: 990, trend: -1 },
   { id: 'a4', name: 'Titan_Exp', city: 'Douala', preset: 'fantasy-shadow', seasonXp: 4210, weekXp: 860, trend: 1 },
-  { id: 'a5', name: 'Awa_Speed', city: 'Douala', preset: 'manga-fighter', seasonXp: 3380, weekXp: 720, trend: 3 },
-  { id: 'a6', name: 'Lucas_Pace', city: 'Kribi', preset: 'fantasy-shadow', seasonXp: 2890, weekXp: 610, trend: -2 },
-  { id: 'a7', name: 'Ibrahim_Cap', city: 'Douala', preset: 'fantasy-paladin', seasonXp: 2240, weekXp: 540, trend: 0 },
-  { id: 'a8', name: 'Yann_Pace', city: 'Yaoundé', preset: 'manga-sprint', seasonXp: 1710, weekXp: 430, trend: 1 },
+  { id: 'a5', name: 'Mireille_Speed', city: 'Douala', preset: 'manga-fighter', seasonXp: 3380, weekXp: 720, trend: 3 },
+  { id: 'a6', name: 'Nkeng_Pace', city: 'Kribi', preset: 'fantasy-shadow', seasonXp: 2890, weekXp: 610, trend: -2 },
+  { id: 'a7', name: 'Abdou_Cap', city: 'Douala', preset: 'fantasy-paladin', seasonXp: 2240, weekXp: 540, trend: 0 },
+  { id: 'a8', name: 'Tchoua_Pace', city: 'Yaoundé', preset: 'manga-sprint', seasonXp: 1710, weekXp: 430, trend: 1 },
   { id: 'a9', name: 'Cédric_K', city: 'Bafoussam', preset: 'fantasy-shadow', seasonXp: 1180, weekXp: 310, trend: -1 },
-  { id: 'a10', name: 'Oumar_W', city: 'Douala', preset: 'manga-sprint', seasonXp: 760, weekXp: 220, trend: 2 },
+  { id: 'a10', name: 'Ousmane_W', city: 'Douala', preset: 'manga-sprint', seasonXp: 760, weekXp: 220, trend: 2 },
   { id: 'a11', name: 'Franck_R', city: 'Kribi', preset: 'fantasy-paladin', seasonXp: 420, weekXp: 140, trend: 0 },
 ];
 

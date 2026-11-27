@@ -1094,6 +1094,7 @@ export default function App() {
                         )}
                         {activeTab === 'missions' && (
                           <MissionsView
+                            userCity={user.city}
                             userCategory={user.category}
                             missionsInCurrentTier={user.missionsInCurrentTier}
                             onRequestRetakeTest={() => setIsRetakingInitiation(true)}

@@ -45,17 +45,17 @@ export const INITIAL_TERRITORIES: TerritoryZone[] = [
 
 export const INITIAL_THURSDAY_PLAYERS: ThursdayPlayer[] = [
   { id: 'p1', name: 'Toi (DEK)', category: 'Standard', team: 'A', paid: true, checkedIn: false, goals: 0, assists: 0 },
-  { id: 'p2', name: 'Koffi_Sprint', category: 'Pro', team: 'A', paid: true, checkedIn: true, goals: 1, assists: 1 },
-  { id: 'p3', name: 'Moussa_Iron', category: 'Standard', team: 'A', paid: false, checkedIn: true, goals: 0, assists: 0 },
-  { id: 'p4', name: 'Yann_Pace', category: 'Amateur', team: 'A', paid: true, checkedIn: true, goals: 0, assists: 1 },
-  { id: 'p5', name: 'Ibrahim_Cap', category: 'Pro', team: 'B', paid: true, checkedIn: true, goals: 1, assists: 0 },
-  { id: 'p6', name: 'Lucas_7', category: 'Standard', team: 'B', paid: true, checkedIn: true, goals: 0, assists: 0 },
-  { id: 'p7', name: 'Sidy_Goal', category: 'Standard', team: 'B', paid: false, checkedIn: true, goals: 0, assists: 0 },
-  { id: 'p8', name: 'Awa_Speed', category: 'Amateur', team: 'B', paid: true, checkedIn: false, goals: 0, assists: 0 },
+  { id: 'p2', name: 'Ngando_Sprint', category: 'Pro', team: 'A', paid: true, checkedIn: true, goals: 1, assists: 1 },
+  { id: 'p3', name: 'Mbarga_Iron', category: 'Standard', team: 'A', paid: false, checkedIn: true, goals: 0, assists: 0 },
+  { id: 'p4', name: 'Tchoua_Pace', category: 'Amateur', team: 'A', paid: true, checkedIn: true, goals: 0, assists: 1 },
+  { id: 'p5', name: 'Abdou_Cap', category: 'Pro', team: 'B', paid: true, checkedIn: true, goals: 1, assists: 0 },
+  { id: 'p6', name: 'Atangana_7', category: 'Standard', team: 'B', paid: true, checkedIn: true, goals: 0, assists: 0 },
+  { id: 'p7', name: 'Fonkam_Goal', category: 'Standard', team: 'B', paid: false, checkedIn: true, goals: 0, assists: 0 },
+  { id: 'p8', name: 'Mireille_Speed', category: 'Amateur', team: 'B', paid: true, checkedIn: false, goals: 0, assists: 0 },
   { id: 'p9', name: 'Eto_Jr', category: 'Pro', team: 'C', paid: true, checkedIn: true, goals: 0, assists: 0 },
-  { id: 'p10', name: 'Tarek_9', category: 'Standard', team: 'C', paid: true, checkedIn: true, goals: 0, assists: 0 },
+  { id: 'p10', name: 'Bekolo_9', category: 'Standard', team: 'C', paid: true, checkedIn: true, goals: 0, assists: 0 },
   { id: 'p11', name: 'Cédric_K', category: 'Amateur', team: 'C', paid: false, checkedIn: true, goals: 0, assists: 0 },
-  { id: 'p12', name: 'Oumar_W', category: 'Standard', team: 'waitlist', paid: false, checkedIn: true, goals: 0, assists: 0 },
+  { id: 'p12', name: 'Ousmane_W', category: 'Standard', team: 'waitlist', paid: false, checkedIn: true, goals: 0, assists: 0 },
   { id: 'p13', name: 'Franck_R', category: 'Amateur', team: 'waitlist', paid: false, checkedIn: false, goals: 0, assists: 0 },
 ];
 
@@ -67,15 +67,15 @@ export const TOURNAMENT_GROUP_TABLE = [
 ];
 
 export const TOURNAMENT_TOP_SCORERS = [
-  { name: 'Koffi_Sprint', team: 'DEK Warriors', goals: 6 },
-  { name: 'Ibrahim_Cap', team: 'FC Bonapriso', goals: 5 },
+  { name: 'Ngando_Sprint', team: 'DEK Warriors', goals: 6 },
+  { name: 'Abdou_Cap', team: 'FC Bonapriso', goals: 5 },
   { name: 'Eto_Jr', team: 'Team 5h', goals: 4 },
 ];
 
 export const INITIAL_GYM_CALLS: GymSpotCall[] = [
   {
     id: 'g1',
-    author: 'Moussa_Iron',
+    author: 'Mbarga_Iron',
     avatarPreset: 'fantasy-paladin',
     gymName: 'Fitness Park Centre',
     focus: 'Pecs / Triceps (Développé couché)',
@@ -84,7 +84,7 @@ export const INITIAL_GYM_CALLS: GymSpotCall[] = [
   },
   {
     id: 'g2',
-    author: 'Sarah_5h',
+    author: 'Estelle_5h',
     avatarPreset: 'manga-fighter',
     gymName: 'Parc Street Workout',
     focus: 'Tractions / Dips / Gainage',
@@ -93,7 +93,7 @@ export const INITIAL_GYM_CALLS: GymSpotCall[] = [
   },
   {
     id: 'g3',
-    author: 'Lucas_Pace',
+    author: 'Nkeng_Pace',
     avatarPreset: 'manga-sprint',
     gymName: 'Basic-Fit Nord',
     focus: 'Jambes & Squats (Spotter)',
@@ -124,7 +124,7 @@ export const DUO_ROUTINES: Record<'salle' | 'street', { title: string; exercises
 export const INITIAL_FORM_CHECKS: FormCheckItem[] = [
   {
     id: 'fc1',
-    author: 'Lucas_Pace',
+    author: 'Nkeng_Pace',
     avatarPreset: 'manga-sprint',
     exercise: 'Squat barre (70 kg)',
     note: 'Mes genoux rentrent légèrement sur les 2 dernières reps, des conseils ?',
@@ -132,7 +132,7 @@ export const INITIAL_FORM_CHECKS: FormCheckItem[] = [
   },
   {
     id: 'fc2',
-    author: 'Awa_Speed',
+    author: 'Mireille_Speed',
     avatarPreset: 'manga-fighter',
     exercise: 'Pompes strictes',
     note: 'Est-ce que mon dos reste assez droit en bas du mouvement ?',
@@ -168,9 +168,9 @@ export const INITIAL_PACTS: FriendPact[] = [
     targetPerWeek: 3,
     members: [
       { id: 'm_me', name: 'Toi', done: 1, isMe: true },
-      { id: 'm2', name: 'Koffi_Sprint', done: 3 },
-      { id: 'm3', name: 'Sarah_5h', done: 2 },
-      { id: 'm4', name: 'Lucas_Pace', done: 0 },
+      { id: 'm2', name: 'Ngando_Sprint', done: 3 },
+      { id: 'm3', name: 'Estelle_5h', done: 2 },
+      { id: 'm4', name: 'Nkeng_Pace', done: 0 },
     ],
   },
   {
@@ -179,8 +179,8 @@ export const INITIAL_PACTS: FriendPact[] = [
     targetPerWeek: 3,
     members: [
       { id: 'm_me2', name: 'Toi', done: 2, isMe: true },
-      { id: 'm5', name: 'Moussa_Iron', done: 2 },
-      { id: 'm6', name: 'Awa_Speed', done: 1 },
+      { id: 'm5', name: 'Mbarga_Iron', done: 2 },
+      { id: 'm6', name: 'Mireille_Speed', done: 1 },
     ],
   },
 ];

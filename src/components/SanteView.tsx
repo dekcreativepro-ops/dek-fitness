@@ -244,11 +244,11 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
   }, [players]);
 
   const handlePublishThursday = () => {
-    const mvpName = players.find((p) => p.id === mvpId)?.name ?? 'Koffi_Sprint';
+    const mvpName = players.find((p) => p.id === mvpId)?.name ?? 'Ngando_Sprint';
     const headline =
       format === 'roi_du_terrain'
-        ? `Match (Roi du Terrain • ${roundNum} manches) : Équipe ${winStreak.team} domine (${winStreak.count} victoires de suite). Top buteur : ${topScorer?.name ?? 'Koffi_Sprint'} (${topScorer?.goals ?? 1} buts).`
-        : `Match (2×25 min) : Éq. ${pitchLeft} ${scoreLeft} - ${scoreRight} Éq. ${pitchRight}. Top buteur : ${topScorer?.name ?? 'Koffi_Sprint'}.`;
+        ? `Match (Roi du Terrain • ${roundNum} manches) : Équipe ${winStreak.team} domine (${winStreak.count} victoires de suite). Top buteur : ${topScorer?.name ?? 'Ngando_Sprint'} (${topScorer?.goals ?? 1} buts).`
+        : `Match (2×25 min) : Éq. ${pitchLeft} ${scoreLeft} - ${scoreRight} Éq. ${pitchRight}. Top buteur : ${topScorer?.name ?? 'Ngando_Sprint'}.`;
     setThursdayPublished(true);
     if (onCompleteThursday(headline, mvpName)) playVictory();
   };

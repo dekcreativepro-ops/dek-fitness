@@ -96,8 +96,8 @@ export function RaidsPactsView({ onRaidCheckin, onPactAction }: RaidsPactsViewPr
       targetPerWeek: pactTarget,
       members: [
         { id: `me-${stamp}`, name: 'Toi', done: 0, isMe: true },
-        { id: `f1-${stamp}`, name: 'Koffi_Sprint', done: 1 },
-        { id: `f2-${stamp}`, name: 'Sarah_5h', done: 0 },
+        { id: `f1-${stamp}`, name: 'Ngando_Sprint', done: 1 },
+        { id: `f2-${stamp}`, name: 'Estelle_5h', done: 0 },
       ],
     };
     setPacts((prev) => [created, ...prev]);
