@@ -107,6 +107,7 @@ const ALL_TOGGLES: { key: keyof GamePrefs; label: string; hint: string }[] = [
   { key: 'rhythm', label: 'Rythme & rapidité', hint: 'Bonus XP si tu enchaînes vite et régulier' },
   { key: 'streak', label: 'Série de victoires', hint: '+10 % d’XP par victoire d’affilée (jusqu’à +50 %)' },
   { key: 'adaptive', label: 'Défi adaptatif', hint: 'Les bonus montent avec ton record pour te pousser' },
+  { key: 'voice', label: 'Voix de jeu', hint: 'Annonceur gamer en anglais ; voix féminine pour les joueuses' },
   { key: 'coach', label: 'Coach motivation', hint: 'Consignes et alertes à mi-parcours et dans le dur' },
 ];
 

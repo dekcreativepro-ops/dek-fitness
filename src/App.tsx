@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { setVoiceGender } from './utils/gameVoice';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { BodyProfileView } from './components/BodyProfileView';
 import { ArrowRight, Compass, House, PaperPlaneRight, Play, SoccerBall, Sword, UsersThree } from './components/DekIcons';
@@ -188,6 +189,10 @@ export default function App() {
     n: 0,
   });
   const [user, setUser] = useState<UserProfile>(loadSavedUser);
+  // Annonceur vocal : voix féminine pour les joueuses (profil corporel), masculine sinon
+  useEffect(() => {
+    setVoiceGender(user.body?.sex === 'femme' ? 'female' : 'male');
+  }, [user.body?.sex]);
   const [isRetakingInitiation, setIsRetakingInitiation] = useState(false);
   const [feed, setFeed] = useState<FeedPost[]>(loadSavedFeed);
   const [toast, setToast] = useState<string | null>(null);

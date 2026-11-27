@@ -21,6 +21,7 @@ import { AlertGlow, BestMedal, BonusPill, GameLegend, GameOptionsCard } from './
 import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
 import { levelFromScore, loadGameRecord, loadStreak, saveGameRecord, saveStreak, streakMultiplier, vibrate } from '../utils/gameFx';
 import { HouseTournamentBoard } from './HouseTournamentBoard';
+import { say } from '../utils/gameVoice';
 import { loadChallenges, winChallenge, type HouseChallenge } from '../utils/houseTournament';
 
 interface DefiHouseViewProps {
@@ -280,6 +281,7 @@ export function DefiHouseView({
     onWin: (xp) => {
       spawnPopup(`Bonus +${xp} XP`, 'opp');
       if (prefs.alerts) vibrate(60);
+      say('bonus', prefs.hardcore ? 'hardcore' : 'hype', prefs.voice);
     },
     onMiss: () => spawnPopup('Bonus raté', 'me'),
     onNear: () => alert('near'),
@@ -298,6 +300,7 @@ export function DefiHouseView({
     if (nearWin && !f.win) {
       f.win = true;
       alert('finish');
+      say('almost', prefsRef.current.hardcore ? 'hardcore' : 'hype', prefsRef.current.voice);
     }
     if (timeLeft <= 5 && timeLeft > 0 && !f.time) {
       f.time = true;
@@ -308,11 +311,13 @@ export function DefiHouseView({
         f.half = true;
         updateCueRef.current('Mi-parcours ! Pousse à fond');
         alert('near');
+        say('half', prefsRef.current.hardcore ? 'hardcore' : 'hype', prefsRef.current.voice);
       }
       if (timeLeft === 10 && !f.ten) {
         f.ten = true;
         updateCueRef.current(oppReps > myReps ? '10 secondes : il te dépasse, accélère !' : '10 secondes : sors tout, garde l’avance !');
         alert('near');
+        say('ten', prefsRef.current.hardcore ? 'hardcore' : 'hype', prefsRef.current.voice);
       }
     }
     if (gameMode === 'survie_maison') {
@@ -372,7 +377,10 @@ export function DefiHouseView({
       const gap = arr.length >= 2 ? t - arr[arr.length - 2] : 0;
       if (gap > 0 && gap <= 1400) {
         speedStreakRef.current += 1;
-        if (speedStreakRef.current % 5 === 0) award('Rapidité', 10);
+        if (speedStreakRef.current % 5 === 0) {
+          award('Rapidité', 10);
+          say('speed', 'hype', prefsRef.current.voice);
+        }
       } else if (gap > 3000) {
         speedStreakRef.current = 0;
       }
@@ -384,6 +392,7 @@ export function DefiHouseView({
         if (mean >= 700 && mean <= 3500 && gaps.every((g) => Math.abs(g - mean) <= mean * 0.25)) {
           sinceRhythmRef.current = 0;
           award('Rythme parfait', 12);
+          say('rhythm', 'hype', prefsRef.current.voice);
         }
       }
     }
@@ -456,6 +465,7 @@ export function DefiHouseView({
     // une défaite casse la série de victoires
     if (matchState === 'lose' && matchPrevRef.current !== 'lose') {
       saveStreak('house', 0);
+      say('defeat', 'calm', prefsRef.current.voice);
       window.setTimeout(() => setStreak(0), 0);
     }
     matchPrevRef.current = matchState;
@@ -475,6 +485,7 @@ export function DefiHouseView({
     const totalXp = Math.round((baseXp + info.getBonusXp() + skillXpRef.current) * mult);
     const label = isTournoi ? `Tournoi Défi House · ${ch.zone}` : modeObj.label;
     info.onWinDuel(totalXp, exLabel, myRepsRef.current, label);
+    say(isTournoi ? 'title' : 'victory', prefsRef.current.hardcore ? 'hardcore' : 'hype', prefsRef.current.voice);
     saveGameRecord(`house:${info.gameMode}:${info.exercise}`, myRepsRef.current);
     saveStreak('house', newStreak);
     window.setTimeout(() => {
@@ -844,6 +855,7 @@ export function DefiHouseView({
     setSkillXp(0);
     setSpeedStreak(0);
     updateCue('C’est parti !');
+    say(gameMode === 'tournoi' ? 'challenge' : 'fight', prefs.hardcore ? 'hardcore' : 'hype', prefs.voice);
     setMatchState('fighting');
   };
 
@@ -1256,7 +1268,7 @@ export function DefiHouseView({
         ]}
         extra={<BestMedal score={record ? record.best : null} goal={FIRST_TO_TARGET} unit="reps" runs={record?.runs} />}
       />
-      <GameOptionsCard prefs={prefs} onChange={setPrefs} show={['bonus', 'alerts', 'hardcore', 'rhythm', 'streak', 'adaptive', 'coach']} />
+      <GameOptionsCard prefs={prefs} onChange={setPrefs} show={['bonus', 'alerts', 'hardcore', 'rhythm', 'streak', 'adaptive', 'coach', 'voice']} />
       <AlertGlow glowKey={glowKey} glowOn={glowOn} />
     </div>
   );

@@ -35,9 +35,10 @@ export interface GamePrefs {
   adaptive: boolean; // le défi s'ajuste à ton record
   coach: boolean; // consignes motivantes en cours de partie
   rhythm: boolean; // bonus de rythme et de rapidité
+  voice: boolean; // annonceur gamer (voix masculine ou féminine)
 }
 const PREFS_KEY = 'dek_game_prefs_v1';
-const DEFAULT_PREFS: GamePrefs = { alerts: true, bonus: true, hardcore: false, streak: true, adaptive: true, coach: true, rhythm: true };
+const DEFAULT_PREFS: GamePrefs = { alerts: true, bonus: true, hardcore: false, streak: true, adaptive: true, coach: true, rhythm: true, voice: true };
 
 export function loadGamePrefs(gameId: string): GamePrefs {
   try {

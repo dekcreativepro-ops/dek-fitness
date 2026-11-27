@@ -21,7 +21,8 @@ import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { UserAvatar } from './UserAvatar';
 import { AlertGlow, BestMedal, BonusPill, GameLegend, GameOptionsCard } from './ui/GameKit';
 import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
-import { levelFromScore, loadGameRecord, saveGameRecord } from '../utils/gameFx';
+import { levelFromScore, loadGamePrefs, loadGameRecord, saveGameRecord } from '../utils/gameFx';
+import { say } from '../utils/gameVoice';
 
 interface GymBuddyViewProps {
   userCategory: MissionDifficulty;
@@ -95,6 +96,17 @@ export function GymBuddyView({
   const { glowKey, glowOn, alert } = useAlertGlow(prefs.alerts);
   const [recordTick, setRecordTick] = useState(0);
 
+  // Accueil vocal une fois par session : « Welcome to Gym Building »
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem('dek_gym_welcome') === '1') return;
+      window.sessionStorage.setItem('dek_gym_welcome', '1');
+    } catch {
+      // sans mémoire de session, on annonce à chaque ouverture
+    }
+    say('welcome', 'hype', loadGamePrefs('gym').voice);
+  }, []);
+
   // Switch Duo Routine
   const selectRoutine = (key: 'salle' | 'street') => {
     setRoutineKey(key);
@@ -114,13 +126,14 @@ export function GymBuddyView({
           playGo();
           setDuoBanner('Repos terminé ! GO série suivante');
           window.setTimeout(() => alert('near'), 0);
+          say('lift', 'hype', prefs.voice);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [restRunning, restRemaining, alert]);
+  }, [restRunning, restRemaining, alert, prefs.voice]);
 
   const startRest = (seconds: number) => {
     setRestDuration(seconds);
@@ -133,6 +146,7 @@ export function GymBuddyView({
     const target = exercises.find((ex) => ex.id === exId);
     if (!target || target.completedSets >= target.sets) return;
     playHit();
+    say('go', prefs.hardcore ? 'hardcore' : 'hype', prefs.voice);
     if (exercises.reduce((a, e) => a + e.completedSets, 0) + 1 === Math.ceil(exercises.reduce((a, e) => a + e.sets, 0) / 2)) alert('finish');
     setExercises((prev) =>
       prev.map((ex) =>
@@ -158,6 +172,7 @@ export function GymBuddyView({
     if (!call) return;
     if (!call.joined) {
       playGo();
+      say('spot', prefs.hardcore ? 'hardcore' : 'hype', prefs.voice);
       onSpotJoin?.(call.author, call.gymName);
     }
     setCalls((prev) => prev.map((c) => (c.id === id ? { ...c, joined: !c.joined } : c)));
@@ -232,6 +247,7 @@ export function GymBuddyView({
     if (!canCloseDuo) return;
     if (onDuoComplete(DUO_ROUTINES[routineKey].title, totalSetsDone, chrono.getTotalXp())) {
       playVictory();
+      say('beast', prefs.hardcore ? 'hardcore' : 'hype', prefs.voice);
       saveGameRecord(`gym:${routineKey}`, totalSetsDone);
       setRecordTick((t) => t + 1);
     }
@@ -490,7 +506,7 @@ export function GymBuddyView({
             ]}
             extra={<BestMedal score={duoRecord ? duoRecord.best : null} goal={totalSetsPlanned} unit="séries" runs={duoRecord?.runs} />}
           />
-          <GameOptionsCard prefs={prefs} onChange={setPrefs} />
+          <GameOptionsCard prefs={prefs} onChange={setPrefs} show={['bonus', 'alerts', 'hardcore', 'voice']} />
         </div>
       )}
       <AlertGlow glowKey={glowKey} glowOn={glowOn} />
