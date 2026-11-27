@@ -28,9 +28,9 @@ sinon elle retombe sur la voix du téléphone. Aucun changement de code nécessa
 | `ten.mp3` | Ten seconds! Give everything! | 10 dernières secondes (coach) |
 | `rhythm.mp3` | Perfect rhythm! | Bonus de rythme |
 | `speed.mp3` | Speed combo! | Bonus de rapidité |
-| `bonusAhead.mp3` | Bonus ahead! | (prévu pour l'Outdoor) |
-| `mission.mp3` | Mission start. Go, go, go! | (prévu pour l'Outdoor) |
-| `final.mp3` | Final stretch! Finish strong! | (prévu pour l'Outdoor) |
-| `complete.mp3` | Mission complete! | (prévu pour l'Outdoor) |
+| `bonusAhead.mp3` | Bonus ahead! | Outdoor : un bonus approche |
+| `mission.mp3` | Mission start. Go, go, go! | Outdoor : départ de la course |
+| `final.mp3` | Final stretch! Finish strong! | Outdoor : approche de l arrivée |
+| `complete.mp3` | Mission complete! | Outdoor : mission réussie |
 
 Les phrases sont définies dans `src/utils/gameVoice.ts` (`VOICE_LINES`) : on peut les changer sans toucher au reste.

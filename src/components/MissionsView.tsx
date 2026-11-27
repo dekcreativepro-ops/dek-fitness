@@ -35,6 +35,7 @@ import type {
 import { CAMEROON_CITIES, CAMEROON_REGIONS } from '../data/cities';
 import { getTierIndex, TIER_COLORS, TIER_REQUIREMENTS } from '../utils/categorization';
 import { enhanceMapLabels } from '../utils/mapLabels';
+import { say } from '../utils/gameVoice';
 import { searchPlaces, type PlaceResult } from '../utils/placeSearch';
 import { syncRouteMarkers } from '../utils/routeMarkers';
 import {
@@ -104,10 +105,11 @@ interface MapOpts {
   km: boolean;
   bonus: boolean;
   alerts: boolean;
+  voice: boolean;
 }
 const MAP_OPTS_KEY = 'dek_map_options_v1';
-const LARGE_OPTS: MapOpts = { detail: 'large', zones: true, places: true, buildings: true, streets: true, km: true, bonus: true, alerts: true };
-const LIGHT_OPTS: MapOpts = { detail: 'leger', zones: true, places: false, buildings: false, streets: false, km: true, bonus: true, alerts: true };
+const LARGE_OPTS: MapOpts = { detail: 'large', zones: true, places: true, buildings: true, streets: true, km: true, bonus: true, alerts: true, voice: true };
+const LIGHT_OPTS: MapOpts = { detail: 'leger', zones: true, places: false, buildings: false, streets: false, km: true, bonus: true, alerts: true, voice: true };
 function loadMapOpts(): MapOpts {
   try {
     const raw = window.localStorage.getItem(MAP_OPTS_KEY);
@@ -124,6 +126,7 @@ const MAP_TOGGLES: { key: Exclude<keyof MapOpts, 'detail'>; label: string; hint:
   { key: 'km', label: 'Bornes kilométriques', hint: '1, 2, 3 km…' },
   { key: 'bonus', label: 'Bonus chrono', hint: '30 s pour les prendre' },
   { key: 'alerts', label: 'Vibration & lueur verte', hint: 'Près d’un bonus et de l’arrivée' },
+  { key: 'voice', label: 'Voix de jeu', hint: 'Annonceur gamer en anglais (voix féminine pour les joueuses)' },
 ];
 
 /** Bonus de jeu : chrono de 30 s pour pousser tes limites ; le temps restant s'ajoute à l'XP du bonus. */
@@ -750,6 +753,7 @@ export function MissionsView({
 
   /** Approche d'un bonus ou de l'arrivée : le téléphone vibre et un halo vert passe autour de l'écran. */
   const triggerAlert = (kind: 'bonus' | 'finish') => {
+    say(kind === 'finish' ? 'final' : 'bonusAhead', 'hype', mapOptsRef.current.voice);
     if (!mapOptsRef.current.alerts) return;
     try {
       navigator.vibrate?.(kind === 'finish' ? [200, 80, 200, 80, 450] : [140, 70, 140]);
@@ -782,6 +786,7 @@ export function MissionsView({
     bonusXpRef.current += gain;
     setBonusXp(bonusXpRef.current);
     playHit();
+    say('bonus', 'hype', mapOptsRef.current.voice);
     if (mapOptsRef.current.alerts) {
       try {
         navigator.vibrate?.(60);
@@ -878,6 +883,7 @@ export function MissionsView({
     if (finishedRef.current) return;
     finishedRef.current = true;
     playVictory();
+    say('complete', 'hype', mapOptsRef.current.voice);
     setPhase('completed');
     const modeLabel = OUTDOOR_MODES.find((m) => m.id === gameMode)?.label ?? 'Mission 05h';
     // runnersRef : classement réel (avant, la closure figée renvoyait toujours #1)
@@ -1718,7 +1724,13 @@ export function MissionsView({
                   />
                 </div>
                 <div className="mt-4">
-                  <Button fullWidth onClick={() => setPhase('running')}>
+                  <Button
+                    fullWidth
+                    onClick={() => {
+                      say('mission', 'hype', mapOptsRef.current.voice);
+                      setPhase('running');
+                    }}
+                  >
                     {gameMode === 'relais_escouade' ? 'Prendre le relais' : 'Lancer ma course'}
                   </Button>
                 </div>
