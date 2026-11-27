@@ -8,12 +8,12 @@ export type PhotoFormat = 'card' | 'detail' | 'wide';
 export const PHOTO_CATEGORIES = {
   hero: ['runner'],
   // séances guidées (une photo fixe par séance)
-  pecs: ['pushwhite'],
-  legs: ['squat'],
-  cardio: ['marathon'],
-  abs: ['torso-abs'],
-  hiit: ['duo'],
-  fullbody: ['back'],
+  pecs: ['s-pecs'],
+  legs: ['s-legs'],
+  cardio: ['s-cardio'],
+  abs: ['s-abs'],
+  hiit: ['s-hiit'],
+  fullbody: ['s-fullbody'],
   // terrains
   football: ['match'],
   matchfoot: ['feet'],
@@ -33,8 +33,10 @@ export const PHOTO_CATEGORIES = {
 export type PhotoCategory = keyof typeof PHOTO_CATEGORIES;
 
 /** Catégories dont la photo a un fond clair (affichée plus opaque, voile sombre plus fort en bas). */
-export const LIGHT_PHOTO_CATEGORIES: PhotoCategory[] = ['pecs', 'coach'];
+export const LIGHT_PHOTO_CATEGORIES: PhotoCategory[] = ['coach'];
 
 export function photoUrl(id: string, format: PhotoFormat): string {
+  // images 3D des séances (préfixe s-) : public/images/seance ; photos : public/images/ph
+  if (id.startsWith('s-')) return `/images/seance/${id.slice(2)}-${format}.jpg`;
   return `/images/ph/${id}-${format}.jpg`;
 }

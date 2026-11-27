@@ -1,10 +1,9 @@
 import { motion } from 'framer-motion';
 import { BookmarkSimple, Play } from '../DekIcons';
 import type { WorkoutProgram } from '../../data/workoutsData';
-import { MASCOT_FALLBACK, PROGRAM_MASCOT } from '../../data/mascots';
-import { Mascot3D } from '../ui/Mascot3D';
+import { usePhoto } from '../../utils/usePhoto';
 
-/** Carte d'une séance guidée : mascotte 3D sur fond blanc ou vert (les photos sont réservées aux bannières). */
+/** Carte d'une séance guidée : image 3D de la séance + dégradé sombre pour le texte. */
 export function WorkoutCard({
   program,
   saved,
@@ -22,8 +21,7 @@ export function WorkoutCard({
   className?: string;
   tall?: boolean;
 }) {
-  const { pose, tone } = PROGRAM_MASCOT[program.photoCat] ?? MASCOT_FALLBACK;
-  const lime = tone === 'lime';
+  const photo = usePhoto(program.photoCat, 'card');
   return (
     <motion.div
       whileTap={{ scale: 0.97 }}
@@ -33,9 +31,10 @@ export function WorkoutCard({
       onKeyDown={(e) => {
         if (e.key === 'Enter') onOpen();
       }}
-      className={`relative cursor-pointer overflow-hidden rounded-[24px] ${lime ? 'bg-lime' : 'bg-card'} ${tall ? 'h-60' : 'h-52'} ${className}`}
+      className={`relative cursor-pointer overflow-hidden rounded-[24px] bg-card ${tall ? 'h-60' : 'h-52'} ${className}`}
     >
-      <Mascot3D pose={pose} tone={tone} className="absolute inset-x-0 top-2 h-[62%] w-full" />
+      <img src={photo} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/30 to-transparent" />
 
       {onToggleSave && (
         <button
@@ -47,7 +46,7 @@ export function WorkoutCard({
           aria-pressed={saved}
           aria-label={saved ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           className={`absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full transition active:scale-90 ${
-            saved ? 'bg-ink text-lime' : lime ? 'bg-black/15 text-ink' : 'bg-white/10 text-fg'
+            saved ? 'bg-lime text-on-lime' : 'bg-black/45 text-white'
           }`}
         >
           <BookmarkSimple className="h-4 w-4" />
@@ -55,14 +54,14 @@ export function WorkoutCard({
       )}
 
       {doneCount > 0 && (
-        <span className="absolute left-2.5 top-2.5 rounded-full bg-ink px-2.5 py-1 text-[11px] font-semibold text-lime">
+        <span className="absolute left-2.5 top-2.5 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-lime">
           Faite {doneCount}×
         </span>
       )}
 
       <div className="absolute inset-x-0 bottom-0 p-3">
-        <div className={`line-clamp-2 text-[15px] font-bold leading-5 ${lime ? 'text-[#0B0F00]' : 'text-fg'}`}>{program.title}</div>
-        <div className={`mt-1 flex items-center gap-1 text-[12px] font-medium ${lime ? 'text-[#2B3300]' : 'text-mute'}`}>
+        <div className="line-clamp-2 text-[15px] font-bold leading-5 text-white">{program.title}</div>
+        <div className="mt-1 flex items-center gap-1 text-[12px] font-medium text-white/80">
           <Play className="h-3 w-3 shrink-0" />
           <span className="truncate">
             {program.durationMin} min · {program.level}

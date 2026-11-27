@@ -35,7 +35,9 @@ sport top, black shorts, black and lime sneakers.
 
 ---
 
-## 2. Séances guidées — 6 images (OBLIGATOIRES)
+## 2. Séances guidées — 6 images (REÇUES ET INTÉGRÉES le 27/11)
+
+Sources dans `images-source/seance-*.png` ; recadrages générés par un script en `public/images/seance/` (card 4:5, detail 5:4).
 
 Utilisées sur les cartes de séance (4:5), sur les bannières de détail (5:4) et sur « Continuer la séance ».
 Une image différente par séance, jamais répétée ailleurs.
@@ -191,7 +193,7 @@ Avatars : portrait carré 1:1, visage et épaules bien lisibles (affichés très
 | Gym Buddy et Défi House | 5 | Obligatoire |
 | Démos d'exercices (posters) | 8 | Obligatoire |
 | Nutrition | 5 | Obligatoire |
-| **Sous-total obligatoire** | **34** | |
+| **Sous-total obligatoire** | **34** (6 déjà reçues, 28 restantes) | |
 | Objectifs onboarding | 5 | Recommandé |
 | Missions Outdoor | 8 | Recommandé |
 | Coachs et avatars | 7 | Recommandé |

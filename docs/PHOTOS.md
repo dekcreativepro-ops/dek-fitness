@@ -43,7 +43,6 @@ piste [5961848](https://www.pexels.com/photo/athletes-running-on-running-track-5
 
 > Les photos fournies par le propriétaire montrent de vraies personnes et des marques : vérifier les droits avant publication.
 
-## Mascottes 3D (cartes de séance)
-Les cartes de séance n'utilisent plus de photo : ce sont des personnages « argile 3D » en SVG
-(`src/components/ui/Mascot3D.tsx`), sur fond blanc ou vert. Pose et fond par catégorie dans `src/data/mascots.ts`
-(`pose` : pecs, legs, cardio, abs, hiit, fullbody ; `tone` : white ou lime). Les photos restent pour les bannières.
+## Images 3D des séances
+Les 6 séances guidées utilisent des images 3D générées (sources `images-source/seance-*.png`, recadrées vers `public/images/seance/`).
+Les photos ci-dessus ne servent plus qu'aux bannières hors séances. Voir `docs/IMAGES-A-GENERER.md` pour les images restantes.
