@@ -167,6 +167,11 @@ export const server = http.createServer(async (req, res) => {
   const provider = providers[PROVIDER] ?? providers.demo;
 
   try {
+    // Adresse de contrôle pour l'hébergeur (il redémarre le serveur si elle ne répond plus).
+    if (req.method === 'GET' && (url.pathname === '/health' || url.pathname === '/')) {
+      return send(res, 200, { ok: true, provider: PROVIDER, accounts: Object.keys(store.db.accounts).length });
+    }
+
     // ----- comptes -----
     if (req.method === 'POST' && url.pathname === '/auth/register') {
       const out = accounts.register(parseJson(await readBody(req)));

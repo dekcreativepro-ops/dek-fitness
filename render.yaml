@@ -1,0 +1,26 @@
+# Déploiement sur Render (https://render.com) : « New + » > « Blueprint », choisir ce dépôt GitHub.
+# Le disque permanent (1 Go) garde la base des comptes : il demande une formule payante (Starter, quelques dollars par mois).
+services:
+  - type: web
+    name: dek-server
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /health
+    autoDeploy: true
+    disk:
+      name: dek-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: PAYMENT_PROVIDER
+        value: chariow
+      - key: CHARIOW_API_KEY
+        sync: false # à saisir dans le tableau de bord Render, jamais ici
+      - key: CHARIOW_PULSE_SECRET
+        sync: false
+      - key: CHARIOW_PRODUCT_IDS
+        sync: false # {"5000":"prd_…","4500":"prd_…","4000":"prd_…","3500":"prd_…","3000":"prd_…","2500":"prd_…"}
+      - key: ALLOWED_ORIGIN
+        value: "*" # à resserrer quand l'app a son adresse définitive
