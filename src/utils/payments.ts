@@ -5,6 +5,9 @@
 //    fournisseur (Chariow, MeSomb, Flutterwave…), garde les clés secrètes et confirme le paiement.
 //  - Démo : sans serveur, le paiement est simulé (aucun argent réel). Utile pour tester l'écran.
 
+import { getToken } from './account';
+import { API } from './api';
+
 export type Operator = 'mtn' | 'orange';
 
 export const OPERATORS: { id: Operator; label: string; hint: string }[] = [
@@ -25,7 +28,6 @@ export interface PaymentResult {
   message?: string;
 }
 
-const API = (import.meta.env.VITE_PAYMENT_API_URL as string | undefined)?.replace(/\/$/, '');
 
 export const PAYMENTS_LIVE = Boolean(API);
 
@@ -95,10 +97,11 @@ export async function payPremium(opts: {
   try {
     const res = await fetch(`${API}/pay`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}) },
       body: JSON.stringify({ operator: opts.operator, phone, email: opts.email, firstName: opts.firstName, lastName: opts.lastName, plan: 'premium-monthly' }),
     });
     const out = (await res.json().catch(() => ({}))) as { reference?: string; checkoutUrl?: string | null; error?: string };
+    if (res.status === 401) throw new Error('Connecte-toi (ou crée ton compte) pour payer.');
     if (!res.ok || !out.reference) throw new Error(out.error ?? 'Paiement refusé par le serveur.');
     const { reference } = out as { reference: string };
     if (out.checkoutUrl) await openCheckout(out.checkoutUrl);

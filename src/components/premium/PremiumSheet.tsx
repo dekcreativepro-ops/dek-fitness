@@ -12,18 +12,25 @@ import {
   usePremium,
   type PremiumFeature,
 } from '../../utils/premium';
+import { loginAccount, refreshAccount, registerAccount, useAccount } from '../../utils/account';
 import { OPERATORS, PAYMENTS_LIVE, getPaymentConfig, guessOperator, normalizePhone, payPremium, type Operator } from '../../utils/payments';
 
 const FIELD =
   'h-12 w-full rounded-2xl bg-tile px-4 text-[14px] font-medium text-fg outline-none placeholder:text-faint focus:ring-1 focus:ring-lime';
 
-const price = `${PREMIUM_PRICE_FCFA.toLocaleString('fr-FR')} FCFA`;
+const fcfa = (n: number) => `${n.toLocaleString('fr-FR')} FCFA`;
 
 type Step = 'offer' | 'pay' | 'wait' | 'done';
 
 function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
-  const { active, days } = usePremium();
-  const [step, setStep] = useState<Step>(active ? 'done' : 'offer');
+  const { paid, trial, trialDays, days } = usePremium();
+  const account = useAccount();
+  const price = fcfa(account?.nextPrice ?? PREMIUM_PRICE_FCFA);
+  const needsAccount = PAYMENTS_LIVE && !account;
+  const [mode, setMode] = useState<'register' | 'login'>('register');
+  const [password, setPassword] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [step, setStep] = useState<Step>(paid ? 'done' : 'offer');
   const [operator, setOperator] = useState<Operator>('mtn');
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +38,16 @@ function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
   const [hosted, setHosted] = useState(false);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+
+  const submitAccount = async () => {
+    const local = normalizePhone(phone);
+    if (!local) return setError('Numéro invalide : 9 chiffres commençant par 6 (ex. 6 70 12 34 56).');
+    setError(null);
+    setStep('wait');
+    const res = mode === 'register' ? await registerAccount(local, accountName, password) : await loginAccount(local, password);
+    setStep('pay');
+    if (!res.ok) setError(res.error);
+  };
 
   const submit = async () => {
     const local = normalizePhone(phone);
@@ -47,7 +64,9 @@ function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
     const [firstName, ...rest] = name.trim().split(/\s+/);
     const res = await payPremium({ operator, phone: local, amount: PREMIUM_PRICE_FCFA, email: email.trim(), firstName: firstName || undefined, lastName: rest.join(' ') || undefined });
     if (res.ok) {
-      activatePremium({ operator, reference: res.reference, demo: res.demo });
+      // En vrai paiement, c'est le serveur qui a activé l'abonnement : on relit le compte. En démo, on active ici.
+      if (res.demo) activatePremium({ operator, reference: res.reference, demo: true });
+      else await refreshAccount();
       setDemo(res.demo);
       setStep('done');
     } else {
@@ -87,9 +106,18 @@ function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
         </div>
       )}
 
+      {trial && (
+        <div className="rounded-[20px] bg-lime/15 p-3 text-center text-[13px] font-semibold text-lime">
+          Essai gratuit : tout est ouvert encore {trialDays} jour{trialDays > 1 ? 's' : ''}
+        </div>
+      )}
+
       <div className="text-center">
         <div className="num text-[34px] font-extrabold leading-10 text-fg">{price}</div>
-        <div className="text-[13px] font-medium text-mute">par mois · sans engagement</div>
+        <div className="text-[13px] font-medium text-mute">
+          par mois · sans engagement
+          {account && account.discountPct > 0 && ` · remise d’effort −${account.discountPct} % (au lieu de ${fcfa(PREMIUM_PRICE_FCFA)})`}
+        </div>
       </div>
 
       <ul className="space-y-3">
@@ -117,7 +145,30 @@ function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
         </Button>
       )}
 
-      {(step === 'pay' || step === 'wait') && (
+      {(step === 'pay' || step === 'wait') && needsAccount && (
+        <div className="space-y-3">
+          <div className="text-[14px] font-bold text-fg">{mode === 'register' ? 'Crée ton compte DEK' : 'Connecte-toi'}</div>
+          <div className="text-[12px] font-medium text-mute">Ton abonnement et tes XP sont rattachés à ton compte : tu les retrouves sur un nouveau téléphone.</div>
+          {mode === 'register' && (
+            <input type="text" autoComplete="name" placeholder="Ton prénom" value={accountName} disabled={step === 'wait'} onChange={(e) => setAccountName(e.target.value)} className={FIELD} />
+          )}
+          <input type="tel" inputMode="tel" autoComplete="tel" placeholder="Ton numéro (ex. 6 70 12 34 56)" value={phone} disabled={step === 'wait'} onChange={(e) => setPhone(e.target.value)} className={FIELD} />
+          <input type="password" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} placeholder="Mot de passe (6 caractères minimum)" value={password} disabled={step === 'wait'} onChange={(e) => setPassword(e.target.value)} className={FIELD} />
+          {error && (
+            <div role="alert" className="flex items-start gap-2 text-[13px] font-medium text-danger">
+              <Warning className="mt-0.5 h-4 w-4 shrink-0" /> {error}
+            </div>
+          )}
+          <Button fullWidth disabled={step === 'wait'} onClick={() => void submitAccount()}>
+            {step === 'wait' ? 'Un instant…' : mode === 'register' ? 'Créer mon compte' : 'Me connecter'}
+          </Button>
+          <button type="button" onClick={() => { setMode(mode === 'register' ? 'login' : 'register'); setError(null); }} className="w-full text-center text-[13px] font-semibold text-mute">
+            {mode === 'register' ? 'J’ai déjà un compte' : 'Créer un compte'}
+          </button>
+        </div>
+      )}
+
+      {(step === 'pay' || step === 'wait') && !needsAccount && (
         <div className="space-y-3">
           <div className={hosted ? 'hidden' : 'grid grid-cols-2 gap-2'} role="radiogroup" aria-label="Opérateur Mobile Money">
             {OPERATORS.map((o) => (
@@ -210,6 +261,7 @@ export function PremiumHost() {
 export function PremiumGate({ feature, title, children }: { feature: PremiumFeature; title?: string; children: ReactNode }) {
   const { active } = usePremium();
   if (active) return <>{children}</>;
+  const price = fcfa(PREMIUM_PRICE_FCFA);
   return (
     <div className="space-y-4 rounded-[28px] bg-card p-6 text-center">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-tile text-lime">

@@ -42,7 +42,7 @@ import { loadPerf, savePerf } from '../utils/coachProfile';
 import { addBonus, ledgerTotal, type BonusId, type BonusLedger } from '../utils/bonusSet';
 import { BonusSummary } from './ui/GameKit';
 import { searchPlaces, type PlaceResult } from '../utils/placeSearch';
-import { isPremiumActive, openPaywall } from '../utils/premium';
+import { consumePiste, isPremiumActive, openPaywall, pistesLeft } from '../utils/premium';
 import { syncRouteMarkers } from '../utils/routeMarkers';
 import {
   addZoneLabels,
@@ -672,7 +672,21 @@ export function MissionsView({
     };
   }, [searchQuery, searchOpen]);
 
+  /** Dépense une piste gratuite (ou rien en Premium/essai) ; false = quota atteint, l'abonnement s'ouvre. */
+  const spendPiste = (): boolean => {
+    if (!consumePiste()) return false;
+    if (!isPremiumActive()) {
+      const left = pistesLeft();
+      flashNotice(left > 0 ? `Piste gratuite utilisée : il t’en reste ${left}` : 'Dernière piste gratuite utilisée');
+    }
+    return true;
+  };
+
   const pickPlace = (r: PlaceResult) => {
+    if (!spendPiste()) {
+      setSearchOpen(false);
+      return;
+    }
     setSearchOpen(false);
     setSearchQuery('');
     setSearchResults([]);
@@ -1614,10 +1628,7 @@ export function MissionsView({
           <IconButton
             label="Générer un nouveau tracé"
             onClick={() => {
-              if (!isPremiumActive()) {
-                openPaywall('pistes');
-                return;
-              }
+              if (!spendPiste()) return;
               void loadNewRoute(coords[0], coords[1], effectiveDistanceKm);
             }}
             disabled={isLoadingRoute || phase !== 'lobby'}
@@ -1634,10 +1645,7 @@ export function MissionsView({
               aria-label="Ville"
               value={cityIdx}
               onChange={(e) => {
-                if (!isPremiumActive()) {
-                  openPaywall('pistes');
-                  return;
-                }
+                if (!spendPiste()) return;
                 const idx = Number(e.target.value);
                 setCityIdx(idx);
                 setCoords([PRESET_CITIES[idx].lat, PRESET_CITIES[idx].lng]);
@@ -1657,7 +1665,7 @@ export function MissionsView({
               ))}
             </select>
 
-            <button type="button" onClick={() => { leaveFullscreen(); if (!isPremiumActive()) { openPaywall('pistes'); return; } setSearchOpen(true); }} aria-label="Rechercher un lieu" className={glassPill}>
+            <button type="button" onClick={() => { leaveFullscreen(); setSearchOpen(true); }} aria-label="Rechercher un lieu" className={glassPill}>
               <MagnifyingGlass className="h-4 w-4" />
             </button>
 

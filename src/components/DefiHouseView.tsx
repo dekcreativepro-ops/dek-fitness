@@ -21,7 +21,7 @@ import { AlertGlow, BestMedal, BonusPill, GameLegend, GameOptionsCard } from './
 import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
 import { levelFromScore, loadGameRecord, loadStreak, saveGameRecord, saveStreak, streakMultiplier, vibrate } from '../utils/gameFx';
 import { HouseTournamentBoard } from './HouseTournamentBoard';
-import { isPremiumActive, openPaywall } from '../utils/premium';
+import { FREE_HOUSE_MODE, isPremiumActive, openPaywall } from '../utils/premium';
 import { say } from '../utils/gameVoice';
 import { CoachBubble } from './coach/CoachBubble';
 import { useCoachLive } from './coach/coachHooks';
@@ -997,7 +997,12 @@ export function DefiHouseView({
               items={HOUSE_MODES.filter((m) => m.id !== 'tournoi').map((m) => ({ id: m.id, label: m.label }))}
               value={gameMode}
               onChange={(id) => {
-                if (!fighting) setGameMode(id);
+                if (fighting) return;
+                if (id !== FREE_HOUSE_MODE && !isPremiumActive()) {
+                  openPaywall('defi_modes');
+                  return;
+                }
+                setGameMode(id);
               }}
               layoutId="houseModePill"
             />

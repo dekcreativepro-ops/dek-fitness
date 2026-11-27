@@ -7,6 +7,7 @@ import { coachSpeak, loadChat, saveChat, saveCoach, type ChatMsg, type CoachStyl
 import { dayKey } from '../../utils/progression';
 import { Button, Card, ChipTabs, IconButton, ScreenHeader } from '../ui/kit';
 import { useCoach } from './coachHooks';
+import { consumeCoachMessage } from '../../utils/premium';
 
 const BRIEF_KEY = 'dek_coach_brief_day';
 
@@ -42,6 +43,7 @@ export function CoachAIScreen({ user, onBack }: { user: UserProfile; onBack: () 
   const send = async (text: string) => {
     const q = text.trim();
     if (!q || busy) return;
+    if (!consumeCoachMessage()) return;
     const userMsg: ChatMsg = { id: Date.now(), from: 'user', text: q };
     const history = [...msgs, userMsg];
     setMsgs(history);

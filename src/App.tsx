@@ -15,6 +15,8 @@ import { pushScreen, riseScreen } from './components/ui/motion';
 import { ViewBoundary } from './components/ViewBoundary';
 import { DekNavContext, type DekNavValue, type OverlayEntry } from './context/DekNav';
 import { PremiumHost } from './components/premium/PremiumSheet';
+import { canOpenProgram, openPaywall } from './utils/premium';
+import { claimXp } from './utils/account';
 import { INITIAL_COACHS, INITIAL_FEED, INITIAL_USER } from './data/mockData';
 import {
   getProgram,
@@ -342,6 +344,11 @@ export default function App() {
 
   // --- PILE D'ÉCRANS (synchronisée avec le bouton retour Android / navigateur) ---
   const pushOverlay = useCallback((entry: OverlayEntry) => {
+    // Séances au-delà des 3 gratuites : réservées à l'essai / Premium
+    if ((entry.kind === 'workout' || entry.kind === 'player') && !canOpenProgram(entry.id)) {
+      openPaywall('seances');
+      return;
+    }
     const next = [...overlaysRef.current, entry];
     overlaysRef.current = next;
     setOverlays(next);
@@ -542,6 +549,7 @@ export default function App() {
   ) => {
     // Calcul de la promotion à partir de l'état courant (et non dans l'updater,
     // qui peut s'exécuter plus tard : le toast de palier ne s'affichait jamais).
+    void claimXp('outdoor', distanceKm, `outdoor:${Date.now()}`);
     const sameTier = tier === user.category;
     const nextCount = sameTier ? user.missionsInCurrentTier + 1 : user.missionsInCurrentTier;
     const currentIdx = getTierIndex(user.category);
@@ -619,6 +627,7 @@ export default function App() {
     reps: number,
     modeLabel = '1v1 K.O. 60s',
   ) => {
+    void claimXp('duel', 1, `duel:${Date.now()}`);
     commitProgress((u) => ({ ...u, xp: u.xp + xpEarned, houseWins: u.houseWins + 1 }), {
       session: true,
       kcal: 60,
@@ -853,6 +862,7 @@ export default function App() {
       showToast('Trop d’exercices passés : séance non comptée, retente-la en entier');
       return 0;
     }
+    void claimXp('workout', result.durationSec / 60, `workout:${programId}:${dayKey()}`);
     commitProgress(
       (u) => ({
         ...u,

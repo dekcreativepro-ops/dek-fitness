@@ -164,19 +164,21 @@ export function ProfilFeedView({
             <Crown className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[16px] font-bold leading-[22px] text-fg">{premium.active ? 'DEK Premium actif' : 'Formule gratuite'}</div>
+            <div className="text-[16px] font-bold leading-[22px] text-fg">{premium.paid ? 'DEK Premium actif' : premium.trial ? 'Essai gratuit en cours' : 'Formule gratuite'}</div>
             <div className="text-[12px] font-medium text-mute">
-              {premium.active
+              {premium.paid
                 ? `${premium.days} jour${premium.days > 1 ? 's' : ''} restant${premium.days > 1 ? 's' : ''}${premium.state.demo ? ' · mode démo' : ''}`
-                : `Tournois, pistes et modes spéciaux : ${PREMIUM_PRICE_FCFA.toLocaleString('fr-FR')} FCFA / mois`}
+                : premium.trial
+                  ? `Tout est ouvert encore ${premium.trialDays} jour${premium.trialDays > 1 ? 's' : ''}, puis ${PREMIUM_PRICE_FCFA.toLocaleString('fr-FR')} FCFA / mois`
+                  : `Tournois, pistes illimitées, toutes les séances : ${PREMIUM_PRICE_FCFA.toLocaleString('fr-FR')} FCFA / mois`}
             </div>
           </div>
         </div>
         <div className="flex gap-2">
           <Button fullWidth onClick={() => openPaywall(null)}>
-            {premium.active ? 'Prolonger d’un mois' : 'Passer Premium'}
+            {premium.paid ? 'Prolonger d’un mois' : 'Passer Premium'}
           </Button>
-          {premium.active && premium.state.demo && (
+          {premium.paid && premium.state.demo && (
             <Button variant="secondary" onClick={cancelPremium}>
               Quitter
             </Button>
