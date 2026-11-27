@@ -28,3 +28,6 @@ dist-ssr
 # APK compilés en local
 releases/
 android/local.properties
+
+# Base des comptes (données personnelles : ne jamais publier)
+server/data/
