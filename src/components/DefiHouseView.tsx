@@ -17,6 +17,10 @@ import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { ExerciseDemoCanvas } from './ExerciseDemoCanvas';
 import { UserAvatar } from './UserAvatar';
 
+import { AlertGlow, BestMedal, BonusPill, GameLegend, GameOptionsCard } from './ui/GameKit';
+import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
+import { levelFromScore, loadGameRecord, saveGameRecord, vibrate } from '../utils/gameFx';
+
 interface DefiHouseViewProps {
   userCategory: MissionDifficulty;
   userAvatar: UserAvatarConfig;
@@ -54,6 +58,11 @@ const HOUSE_MODES: {
   { id: 'survie_maison', label: 'Survie', shortDesc: 'Ne laisse pas ta jauge tomber (4.5s)', xpReward: 300 },
   { id: 'equipe_4v4', label: 'Équipe 4v4', shortDesc: 'DEK Squad vs Iron Crew (80 reps)', xpReward: 320 },
 ];
+
+/** Difficulté d'un défi : mode + exercice + force de l'adversaire. */
+const MODE_BASE: Record<HouseGameMode, number> = { ko_60s: 4.5, first_to_20: 5, survie_maison: 6.5, equipe_4v4: 6 };
+const EXERCISE_LOAD: Record<HouseExercise, number> = { pompes: 1.5, squats: 1, jumping_jacks: 0, corde: 1.5, gainage: 1, burpees: 2.5 };
+const BONUS_NEED: Record<MissionDifficulty, number> = { Amateur: 6, Standard: 8, Pro: 10, Expert: 12 };
 
 const POSE_CONNECTIONS: [number, number][] = [
   [11, 12],
@@ -226,6 +235,54 @@ export function DefiHouseView({
     }, 620);
   };
 
+  // Jeu : réglages, alertes (vibration + halo), bonus chrono et records
+  const [prefs, setPrefs] = useGamePrefs('house');
+  const { glowKey, glowOn, alert } = useAlertGlow(prefs.alerts);
+  const alertFlagsRef = useRef({ win: false, time: false, stamina: false });
+  const [recordTick, setRecordTick] = useState(0);
+  const chrono = useChronoBonus({
+    enabled: prefs.bonus,
+    active: matchState === 'fighting',
+    progress: myReps,
+    need: BONUS_NEED[userCategory] ?? 8,
+    base: 15,
+    label: 'Défi chrono',
+    onWin: (xp) => {
+      spawnPopup(`Bonus +${xp} XP`, 'opp');
+      if (prefs.alerts) vibrate(60);
+    },
+    onMiss: () => spawnPopup('Bonus raté', 'me'),
+    onNear: () => alert('near'),
+  });
+
+  // Alertes : victoire proche, dernières secondes, jauge de survie presque vide
+  useEffect(() => {
+    if (matchState !== 'fighting') return;
+    const f = alertFlagsRef.current;
+    const nearWin =
+      gameMode === 'ko_60s' || gameMode === 'survie_maison'
+        ? oppHp <= 15
+        : gameMode === 'first_to_20'
+          ? myReps >= FIRST_TO_TARGET - 3
+          : mySquadReps >= SQUAD_TARGET_REPS - 8;
+    if (nearWin && !f.win) {
+      f.win = true;
+      alert('finish');
+    }
+    if (timeLeft <= 5 && timeLeft > 0 && !f.time) {
+      f.time = true;
+      alert('near');
+    }
+    if (gameMode === 'survie_maison') {
+      if (staminaMs < 1200 && !f.stamina) {
+        f.stamina = true;
+        alert('near');
+      } else if (staminaMs > 2500) {
+        f.stamina = false;
+      }
+    }
+  }, [matchState, gameMode, oppHp, myReps, mySquadReps, timeLeft, staminaMs, alert]);
+
   /** Limite les re-rendus : on ne met à jour la jauge / le conseil que s'ils changent. */
   const updateDepth = (pct: number) => {
     if (Math.abs(pct - lastDepthRef.current) < 3) return;
@@ -311,9 +368,9 @@ export function DefiHouseView({
   };
 
   // Dernières valeurs lues au moment de la victoire (l'effet ne doit réagir qu'au passage en 'win')
-  const winInfoRef = useRef({ exercise, gameMode, onWinDuel });
+  const winInfoRef = useRef({ exercise, gameMode, onWinDuel, getBonusXp: chrono.getTotalXp });
   useEffect(() => {
-    winInfoRef.current = { exercise, gameMode, onWinDuel };
+    winInfoRef.current = { exercise, gameMode, onWinDuel, getBonusXp: chrono.getTotalXp };
   });
 
   useEffect(() => {
@@ -322,7 +379,9 @@ export function DefiHouseView({
     playVictory();
     const exLabel = EXERCISES.find((e) => e.id === info.exercise)?.label ?? 'Pompes';
     const modeObj = HOUSE_MODES.find((m) => m.id === info.gameMode) ?? HOUSE_MODES[0];
-    info.onWinDuel(modeObj.xpReward, exLabel, myRepsRef.current, modeObj.label);
+    info.onWinDuel(modeObj.xpReward + info.getBonusXp(), exLabel, myRepsRef.current, modeObj.label);
+    saveGameRecord(`house:${info.gameMode}:${info.exercise}`, myRepsRef.current);
+    window.setTimeout(() => setRecordTick((t) => t + 1), 0);
   }, [matchState]);
 
   useEffect(() => {
@@ -672,6 +731,8 @@ export function DefiHouseView({
     setStaminaMs(SURVIVAL_MAX_MS);
     setCombo(0);
     setTimeLeft(gameMode === 'survie_maison' ? 45 : 60);
+    chrono.reset();
+    alertFlagsRef.current = { win: false, time: false, stamina: false };
     updateCue('C’est parti !');
     setMatchState('fighting');
   };
@@ -679,6 +740,11 @@ export function DefiHouseView({
   const activeEx = EXERCISES.find((e) => e.id === exercise) ?? EXERCISES[0];
   const activeMode = HOUSE_MODES.find((m) => m.id === gameMode) ?? HOUSE_MODES[0];
   const staminaPct = Math.round((staminaMs / SURVIVAL_MAX_MS) * 100);
+  const levelScore = MODE_BASE[gameMode] + EXERCISE_LOAD[exercise] + opponent.hitChance * 4;
+  const level = levelFromScore(levelScore, [6.5, 8.5, 10.5]);
+  const recordKey = `house:${gameMode}:${exercise}`;
+  // recordTick force la relecture du record après une victoire
+  const record = recordTick >= 0 ? loadGameRecord(recordKey) : null;
   const fighting = matchState === 'fighting';
 
   // Deux lignes HUD (adversaire / toi) selon le mode actif
@@ -939,7 +1005,8 @@ export function DefiHouseView({
                   <h3 className="mt-3 text-[22px] font-extrabold leading-7">Victoire • {activeMode.label}</h3>
                   <p className="mt-1 text-[13px] font-medium">
                     {endReason || `${myReps} ${activeEx.label}`} •{' '}
-                    <strong className="font-bold">+{activeMode.xpReward} XP</strong>
+                    <strong className="font-bold">+{activeMode.xpReward + chrono.totalXp} XP</strong>
+                    {chrono.totalXp > 0 && ` (dont ${chrono.totalXp} de bonus)`}
                   </p>
                   <div className="mt-4">
                     <Button variant="secondary" fullWidth onClick={startDuel}>
@@ -971,6 +1038,15 @@ export function DefiHouseView({
           Lancer • {activeMode.label}
         </Button>
       ) : fighting ? (
+        <div className="space-y-2">
+          {chrono.bonus && (
+            <BonusPill
+              label="Défi chrono"
+              hint={`Encore ${Math.max(0, chrono.bonus.target - myReps)} reps avant la fin du chrono`}
+              xp={15}
+              secondsLeft={chrono.secondsLeft}
+            />
+          )}
         <div className="flex gap-3">
           <Button className="flex-1" onClick={registerMyRep}>
             {exercise === 'gainage' ? '+2s gainage' : `+1 rep (${activeEx.label})`}
@@ -979,11 +1055,26 @@ export function DefiHouseView({
             Stop
           </Button>
         </div>
+        </div>
       ) : (
         <p className="text-center text-[13px] font-medium text-mute">
           Duel ({activeMode.label}) enregistré sur ta Carte Athlète.
         </p>
       )}
+
+      <GameLegend
+        title={`${activeMode.label} · ${activeEx.label}`}
+        description={`${activeMode.shortDesc}. ${activeEx.tip} Adversaire : ${opponent.name} (${userCategory}). Bonus : ${BONUS_NEED[userCategory] ?? 8} reps de plus en 30 s.`}
+        level={level}
+        stats={[
+          { label: 'Durée', value: gameMode === 'survie_maison' ? 45 : 60, unit: 's' },
+          { label: 'Récompense', value: `+${activeMode.xpReward}`, unit: 'XP' },
+          { label: 'Bonus', value: BONUS_NEED[userCategory] ?? 8, unit: 'reps' },
+        ]}
+        extra={<BestMedal score={record ? record.best : null} goal={FIRST_TO_TARGET} unit="reps" runs={record?.runs} />}
+      />
+      <GameOptionsCard prefs={prefs} onChange={setPrefs} />
+      <AlertGlow glowKey={glowKey} glowOn={glowOn} />
     </div>
   );
 }
