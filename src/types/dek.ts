@@ -158,6 +158,10 @@ export interface SanteMatch {
     | 'Crossfit'
     | 'Spinning'
     | 'Street workout'
+    | 'Street fitness'
+    | 'Street dance'
+    | 'Run crew'
+    | 'Parkour'
     | 'Pilates';
   location: string;
   city: string;

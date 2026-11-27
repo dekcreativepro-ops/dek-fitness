@@ -31,7 +31,11 @@ export const SPORTS: SportMeta[] = [
   { id: 'Tabata', label: 'Tabata', group: 'Cardio', max: 15, intensity: 2.5, unit: 'participants', place: 'salle ou plein air, 20 s d’effort / 10 s de repos', slug: 'tabata' },
   { id: 'Crossfit', label: 'Crossfit', group: 'Cardio', max: 12, intensity: 3, unit: 'participants', place: 'box de crossfit', slug: 'crossfit' },
   { id: 'Spinning', label: 'Spinning', group: 'Vélo', max: 14, intensity: 2, unit: 'participants', place: 'salle de vélos', slug: 'spinning' },
+  { id: 'Street fitness', label: 'Street fitness', group: 'Street', max: 30, intensity: 1.5, unit: 'participants', place: 'rue ou place publique, circuit en groupe', slug: 'street-fitness' },
   { id: 'Street workout', label: 'Street workout', group: 'Street', max: 12, intensity: 2, unit: 'participants', place: 'parc à barres', slug: 'street' },
+  { id: 'Street dance', label: 'Street dance', group: 'Street', max: 20, intensity: 1.5, unit: 'participants', place: 'rue ou esplanade', slug: 'street-dance' },
+  { id: 'Run crew', label: 'Run crew', group: 'Street', max: 40, intensity: 1.5, unit: 'participants', place: 'rues du quartier, parcours en groupe', slug: 'run-crew' },
+  { id: 'Parkour', label: 'Parkour', group: 'Street', max: 10, intensity: 2.5, unit: 'participants', place: 'spot urbain encadré', slug: 'parkour' },
   { id: 'Pilates', label: 'Pilates', group: 'Bien-être', max: 12, intensity: 0.5, unit: 'participants', place: 'studio calme', slug: 'pilates' },
   { id: 'Yoga & mobilité', label: 'Yoga & mobilité', group: 'Bien-être', max: 15, intensity: 0, unit: 'participants', place: 'studio calme', slug: 'yoga' },
 ];

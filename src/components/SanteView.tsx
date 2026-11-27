@@ -94,7 +94,8 @@ function matchInfo(m: SanteMatch) {
   const score = base + meta.intensity;
   const level = levelFromScore(score, [2.5, 4.5, 6.5]);
   const left = Math.max(0, m.playersMax - m.playersJoined);
-  const description = `${m.sport} ${m.level.toLowerCase()} · ${m.playersMax} ${meta.unit} · ${meta.place} · ${left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'complet'}.`;
+  const street = meta.group === 'Street' ? ' Rue partagée : reste sur les zones piétonnes, gilet fluo conseillé, jamais sur la chaussée.' : '';
+  const description = `${m.sport} ${m.level.toLowerCase()} · ${m.playersMax} ${meta.unit} · ${meta.place} · ${left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'complet'}.${street}`;
   return { level, description };
 }
 

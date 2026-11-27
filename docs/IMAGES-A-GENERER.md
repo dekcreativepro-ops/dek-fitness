@@ -239,3 +239,6 @@ Pas encore utilisées : `exo-pompes-tempo`, `exo-squat-iso`, `bonus-shaker`, `re
 
 Mise à jour : les 51 images de 250 px ont été agrandies x4 par IA locale (Real-ESRGAN anime 6B), puis importées en 1000 px de large.
 C'est bien plus net, mais l'IA lisse un peu les détails : des originaux en grande taille restent préférables si tu les as.
+
+Street (sport en groupe dans la rue) : `sport-street-fitness.jpg` (circuit de groupe sur un boulevard), `sport-street-dance.jpg`,
+`sport-run-crew.jpg` (groupe qui court dans une rue), `sport-parkour.jpg` (saut de muret). Même format 2:1.
