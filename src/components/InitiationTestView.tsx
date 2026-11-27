@@ -24,6 +24,17 @@ interface InitiationTestViewProps {
   onComplete: (result: InitiationResult) => void;
 }
 
+import { Slot3D } from './ui/Slot3D';
+import { Dumbbell, Fire, Heart, Sunrise, Trophy } from './DekIcons';
+
+const GOAL_ICONS: Record<string, React.ReactNode> = {
+  perte_poids: <Fire />,
+  prise_muscle: <Dumbbell />,
+  endurance_5am: <Sunrise />,
+  foot_sante: <Trophy />,
+  remise_forme: <Heart />,
+};
+
 const CARDIO_OPTIONS: { id: CardioLevel; title: string; subtitle: string }[] = [
   { id: 'marche', title: 'Débutant', subtitle: '< 2 km' },
   { id: '3km', title: '3 km', subtitle: 'Amateur' },
@@ -208,15 +219,18 @@ export function InitiationTestView({
                       type="button"
                       onClick={() => toggleGoal(g.id)}
                       aria-pressed={active}
-                      className={`border-y-2 px-4 py-3 text-center transition-colors ${
-                        active ? 'border-lime' : 'border-transparent'
+                      className={`flex items-center gap-4 rounded-[24px] border-2 px-3 py-3 text-left transition-colors ${
+                        active ? 'border-lime bg-card' : 'border-transparent'
                       }`}
                     >
-                      <div className={`font-bold transition-all ${active ? 'text-[22px] leading-7 text-fg' : 'text-[18px] leading-6 text-faint'}`}>
-                        {g.label}
-                      </div>
-                      <div className={`text-[13px] font-medium leading-[18px] ${active ? 'text-mute' : 'text-faint'}`}>
-                        {g.subtitle}
+                      <Slot3D name={`objectif-${g.id}`} icon={GOAL_ICONS[g.id]} tone={active ? 'lime' : 'dark'} className="h-16 w-16" />
+                      <div className="min-w-0 flex-1">
+                        <div className={`font-bold transition-all ${active ? 'text-[20px] leading-6 text-fg' : 'text-[17px] leading-6 text-faint'}`}>
+                          {g.label}
+                        </div>
+                        <div className={`text-[13px] font-medium leading-[18px] ${active ? 'text-mute' : 'text-faint'}`}>
+                          {g.subtitle}
+                        </div>
                       </div>
                     </button>
                   );

@@ -2,6 +2,8 @@ import type { ComponentType } from 'react';
 import {
   AlertTriangle,
   Award,
+  Heart as LucideHeart,
+  Sunrise as LucideSunrise,
   Bell as LucideBell,
   Bike as LucideBike,
   Box,
@@ -182,3 +184,5 @@ export const BatteryFull = makeLine(LucideBatteryFull);
 export const Maximize = makeLine(LucideMaximize);
 export const Minimize = makeLine(LucideMinimize);
 export const Wifi = makeLine(LucideWifi);
+export const Heart = makeLine(LucideHeart);
+export const Sunrise = makeLine(LucideSunrise);

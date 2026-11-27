@@ -210,3 +210,8 @@ Pas besoin d'image pour : les icônes (déjà vectorielles), les emblèmes de ra
 3. Si tu fournis des fonds transparents, je peux changer la couleur de fond depuis le code (vert, noir, dégradé).
 4. Pour les vidéos d'exercices : dépose-les dans `videos-source/`, ffmpeg est installé, je les convertis en MP4 léger
    avec image de poster.
+
+## Emplacements prêts (visuel provisoire)
+Les cartes d'objectifs de l'onboarding (section 7) utilisent `Slot3D` : tant que l'image n'existe pas, un visuel provisoire
+(dégradé + icône) s'affiche ; dès que `public/images/3d/objectif-<id>.jpg` existe, il le remplace. Identifiants :
+`objectif-perte_poids`, `objectif-prise_muscle`, `objectif-endurance_5am`, `objectif-foot_sante`, `objectif-remise_forme`.
