@@ -1,0 +1,24 @@
+name: Build iOS (vérification de compilation)
+
+# Compile l'app pour le simulateur iPhone, sans signature. Pour un vrai fichier .ipa (TestFlight / App Store),
+# il faut un compte Apple Developer et des certificats : voir docs/ABONNEMENT.md et docs/APPLICATION-MOBILE.md.
+on:
+  workflow_dispatch:
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync ios
+      - name: Compiler pour le simulateur
+        working-directory: ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build

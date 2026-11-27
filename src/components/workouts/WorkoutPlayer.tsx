@@ -298,7 +298,23 @@ export function WorkoutPlayer({
           >
             {/* Média + énorme chiffre */}
             <div className={`relative min-h-0 flex-1 overflow-hidden rounded-[28px] ${exercise.video ? 'bg-black' : 'bg-white'}`}>
-              <ExerciseMedia exercise={exercise} fill className="relative" />
+              <ExerciseMedia exercise={exercise} fill />
+              {exercise.video ? (
+                // Vidéo : bandeau compact pour ne pas cacher l'exercice
+                <div className="absolute inset-x-0 bottom-0 flex items-end gap-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-5 pb-4 pt-12">
+                  <motion.div
+                    key={`${idx}-${step.mode === 'reps' ? step.target : remaining}`}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                    className="num shrink-0 text-[52px] font-extrabold leading-[0.9] text-lime"
+                  >
+                    {step.mode === 'reps' ? step.target : remaining}
+                    <span className="ml-1.5 text-[13px] font-bold text-white/80">{step.mode === 'reps' ? 'reps' : 's'}</span>
+                  </motion.div>
+                  <div className="min-w-0 pb-0.5 text-[16px] font-bold leading-5 text-white">{exercise.name}</div>
+                </div>
+              ) : (
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-5 pb-4 pt-16">
                 <motion.div
                   key={`${idx}-${step.mode === 'reps' ? step.target : remaining}`}
@@ -313,6 +329,7 @@ export function WorkoutPlayer({
                 <div className="mt-2 text-[20px] font-bold leading-6 text-white">{exercise.name}</div>
                 <p className="mt-0.5 line-clamp-2 text-[13px] text-white/75">{exercise.cue}</p>
               </div>
+              )}
               {paused && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/70">
                   <span className="text-[26px] font-extrabold text-white">En pause</span>

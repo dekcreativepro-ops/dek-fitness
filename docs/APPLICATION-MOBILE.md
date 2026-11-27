@@ -3,7 +3,7 @@
 L'app web est emballée avec **Capacitor** : les dossiers `android/` et `ios/` sont de vrais projets natifs qui chargent le build web (`dist/`). Identifiant : `com.dek.fitness` (`capacitor.config.ts`, à changer avant publication si besoin).
 
 ## Android (APK)
-**Sans rien installer** : sur GitHub, onglet *Actions* → « Build Android APK » → *Run workflow*. À la fin, télécharge l'artefact `dek-fitness-debug-apk` (fichier `app-debug.apk`) et installe-le sur ton téléphone (autoriser les sources inconnues). Ce workflow se lance aussi à chaque push.
+**Sans rien installer** (après avoir activé les workflows : voir `docs/github-workflows/LISEZ-MOI.md`) : sur GitHub, onglet *Actions* → « Build Android APK » → *Run workflow*. À la fin, télécharge l'artefact `dek-fitness-debug-apk` (fichier `app-debug.apk`) et installe-le sur ton téléphone (autoriser les sources inconnues). Ce workflow se lance aussi à chaque push.
 
 **En local** (il faut Android Studio, qui contient le SDK et Java) :
 ```powershell
