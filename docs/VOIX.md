@@ -34,3 +34,7 @@ sinon elle retombe sur la voix du téléphone. Aucun changement de code nécessa
 | `complete.mp3` | Mission complete! | Outdoor : mission réussie |
 
 Les phrases sont définies dans `src/utils/gameVoice.ts` (`VOICE_LINES`) : on peut les changer sans toucher au reste.
+
+## État : synthèse vocale coupée
+La voix de synthèse du téléphone sonnait robotique : elle est désactivée (`SYNTH_VOICE = false` dans `src/utils/gameVoice.ts`).
+L'annonceur ne joue plus que les MP3 de studio ci-dessus ; sans fichier, il reste silencieux. Le coach affiche ses conseils par écrit.

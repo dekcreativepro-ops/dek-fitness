@@ -119,7 +119,7 @@ export function CoachAIScreen({ user, onBack }: { user: UserProfile; onBack: () 
           >
             <span>
               <span className="block text-[14px] font-semibold text-fg">Voix du coach</span>
-              <span className="block text-[12px] font-medium text-mute">Il te parle en direct (voix {coach.gender === 'femme' ? 'féminine' : 'masculine'})</span>
+              <span className="block text-[12px] font-medium text-mute">Voix coupée en attendant une vraie voix de studio (le coach écrit)</span>
             </span>
             <span className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 ${coach.voice ? 'bg-lime' : 'bg-rim'}`}>
               <span className={`h-5 w-5 rounded-full bg-ink transition-transform ${coach.voice ? 'translate-x-5' : ''}`} />

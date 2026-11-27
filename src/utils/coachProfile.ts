@@ -1,4 +1,5 @@
 import { isSoundEnabled } from './soundFx';
+import { SYNTH_VOICE } from './gameVoice';
 
 // Profil du coach IA (nom, genre, style), conversation, historique de performances et voix en français.
 
@@ -121,7 +122,8 @@ const FEMALE_FR = /(hortense|julie|denise|eloise|éloïse|marie|amelie|amélie|f
 const MALE_FR = /(paul|henri|claude|remy|rémy|male|homme|antoine|thomas|nicolas)/i;
 
 export function coachSpeak(text: string, coach: CoachProfile): void {
-  if (!coach.voice || !isSoundEnabled() || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  // voix de synthèse coupée (rendu robotique) : le coach s'exprime par écrit en attendant une vraie voix
+  if (!SYNTH_VOICE || !coach.voice || !isSoundEnabled() || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   try {
     const synth = window.speechSynthesis;
     synth.cancel();

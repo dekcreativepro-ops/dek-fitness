@@ -7,6 +7,12 @@ import { isSoundEnabled } from './soundFx';
 // public/voices pour remplacer la synthèse), sinon on prend la meilleure voix du téléphone (voix « Natural/Neural »
 // de préférence : Chrome et Edge en proposent d'excellentes).
 
+/**
+ * Voix de synthèse du téléphone : COUPÉE (rendu robotique). Seules les voix de studio (MP3 dans public/voices) sont jouées.
+ * Repasser à true pour réactiver la synthèse de secours.
+ */
+export const SYNTH_VOICE = false;
+
 export type VoiceGender = 'male' | 'female';
 export type VoiceTone = 'hype' | 'hardcore' | 'calm';
 
@@ -105,6 +111,7 @@ async function playStudioFile(key: VoiceKey): Promise<boolean> {
 }
 
 function speakSynth(text: string, tone: VoiceTone): void {
+  if (!SYNTH_VOICE) return;
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   try {
     const synth = window.speechSynthesis;
