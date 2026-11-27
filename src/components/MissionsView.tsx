@@ -27,6 +27,7 @@ import type {
 } from '../types/dek';
 import { CAMEROON_CITIES, CAMEROON_REGIONS } from '../data/cities';
 import { getTierIndex, TIER_COLORS, TIER_REQUIREMENTS } from '../utils/categorization';
+import { enhanceMapLabels } from '../utils/mapLabels';
 import { generateLoopRoute, type GeneratedRoute } from '../utils/routeGenerator';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { CheckDraw } from './ui/AnimatedIcons';
@@ -385,6 +386,12 @@ export function MissionsView({
           layout: { 'line-join': 'round', 'line-cap': 'round' },
           paint: { 'line-color': '#C8FF00', 'line-width': 5, 'line-opacity': 0.96 },
         });
+      }
+
+      try {
+        enhanceMapLabels(map);
+      } catch {
+        // Les repères sont un plus : la carte reste utilisable sans
       }
 
       if (routeRef.current) {
