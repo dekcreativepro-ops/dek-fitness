@@ -12,6 +12,8 @@ import {
   Lightning,
   Lock,
   MagnifyingGlass,
+  Maximize,
+  Minimize,
   Microphone,
   MicrophoneSlash,
   Minus,
@@ -87,6 +89,52 @@ const OUTDOOR_MODES: { id: OutdoorGameMode; label: string; short: string }[] = [
   { id: 'conquete_territoire', label: 'Conquête Territoire', short: 'Territoire' },
   { id: 'fantome', label: 'Duel Fantôme', short: 'Fantôme' },
 ];
+
+/** Réglages de la carte : « Léger » (fluide) ou « Large » (tous les détails), puis interrupteurs détaillés. */
+interface MapOpts {
+  detail: 'leger' | 'large';
+  zones: boolean;
+  places: boolean;
+  buildings: boolean;
+  streets: boolean;
+  km: boolean;
+  bonus: boolean;
+}
+const MAP_OPTS_KEY = 'dek_map_options_v1';
+const LARGE_OPTS: MapOpts = { detail: 'large', zones: true, places: true, buildings: true, streets: true, km: true, bonus: true };
+const LIGHT_OPTS: MapOpts = { detail: 'leger', zones: true, places: false, buildings: false, streets: false, km: true, bonus: true };
+function loadMapOpts(): MapOpts {
+  try {
+    const raw = window.localStorage.getItem(MAP_OPTS_KEY);
+    return raw ? { ...LARGE_OPTS, ...(JSON.parse(raw) as Partial<MapOpts>) } : LARGE_OPTS;
+  } catch {
+    return LARGE_OPTS;
+  }
+}
+const MAP_TOGGLES: { key: Exclude<keyof MapOpts, 'detail'>; label: string; hint: string }[] = [
+  { key: 'zones', label: 'Zones NO RUN & médailles', hint: 'Carrés de 550 m' },
+  { key: 'places', label: 'Lieux', hint: 'Écoles, hôpitaux, stades…' },
+  { key: 'streets', label: 'Noms de rues', hint: 'Sur le tracé et autour' },
+  { key: 'buildings', label: 'Bâtiments 3D', hint: 'Plus gourmand' },
+  { key: 'km', label: 'Bornes kilométriques', hint: '1, 2, 3 km…' },
+  { key: 'bonus', label: 'Bonus chrono', hint: '30 s pour les prendre' },
+];
+
+/** Bonus de jeu : chrono de 30 s pour pousser tes limites ; le temps restant s'ajoute à l'XP du bonus. */
+const BONUS_LIMIT_SEC = 30;
+const BONUS_KINDS = {
+  xp: { label: 'Bonus', base: 10 },
+  turbo: { label: 'Turbo', base: 20 },
+  star: { label: 'Étoile', base: 35 },
+} as const;
+type BonusKind = keyof typeof BONUS_KINDS;
+interface Bonus {
+  id: number;
+  kind: BonusKind;
+  lat: number;
+  lng: number;
+  expiresAt: number;
+}
 
 /** Fenêtre de temps (s) pour atteindre chaque checkpoint en mode Survie. */
 const CP_WINDOW_SEC = 11;
@@ -171,6 +219,20 @@ export function MissionsView({
   const medalsRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const routeMarkersRef = useRef<maplibregl.Marker[]>([]);
   const zoneRecordsRef = useRef(zoneRecords);
+  const [mapOpts, setMapOpts] = useState<MapOpts>(() => loadMapOpts());
+  const [isFull, setIsFull] = useState(false);
+  const [tallMap, setTallMap] = useState(false);
+  const mapWrapRef = useRef<HTMLDivElement | null>(null);
+  // Bonus chrono (jeu)
+  const [bonuses, setBonuses] = useState<Bonus[]>([]);
+  const [bonusXp, setBonusXp] = useState(0);
+  const [nowMs, setNowMs] = useState(0);
+  const bonusesRef = useRef<Bonus[]>([]);
+  const bonusSeqRef = useRef(0);
+  const bonusSpawnedRef = useRef(0);
+  const bonusXpRef = useRef(0);
+  const lastBonusEndRef = useRef(0);
+  const bonusMarkersRef = useRef<Map<number, { marker: maplibregl.Marker; el: HTMLElement }>>(new Map());
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
@@ -597,6 +659,160 @@ export function MissionsView({
     flashNotice(fresh > 0 ? `${fresh} nouvelle${fresh > 1 ? 's' : ''} zone${fresh > 1 ? 's' : ''} courue${fresh > 1 ? 's' : ''} · médaille ${score} pts` : `Score de zone : ${score} pts`);
   };
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(MAP_OPTS_KEY, JSON.stringify(mapOpts));
+    } catch {
+      // réglages non conservés
+    }
+  }, [mapOpts]);
+
+  // Applique les réglages aux couches de la carte
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const vis = (id: string, on: boolean) => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    };
+    vis('dek-3d-buildings', mapOpts.buildings);
+    vis('dek-poi-dot', mapOpts.places);
+    vis('dek-poi-label', mapOpts.places);
+    for (const id of ['dek-zones-fill', 'dek-zones-line', 'dek-zones-label']) vis(id, mapOpts.zones);
+    for (const l of map.getStyle()?.layers ?? []) {
+      if (l.id.startsWith('highway_name')) vis(l.id, mapOpts.streets);
+    }
+    try {
+      map.setPixelRatio(mapOpts.detail === 'leger' ? 1 : Math.min(window.devicePixelRatio || 1, 2));
+    } catch {
+      // setPixelRatio indisponible : sans effet sur le rendu
+    }
+  }, [mapOpts, mapReady]);
+
+  // Plein écran horizontal (API plein écran du navigateur ; repli : carte agrandie)
+  useEffect(() => {
+    const onChange = () => setIsFull(document.fullscreenElement === mapWrapRef.current);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    const wrap = mapWrapRef.current;
+    if (!wrap) return;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+      try {
+        screen.orientation?.unlock?.();
+      } catch {
+        // pas de verrouillage d'orientation
+      }
+      return;
+    }
+    if (!wrap.requestFullscreen) {
+      setTallMap((t) => !t);
+      flashNotice(tallMap ? 'Carte réduite' : 'Plein écran indisponible : carte agrandie');
+      return;
+    }
+    wrap
+      .requestFullscreen()
+      .then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape'))
+      .catch(() => {
+        // orientation non verrouillable (ordinateur) : le plein écran reste actif
+      });
+  };
+
+  /** Sortie du plein écran avant d'ouvrir une feuille (elles s'affichent en dehors de la carte). */
+  const leaveFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+  };
+
+  const applyPreset = (detail: 'leger' | 'large') => setMapOpts(detail === 'leger' ? LIGHT_OPTS : LARGE_OPTS);
+
+  // Bonus : un à la fois, chrono de 30 s ; disparaît si on ne le prend pas à temps
+  const clearBonuses = () => {
+    bonusesRef.current = [];
+    setBonuses([]);
+  };
+
+  const collectBonus = (id: number) => {
+    const b = bonusesRef.current.find((x) => x.id === id);
+    if (!b || finishedRef.current) return;
+    const left = Math.max(0, Math.ceil((b.expiresAt - Date.now()) / 1000));
+    const gain = BONUS_KINDS[b.kind].base + left; // le chrono restant s'ajoute à l'XP
+    bonusesRef.current = bonusesRef.current.filter((x) => x.id !== id);
+    setBonuses([...bonusesRef.current]);
+    lastBonusEndRef.current = Date.now();
+    bonusXpRef.current += gain;
+    setBonusXp(bonusXpRef.current);
+    playHit();
+    flashNotice(`${BONUS_KINDS[b.kind].label} pris · +${gain} XP (${BONUS_KINDS[b.kind].base} + ${left} s restantes)`);
+  };
+  const collectBonusRef = useRef(collectBonus);
+  useEffect(() => {
+    collectBonusRef.current = collectBonus;
+  });
+
+  useEffect(() => {
+    if (phase !== 'running' || !mapOpts.bonus) return;
+    lastBonusEndRef.current = Date.now() - 600;
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const alive = bonusesRef.current.filter((b) => b.expiresAt > now);
+      if (alive.length < bonusesRef.current.length) {
+        flashNotice('Bonus raté, trop lent !');
+        lastBonusEndRef.current = now;
+      }
+      bonusesRef.current = alive;
+      const r = routeRef.current;
+      const ratio = myProgressRef.current / Math.max(0.1, effectiveDistanceKm);
+      if (alive.length === 0 && r && r.coordinates.length > 4 && bonusSpawnedRef.current < 4 && ratio < 0.85 && now - lastBonusEndRef.current > 1200) {
+        const target = Math.min(0.95, ratio + 0.06 + Math.random() * 0.14);
+        const pt = r.coordinates[Math.min(r.coordinates.length - 1, Math.floor(target * (r.coordinates.length - 1)))];
+        const roll = Math.random();
+        const kind: BonusKind = roll < 0.18 ? 'star' : roll < 0.5 ? 'turbo' : 'xp';
+        bonusSeqRef.current += 1;
+        bonusSpawnedRef.current += 1;
+        alive.push({ id: bonusSeqRef.current, kind, lat: pt[0], lng: pt[1], expiresAt: now + BONUS_LIMIT_SEC * 1000 });
+        bonusesRef.current = alive;
+      }
+      setBonuses([...bonusesRef.current]);
+      setNowMs(now);
+    }, 300);
+    return () => clearInterval(timer);
+  }, [phase, mapOpts.bonus, effectiveDistanceKm]);
+
+  // Pastilles de bonus sur la carte (cliquables) synchronisées avec la liste
+  useEffect(() => {
+    const map = mapRef.current;
+    const markers = bonusMarkersRef.current;
+    if (!map) return;
+    for (const [id, m] of markers) {
+      if (!bonuses.some((b) => b.id === id)) {
+        m.marker.remove();
+        markers.delete(id);
+      }
+    }
+    for (const b of bonuses) {
+      if (markers.has(b.id)) continue;
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'dek-bonus';
+      el.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0E0F12" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span class="dek-bonus-left"></span><span class="dek-bonus-name">${BONUS_KINDS[b.kind].label} +${BONUS_KINDS[b.kind].base}</span>`;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        collectBonusRef.current(b.id);
+      });
+      const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([b.lng, b.lat]).addTo(map);
+      markers.set(b.id, { marker, el });
+    }
+  }, [bonuses]);
+
+  useEffect(() => {
+    for (const b of bonuses) {
+      const left = bonusMarkersRef.current.get(b.id)?.el.querySelector('.dek-bonus-left');
+      if (left) left.textContent = `${Math.max(0, Math.ceil((b.expiresAt - nowMs) / 1000))}s`;
+    }
+  }, [bonuses, nowMs]);
+
   const toggle3D = () => {
     const next = !is3D;
     setIs3D(next);
@@ -612,7 +828,8 @@ export function MissionsView({
     // runnersRef : classement réel (avant, la closure figée renvoyait toujours #1)
     const myRank =
       runnersRef.current.filter((r) => r.progressKm >= effectiveDistanceKm).length + 1;
-    const xpEarned = tierObj.xpReward + (gameMode === 'survie_checkpoint' ? 100 : 0);
+    const xpEarned = tierObj.xpReward + (gameMode === 'survie_checkpoint' ? 100 : 0) + bonusXpRef.current;
+    clearBonuses();
     setLastResult({ rank: myRank, km: effectiveDistanceKm, xp: xpEarned });
     recordZonesRun(xpEarned + Math.max(0, 5 - myRank) * 10);
 
@@ -650,6 +867,7 @@ export function MissionsView({
     if (finishedRef.current) return;
     finishedRef.current = true;
     setFailReason(msg);
+    clearBonuses();
     setPhase('failed');
     callbacksRef.current.onMissionFail(msg);
   };
@@ -822,6 +1040,10 @@ export function MissionsView({
   };
 
   const resetRunRefs = () => {
+    bonusXpRef.current = 0;
+    bonusSpawnedRef.current = 0;
+    setBonusXp(0);
+    clearBonuses();
     finishedRef.current = false;
     myProgressRef.current = 0;
     cpIdxRef.current = 1;
@@ -1165,7 +1387,10 @@ export function MissionsView({
       </div>
 
       {/* Carte */}
-      <div className="relative h-[380px] w-full overflow-hidden rounded-[28px] bg-card">
+      <div
+        ref={mapWrapRef}
+        className={`relative w-full overflow-hidden bg-card ${isFull ? 'h-full rounded-none' : `${tallMap ? 'h-[620px]' : 'h-[380px]'} rounded-[28px]`} ${mapOpts.zones ? '' : 'dek-nozones'} ${mapOpts.km ? '' : 'dek-nokm'}`}
+      >
         <div ref={mapContainerRef} className="h-full w-full" />
 
         {/* Consigne */}
@@ -1176,6 +1401,7 @@ export function MissionsView({
         </div>
 
         {/* Légende des zones */}
+        {phase === 'lobby' && mapOpts.zones && (
         <div className="pointer-events-none absolute left-3 top-14 z-20 flex flex-col gap-1.5">
           <span className="pointer-events-auto inline-flex h-7 items-center gap-1.5 rounded-full bg-ink/80 px-3 text-[11px] font-semibold text-mute backdrop-blur-md">
             <span className="h-2.5 w-2.5 rounded-[3px] border border-dashed border-faint bg-black/60" /> NO RUN
@@ -1190,6 +1416,33 @@ export function MissionsView({
             </span>
           )}
         </div>
+        )}
+
+        {/* Bonus chrono en cours */}
+        {phase === 'running' && (bonuses.length > 0 || bonusXp > 0) && (
+          <div className="absolute left-3 top-14 z-20 flex flex-col items-start gap-1.5">
+            {bonuses.map((b) => {
+              const left = Math.max(0, Math.ceil((b.expiresAt - nowMs) / 1000));
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => collectBonus(b.id)}
+                  className="flex h-9 items-center gap-2 rounded-full bg-lime px-3 text-[13px] font-extrabold text-on-lime shadow-lg transition active:scale-95"
+                >
+                  <Lightning className="h-4 w-4" />
+                  {BONUS_KINDS[b.kind].label} +{BONUS_KINDS[b.kind].base + left} XP
+                  <span className="num rounded-full bg-black/80 px-2 text-[12px] leading-5 text-lime">{left}s</span>
+                </button>
+              );
+            })}
+            {bonusXp > 0 && (
+              <span className="inline-flex h-7 items-center rounded-full bg-ink/80 px-3 text-[11px] font-semibold text-lime backdrop-blur-md">
+                Bonus cumulés · +{bonusXp} XP
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Zoom */}
         <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-2">
@@ -1205,6 +1458,9 @@ export function MissionsView({
         <div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
           <IconButton label={is3D ? 'Passer en 2D' : 'Passer en 3D'} onClick={toggle3D} size={40} className={glassBtn}>
             <span className="num text-[13px] font-bold">{is3D ? '3D' : '2D'}</span>
+          </IconButton>
+          <IconButton label={isFull || tallMap ? 'Réduire la carte' : 'Carte en plein écran (horizontal)'} onClick={toggleFullscreen} size={40} className={glassBtn}>
+            {isFull || tallMap ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
           </IconButton>
           <IconButton label="Utiliser ma position GPS" onClick={handleUseGPS} size={40} className={glassBtn}>
             <Compass className="h-5 w-5" />
@@ -1245,11 +1501,11 @@ export function MissionsView({
               ))}
             </select>
 
-            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Rechercher un lieu" className={glassPill}>
+            <button type="button" onClick={() => { leaveFullscreen(); setSearchOpen(true); }} aria-label="Rechercher un lieu" className={glassPill}>
               <MagnifyingGlass className="h-4 w-4" />
             </button>
 
-            <button type="button" onClick={() => setVoiceSheetOpen(true)} className={glassPill}>
+            <button type="button" onClick={() => { leaveFullscreen(); setVoiceSheetOpen(true); }} className={glassPill}>
               <Microphone className="h-4 w-4" /> Vocal ({runners.length + 1})
             </button>
           </div>
@@ -1563,6 +1819,49 @@ export function MissionsView({
             <SlidersHorizontal className="h-5 w-5" />
           </IconButton>
         </div>
+      </Card>
+
+      {/* Réglages de la carte */}
+      <Card className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[15px] font-bold text-fg">Réglages de la carte</div>
+            <div className="text-[12px] font-medium text-mute">Léger pour la fluidité, Large pour tous les détails</div>
+          </div>
+          <SlidersHorizontal className="h-5 w-5 text-mute" />
+        </div>
+        <ChipTabs
+          items={[
+            { id: 'leger', label: 'Léger' },
+            { id: 'large', label: 'Large' },
+          ]}
+          value={mapOpts.detail}
+          onChange={(v) => applyPreset(v as 'leger' | 'large')}
+          layoutId="map-detail"
+        />
+        <div className="flex flex-col gap-1.5">
+          {MAP_TOGGLES.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="switch"
+              aria-checked={mapOpts[t.key]}
+              onClick={() => setMapOpts((o) => ({ ...o, [t.key]: !o[t.key] }))}
+              className="flex items-center justify-between gap-3 rounded-[18px] bg-tile px-4 py-2.5 text-left transition active:scale-[0.98]"
+            >
+              <span>
+                <span className="block text-[14px] font-semibold text-fg">{t.label}</span>
+                <span className="block text-[12px] font-medium text-mute">{t.hint}</span>
+              </span>
+              <span className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${mapOpts[t.key] ? 'bg-lime' : 'bg-rim'}`}>
+                <span className={`h-5 w-5 rounded-full bg-ink transition-transform ${mapOpts[t.key] ? 'translate-x-5' : 'translate-x-0'}`} />
+              </span>
+            </button>
+          ))}
+        </div>
+        <Button fullWidth variant="secondary" onClick={toggleFullscreen}>
+          <Maximize className="h-4 w-4" /> Carte en plein écran (horizontal)
+        </Button>
       </Card>
 
       {/* Conquête de territoire */}
