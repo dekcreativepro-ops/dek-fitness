@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import {
   AlertTriangle,
   Award,
+  Music as LucideMusic,
   Flower2 as LucideFlower2,
   Hand as LucideHand,
   Volleyball as LucideVolleyball,
@@ -189,6 +190,7 @@ export const Maximize = makeLine(LucideMaximize);
 export const Minimize = makeLine(LucideMinimize);
 export const Wifi = makeLine(LucideWifi);
 export const Heart = makeLine(LucideHeart);
+export const Music = makeLine(LucideMusic);
 export const Volley = makeLine(LucideVolleyball);
 export const Swim = makeLine(LucideWaves);
 export const Yoga = makeLine(LucideFlower2);

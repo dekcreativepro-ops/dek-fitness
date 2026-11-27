@@ -14,7 +14,7 @@ import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { LEVEL_COLORS, levelFromScore } from '../utils/gameFx';
 import { SPORTS, SPORT_GROUPS, sportMeta, type SportGroup } from '../data/sports';
 import { Slot3D } from './ui/Slot3D';
-import { HandBall, Sword, Swim, Trophy, Volley, Yoga } from './DekIcons';
+import { Bike, Dumbbell, HandBall, Music, Sword, Swim, Timer, Trophy, Volley, Yoga } from './DekIcons';
 
 interface SanteViewProps {
   onJoinSante: (matchTitle: string) => void;
@@ -67,6 +67,10 @@ const GROUP_ICON: Record<SportGroup, React.ReactNode> = {
   Padel: <Trophy />,
   Natation: <Swim />,
   Combat: <Sword />,
+  Danse: <Music />,
+  Cardio: <Timer />,
+  Vélo: <Bike />,
+  Street: <Dumbbell />,
   'Bien-être': <Yoga />,
 };
 

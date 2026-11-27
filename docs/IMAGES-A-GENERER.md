@@ -220,3 +220,7 @@ Les cartes d'objectifs de l'onboarding (section 7) utilisent `Slot3D` : tant que
 Bannière 2:1 par discipline, à déposer dans `public/images/3d/` : `sport-volley.jpg`, `sport-hand.jpg`, `sport-padel.jpg`,
 `sport-natation.jpg`, `sport-boxe.jpg`, `sport-yoga.jpg` (le foot et le basket gardent leurs photos). Actions : smash au filet,
 tir en suspension, volée au padel, crawl dans un bassin, enchaînement de boxe sur sac, posture de yoga au lever du jour.
+
+Autres disciplines (même principe, bannières 2:1 dans `public/images/3d/`) : `sport-danse.jpg` (pas de danse afro), `sport-zumba.jpg`,
+`sport-tabata.jpg` (fente sautée chronomètre en main), `sport-crossfit.jpg` (soulevé de barre), `sport-spinning.jpg`,
+`sport-street.jpg` (traction aux barres), `sport-pilates.jpg` (gainage sur tapis).

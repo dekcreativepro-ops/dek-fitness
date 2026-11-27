@@ -2,7 +2,7 @@ import type { SanteMatch } from '../types/dek';
 
 // Disciplines proposées dans « Terrains & Santé » : sports collectifs, raquette, eau, combat et bien-être.
 
-export type SportGroup = 'Foot' | 'Basket' | 'Volley' | 'Hand' | 'Padel' | 'Natation' | 'Combat' | 'Bien-être';
+export type SportGroup = 'Foot' | 'Basket' | 'Volley' | 'Hand' | 'Padel' | 'Natation' | 'Combat' | 'Danse' | 'Cardio' | 'Vélo' | 'Street' | 'Bien-être';
 
 export interface SportMeta {
   id: SanteMatch['sport'];
@@ -26,9 +26,16 @@ export const SPORTS: SportMeta[] = [
   { id: 'Padel 2v2', label: 'Padel', group: 'Padel', max: 4, intensity: 1, unit: 'joueurs', place: 'court de padel', slug: 'padel' },
   { id: 'Natation', label: 'Natation', group: 'Natation', max: 12, intensity: 1.5, unit: 'participants', place: 'bassin encadré', slug: 'natation' },
   { id: 'Boxe fitness', label: 'Boxe fitness', group: 'Combat', max: 12, intensity: 2.5, unit: 'participants', place: 'salle avec sacs', slug: 'boxe' },
+  { id: 'Danse afro', label: 'Danse afro', group: 'Danse', max: 20, intensity: 1.5, unit: 'participants', place: 'studio ou esplanade', slug: 'danse' },
+  { id: 'Zumba', label: 'Zumba', group: 'Danse', max: 25, intensity: 1.5, unit: 'participants', place: 'salle de danse', slug: 'zumba' },
+  { id: 'Tabata', label: 'Tabata', group: 'Cardio', max: 15, intensity: 2.5, unit: 'participants', place: 'salle ou plein air, 20 s d’effort / 10 s de repos', slug: 'tabata' },
+  { id: 'Crossfit', label: 'Crossfit', group: 'Cardio', max: 12, intensity: 3, unit: 'participants', place: 'box de crossfit', slug: 'crossfit' },
+  { id: 'Spinning', label: 'Spinning', group: 'Vélo', max: 14, intensity: 2, unit: 'participants', place: 'salle de vélos', slug: 'spinning' },
+  { id: 'Street workout', label: 'Street workout', group: 'Street', max: 12, intensity: 2, unit: 'participants', place: 'parc à barres', slug: 'street' },
+  { id: 'Pilates', label: 'Pilates', group: 'Bien-être', max: 12, intensity: 0.5, unit: 'participants', place: 'studio calme', slug: 'pilates' },
   { id: 'Yoga & mobilité', label: 'Yoga & mobilité', group: 'Bien-être', max: 15, intensity: 0, unit: 'participants', place: 'studio calme', slug: 'yoga' },
 ];
 
-export const SPORT_GROUPS: ('Tous' | SportGroup)[] = ['Tous', 'Foot', 'Basket', 'Volley', 'Hand', 'Padel', 'Natation', 'Combat', 'Bien-être'];
+export const SPORT_GROUPS: ('Tous' | SportGroup)[] = ['Tous', 'Foot', 'Basket', 'Volley', 'Hand', 'Padel', 'Natation', 'Combat', 'Danse', 'Cardio', 'Vélo', 'Street', 'Bien-être'];
 
 export const sportMeta = (id: SanteMatch['sport']): SportMeta => SPORTS.find((s) => s.id === id) ?? SPORTS[0];

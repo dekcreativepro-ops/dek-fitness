@@ -151,7 +151,14 @@ export interface SanteMatch {
     | 'Padel 2v2'
     | 'Natation'
     | 'Boxe fitness'
-    | 'Yoga & mobilité';
+    | 'Yoga & mobilité'
+    | 'Danse afro'
+    | 'Zumba'
+    | 'Tabata'
+    | 'Crossfit'
+    | 'Spinning'
+    | 'Street workout'
+    | 'Pilates';
   location: string;
   city: string;
   dateLabel: string;
