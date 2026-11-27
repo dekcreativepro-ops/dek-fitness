@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as maplibregl from 'maplibre-gl';
 // MapLibre v6 cherche son worker à côté de son propre fichier : introuvable une fois
 // l'app bundlée par Vite (dev : 504, build : fichier absent) → carte vide.
@@ -40,6 +41,7 @@ import {
   addZoneLabels,
   addZoneLayers,
   loadZoneRecords,
+  nearestPlace,
   readPlaceNames,
   recordRun,
   saveZoneRecords,
@@ -51,6 +53,7 @@ import {
   type ZoneRecords,
 } from '../utils/zones';
 import { dayKey } from '../utils/progression';
+import { describeTrack } from '../utils/trackInfo';
 import { generateLoopRoute, type GeneratedRoute } from '../utils/routeGenerator';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { CheckDraw } from './ui/AnimatedIcons';
@@ -100,10 +103,11 @@ interface MapOpts {
   streets: boolean;
   km: boolean;
   bonus: boolean;
+  alerts: boolean;
 }
 const MAP_OPTS_KEY = 'dek_map_options_v1';
-const LARGE_OPTS: MapOpts = { detail: 'large', zones: true, places: true, buildings: true, streets: true, km: true, bonus: true };
-const LIGHT_OPTS: MapOpts = { detail: 'leger', zones: true, places: false, buildings: false, streets: false, km: true, bonus: true };
+const LARGE_OPTS: MapOpts = { detail: 'large', zones: true, places: true, buildings: true, streets: true, km: true, bonus: true, alerts: true };
+const LIGHT_OPTS: MapOpts = { detail: 'leger', zones: true, places: false, buildings: false, streets: false, km: true, bonus: true, alerts: true };
 function loadMapOpts(): MapOpts {
   try {
     const raw = window.localStorage.getItem(MAP_OPTS_KEY);
@@ -119,6 +123,7 @@ const MAP_TOGGLES: { key: Exclude<keyof MapOpts, 'detail'>; label: string; hint:
   { key: 'buildings', label: 'Bâtiments 3D', hint: 'Plus gourmand' },
   { key: 'km', label: 'Bornes kilométriques', hint: '1, 2, 3 km…' },
   { key: 'bonus', label: 'Bonus chrono', hint: '30 s pour les prendre' },
+  { key: 'alerts', label: 'Vibration & lueur verte', hint: 'Près d’un bonus et de l’arrivée' },
 ];
 
 /** Bonus de jeu : chrono de 30 s pour pousser tes limites ; le temps restant s'ajoute à l'XP du bonus. */
@@ -135,6 +140,7 @@ interface Bonus {
   lat: number;
   lng: number;
   expiresAt: number;
+  ratio: number; // position le long du tracé (0 à 1)
 }
 
 /** Fenêtre de temps (s) pour atteindre chaque checkpoint en mode Survie. */
@@ -217,6 +223,7 @@ export function MissionsView({
   const [mapReady, setMapReady] = useState(false);
   const [placesVersion, setPlacesVersion] = useState(0);
   const placesRef = useRef<PlaceName[]>([]);
+  const [places, setPlaces] = useState<PlaceName[]>([]);
   const medalsRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const routeMarkersRef = useRef<maplibregl.Marker[]>([]);
   const zoneRecordsRef = useRef(zoneRecords);
@@ -226,6 +233,11 @@ export function MissionsView({
   const [tallMap, setTallMap] = useState(false);
   const mapWrapRef = useRef<HTMLDivElement | null>(null);
   // Bonus chrono (jeu)
+  const [glowKey, setGlowKey] = useState(0);
+  const [glowOn, setGlowOn] = useState(false);
+  const glowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finishAlertRef = useRef(false);
+  const approachedRef = useRef<Set<number>>(new Set());
   const [bonuses, setBonuses] = useState<Bonus[]>([]);
   const [bonusXp, setBonusXp] = useState(0);
   const [nowMs, setNowMs] = useState(0);
@@ -508,6 +520,7 @@ export function MissionsView({
         if (found.length !== lastPlaces) {
           lastPlaces = found.length;
           placesRef.current = found;
+          setPlaces(found);
           setPlacesVersion((v) => v + 1);
         }
       } catch {
@@ -730,6 +743,29 @@ export function MissionsView({
   const applyPreset = (detail: 'leger' | 'large') => setMapOpts(detail === 'leger' ? LIGHT_OPTS : LARGE_OPTS);
 
   // Bonus : un à la fois, chrono de 30 s ; disparaît si on ne le prend pas à temps
+  const mapOptsRef = useRef(mapOpts);
+  useEffect(() => {
+    mapOptsRef.current = mapOpts;
+  }, [mapOpts]);
+
+  /** Approche d'un bonus ou de l'arrivée : le téléphone vibre et un halo vert passe autour de l'écran. */
+  const triggerAlert = (kind: 'bonus' | 'finish') => {
+    if (!mapOptsRef.current.alerts) return;
+    try {
+      navigator.vibrate?.(kind === 'finish' ? [200, 80, 200, 80, 450] : [140, 70, 140]);
+    } catch {
+      // vibration non prise en charge (ordinateur, iPhone)
+    }
+    setGlowKey((k) => k + 1);
+    setGlowOn(true);
+    if (glowTimerRef.current) clearTimeout(glowTimerRef.current);
+    glowTimerRef.current = setTimeout(() => setGlowOn(false), 1600);
+  };
+  const triggerAlertRef = useRef(triggerAlert);
+  useEffect(() => {
+    triggerAlertRef.current = triggerAlert;
+  });
+
   const clearBonuses = () => {
     bonusesRef.current = [];
     setBonuses([]);
@@ -746,6 +782,13 @@ export function MissionsView({
     bonusXpRef.current += gain;
     setBonusXp(bonusXpRef.current);
     playHit();
+    if (mapOptsRef.current.alerts) {
+      try {
+        navigator.vibrate?.(60);
+      } catch {
+        // sans vibration
+      }
+    }
     flashNotice(`${BONUS_KINDS[b.kind].label} pris · +${gain} XP (${BONUS_KINDS[b.kind].base} + ${left} s restantes)`);
   };
   const collectBonusRef = useRef(collectBonus);
@@ -773,8 +816,18 @@ export function MissionsView({
         const kind: BonusKind = roll < 0.18 ? 'star' : roll < 0.5 ? 'turbo' : 'xp';
         bonusSeqRef.current += 1;
         bonusSpawnedRef.current += 1;
-        alive.push({ id: bonusSeqRef.current, kind, lat: pt[0], lng: pt[1], expiresAt: now + BONUS_LIMIT_SEC * 1000 });
+        alive.push({ id: bonusSeqRef.current, kind, lat: pt[0], lng: pt[1], expiresAt: now + BONUS_LIMIT_SEC * 1000, ratio: target });
         bonusesRef.current = alive;
+      }
+      // Approche d'un bonus (moins de 250 m ou 8 % du tracé) : vibration + lueur, une seule fois par bonus
+      if (r) {
+        const totalM = r.distanceKm * 1000;
+        for (const b of bonusesRef.current) {
+          if (!approachedRef.current.has(b.id) && (b.ratio - ratio) * totalM <= Math.max(250, totalM * 0.08)) {
+            approachedRef.current.add(b.id);
+            triggerAlertRef.current('bonus');
+          }
+        }
       }
       setBonuses([...bonusesRef.current]);
       setNowMs(now);
@@ -883,6 +936,12 @@ export function MissionsView({
     );
     myProgressRef.current = next;
     setMyProgressKm(next);
+
+    // Approche de l'arrivée (moins de 250 m ou 8 % du parcours)
+    if (!finishAlertRef.current && next < effectiveDistanceKm && effectiveDistanceKm - next <= Math.max(0.25, effectiveDistanceKm * 0.08)) {
+      finishAlertRef.current = true;
+      triggerAlertRef.current('finish');
+    }
 
     if (gameMode === 'survie_checkpoint') {
       let cp = cpIdxRef.current;
@@ -1042,6 +1101,8 @@ export function MissionsView({
   };
 
   const resetRunRefs = () => {
+    finishAlertRef.current = false;
+    approachedRef.current.clear();
     bonusXpRef.current = 0;
     bonusSpawnedRef.current = 0;
     setBonusXp(0);
@@ -1135,6 +1196,18 @@ export function MissionsView({
   const zonesRun = Object.keys(zoneRecords).length;
   const bestZoneScore = Object.values(zoneRecords).reduce((m, z) => Math.max(m, z.best), 0);
   const zonesTotal = (2 * ZONE_RADIUS + 1) ** 2;
+  // Légende de la piste : nom, description et difficulté calculés depuis le tracé
+  const trackInfo = route
+    ? describeTrack({
+        route,
+        baseKm: tierObj.distanceKm,
+        speedKmh,
+        discipline,
+        area: nearestPlace(places, route.coordinates[0]?.[0] ?? coords[0], route.coordinates[0]?.[1] ?? coords[1]),
+        records: zoneRecords,
+        survie: gameMode === 'survie_checkpoint',
+      })
+    : null;
 
   const guidanceLabel = mapNotice
     ? mapNotice
@@ -1159,6 +1232,7 @@ export function MissionsView({
     'flex h-10 items-center gap-2 rounded-full bg-black/50 px-4 text-[13px] font-semibold text-fg backdrop-blur-md';
 
   const queryReady = searchQuery.trim().length >= 3;
+  const overlayRoot = typeof document !== 'undefined' ? document.getElementById('dek-overlay-root') : null;
   const searchBottomSheet = (
     <BottomSheet open={searchOpen} onClose={() => setSearchOpen(false)} title="Rechercher un lieu">
       <input
@@ -1394,6 +1468,7 @@ export function MissionsView({
         className={`relative w-full overflow-hidden bg-card ${isFull ? 'h-full rounded-none' : `${tallMap ? 'h-[620px]' : 'h-[380px]'} rounded-[28px]`} ${mapOpts.zones ? '' : 'dek-nozones'} ${mapOpts.km ? '' : 'dek-nokm'}`}
       >
         <div ref={mapContainerRef} className="h-full w-full" />
+        {glowOn && isFull && <div key={glowKey} className="dek-glow" />}
 
         {/* Consigne */}
         <div className="pointer-events-none absolute left-3 right-16 top-3 z-20">
@@ -1729,6 +1804,38 @@ export function MissionsView({
         </AnimatePresence>
       </div>
 
+      {/* Légende de la piste */}
+      <Card className="space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[12px] font-semibold text-mute">Légende de la piste</div>
+            <div className="truncate text-[17px] font-bold leading-6 text-fg">{trackInfo?.name ?? 'Calcul du tracé…'}</div>
+          </div>
+          {trackInfo && (
+            <span
+              className="flex h-7 shrink-0 items-center rounded-full bg-tile px-3 text-[12px] font-bold"
+              style={{ color: trackInfo.color }}
+            >
+              {trackInfo.level}
+            </span>
+          )}
+        </div>
+        {trackInfo ? (
+          <>
+            <p className="text-[13px] font-medium leading-5 text-mute">{trackInfo.description}</p>
+            <StatTiles
+              items={[
+                { label: 'Distance', value: trackInfo.km, unit: 'km' },
+                { label: 'Virages', value: trackInfo.turns },
+                { label: 'NO RUN', value: trackInfo.newZones, unit: `/${trackInfo.zones}` },
+              ]}
+            />
+          </>
+        ) : (
+          <p className="text-[13px] font-medium text-mute">Génération du parcours sur les vraies rues…</p>
+        )}
+      </Card>
+
       {/* Bloc métriques */}
       <Card className="space-y-4">
         <div className="flex items-end justify-between gap-3">
@@ -1967,6 +2074,7 @@ export function MissionsView({
 
       {voiceBottomSheet}
       {searchBottomSheet}
+      {glowOn && !isFull && overlayRoot && createPortal(<div key={glowKey} className="dek-glow" />, overlayRoot)}
       {detailsBottomSheet}
       {lockedSheet}
     </div>

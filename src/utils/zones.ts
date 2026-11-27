@@ -59,7 +59,7 @@ export function recordRun(prev: ZoneRecords, ids: string[], score: number, day: 
   return next;
 }
 
-function nearestPlace(places: PlaceName[], lat: number, lng: number): string | undefined {
+export function nearestPlace(places: PlaceName[], lat: number, lng: number): string | undefined {
   let best: PlaceName | undefined;
   let bestD = 0.009 * 0.009; // ~1 km
   for (const p of places) {

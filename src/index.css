@@ -180,3 +180,8 @@
 @media (prefers-reduced-motion: reduce) { .dek-bonus { animation: none; } }
 .dek-nozones .dek-medal { display: none; }
 .dek-nokm .dek-km { display: none; }
+
+/* Halo vert autour de l'écran : approche d'un bonus ou de l'arrivée */
+.dek-glow { position: absolute; inset: 0; z-index: 40; pointer-events: none; border-radius: inherit; box-shadow: inset 0 0 0 3px rgba(200, 255, 0, 0.95), inset 0 0 46px 12px rgba(200, 255, 0, 0.55); animation: dek-glow-pulse 1.5s ease-out forwards; }
+@keyframes dek-glow-pulse { 0% { opacity: 0; } 18% { opacity: 1; } 45% { opacity: 0.55; } 65% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .dek-glow { animation-duration: 0.8s; } }
