@@ -116,7 +116,7 @@ function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
         <div className="num text-[34px] font-extrabold leading-10 text-fg">{price}</div>
         <div className="text-[13px] font-medium text-mute">
           par mois · sans engagement
-          {account && account.discountPct > 0 && ` · remise d’effort −${account.discountPct} % (au lieu de ${fcfa(PREMIUM_PRICE_FCFA)})`}
+          {account && account.discountPct > 0 && ` · remise de performance −${account.discountPct} % (au lieu de ${fcfa(PREMIUM_PRICE_FCFA)})`}
         </div>
       </div>
 

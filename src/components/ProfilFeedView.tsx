@@ -12,6 +12,7 @@ import { AvatarStudio } from './AvatarStudio';
 import { BottomSheet, Button, Card, ProgressBar, StatTiles } from './ui/kit';
 import { ImagePicker } from './ui/ImagePicker';
 import { Crown } from './DekIcons';
+import { useAccount } from '../utils/account';
 import { PREMIUM_PRICE_FCFA, cancelPremium, openPaywall, usePremium } from '../utils/premium';
 import { ACCENTS, loadAccent, saveAccent } from '../utils/theme';
 import { getHeroImage, setHeroImage, subscribeHeroImage } from '../utils/customImage';
@@ -91,6 +92,7 @@ export function ProfilFeedView({
   const customHero = useSyncExternalStore(subscribeHeroImage, getHeroImage, getHeroImage);
   const [accent, setAccent] = useState(loadAccent);
   const premium = usePremium();
+  const account = useAccount();
   const earnedCount = getEarnedAchievementIds(user).length;
 
   const handlePublish = (e: React.FormEvent) => {
@@ -174,6 +176,27 @@ export function ProfilFeedView({
             </div>
           </div>
         </div>
+        {account && (
+          <div className="rounded-[20px] bg-tile p-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[13px] font-semibold text-fg">Bonus de performance du mois</span>
+              <span className="num text-[15px] font-extrabold text-lime">{account.bonusPct} %</span>
+            </div>
+            <ProgressBar value={Math.min(100, Math.round((account.bonusPct / 50) * 100))} />
+            <div className="mt-1.5 text-[12px] font-medium text-mute">
+              Remise appliquée : −{account.discountPct} % · prochain mois : {account.nextPrice.toLocaleString('fr-FR')} FCFA (minimum 2 500)
+            </div>
+            {account.bonuses.length > 0 && (
+              <ul className="mt-2 space-y-0.5 text-[12px] font-medium text-mute">
+                {account.bonuses.map((b) => (
+                  <li key={b.id}>
+                    {b.label} × {b.count} : +{b.pct} %
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         <div className="flex gap-2">
           <Button fullWidth onClick={() => openPaywall(null)}>
             {premium.paid ? 'Prolonger d’un mois' : 'Passer Premium'}

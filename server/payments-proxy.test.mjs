@@ -8,19 +8,24 @@ import os from 'node:os';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { PRICE_LEVELS, discountPct, priceFor, xpForClaim } from './economy.mjs';
+import { PRICE_LEVELS, discountPct, priceFor, totalBonusPct, xpForClaim } from './economy.mjs';
 
 // ---------- règles pures ----------
+// la remise vient des BONUS de performance additionnés (en %), arrondie au palier de 10 % inférieur
 assert.equal(discountPct(0), 0);
-assert.equal(discountPct(999), 0);
-assert.equal(discountPct(1000), 10);
-assert.equal(discountPct(4999), 40);
-assert.equal(discountPct(5000), 50);
-assert.equal(discountPct(99999), 50, 'plafond à 50 %');
+assert.equal(discountPct(9.5), 0);
+assert.equal(discountPct(10), 10);
+assert.equal(discountPct(14), 10, 'arrondie vers le bas');
+assert.equal(discountPct(49.5), 40);
+assert.equal(discountPct(50), 50);
+assert.equal(discountPct(400), 50, 'plafond à 50 %');
 assert.equal(priceFor(0), 5000);
-assert.equal(priceFor(5000), 2500);
-assert.equal(priceFor(123456), 2500, 'jamais sous 2 500');
+assert.equal(priceFor(50), 2500);
+assert.equal(priceFor(999), 2500, 'jamais sous 2 500');
 assert.deepEqual(PRICE_LEVELS, [5000, 4500, 4000, 3500, 3000, 2500]);
+assert.equal(totalBonusPct([{ pct: 2, ts: 1000 }, { pct: 0.5, ts: 2000 }], 3000), 2.5);
+assert.equal(totalBonusPct([{ pct: 2, ts: 1000 }], 1000 + 31 * 86_400_000), 0, 'un bonus de plus de 30 jours ne compte plus');
+assert.equal(totalBonusPct([{ pct: 30, ts: 5 }, { pct: 30, ts: 6 }], 10), 50);
 assert.equal(xpForClaim('workout', 60, { kind: 0, total: 0 }).xp, 500, '1 heure = 500 XP');
 assert.equal(xpForClaim('workout', 60, { kind: 400, total: 400 }).xp, 200, 'quota journalier par type');
 assert.equal(xpForClaim('workout', 60, { kind: 0, total: 1250 }).reason, 'daily_cap', 'quota total par jour');
@@ -111,24 +116,50 @@ try {
   r = await call('POST', '/auth/login', { phone: '670123456', password: 'secret1' });
   assert.equal(r.status, 401, 'compte bloqué quelques minutes après trop d’essais');
 
-  // ----- XP : calculés par le serveur, avec quotas -----
+  // ----- XP (jauge) et bonus de performance : tout est calculé par le serveur -----
   r = await call('POST', '/xp/earn', { kind: 'workout', units: 60, claimId: 'c1' }, auth(token));
   assert.equal(r.json.xp, 500);
+  assert.deepEqual(r.json.bonuses, [{ id: 'seance', pct: 0.5 }], 'une séance donne le bonus « séance »');
   r = await call('POST', '/xp/earn', { kind: 'workout', units: 60, claimId: 'c1' }, auth(token));
-  assert.equal(r.json.xp, 0, 'même déclaration : comptée une seule fois');
-  assert.equal(r.json.reason, 'duplicate');
+  assert.equal(r.json.reason, 'duplicate', 'même déclaration : comptée une seule fois');
   r = await call('POST', '/xp/earn', { kind: 'workout', units: 60, claimId: 'c2' }, auth(token));
   assert.equal(r.json.xp, 100, 'quota de 600 XP/jour pour les séances');
+  assert.deepEqual(r.json.bonuses, [], 'le bonus « séance » est limité à 1 par jour');
   r = await call('POST', '/xp/earn', { kind: 'workout', units: 60, claimId: 'c3' }, auth(token));
-  assert.equal(r.json.xp, 0);
   assert.equal(r.json.reason, 'daily_cap');
-  r = await call('POST', '/xp/earn', { xp: 99999, kind: 'workout', units: 0 }, auth(token));
-  assert.equal(r.status, 400, 'le client ne peut pas imposer un nombre d’XP');
-  r = await call('POST', '/xp/earn', { kind: 'outdoor', units: 5 }, auth(token));
-  assert.equal(r.json.xp, 650, 'plafond total de 1 250 XP par jour');
-  assert.equal(r.json.account.xp.last30, 1250);
+  r = await call('POST', '/xp/earn', { bonus: 99, kind: 'workout', units: 0 }, auth(token));
+  assert.equal(r.status, 400, 'le client ne peut pas imposer un bonus');
+  r = await call('POST', '/xp/earn', { kind: 'pushups', units: 150, claimId: 'p1' }, auth(token));
+  assert.deepEqual(r.json.bonuses, [], '150 pompes : pas encore 200');
+  r = await call('POST', '/xp/earn', { kind: 'pushups', units: 60, claimId: 'p2' }, auth(token));
+  assert.deepEqual(r.json.bonuses, [{ id: 'pompes200', pct: 2 }], '150 + 60 = 210 pompes dans la journée');
+  for (const n of [1, 2, 3]) r = await call('POST', '/xp/earn', { kind: 'outdoor', units: 1, claimId: 'o' + n }, auth(token));
+  assert.deepEqual(r.json.bonuses, [{ id: 'pistes3', pct: 2 }], 'la 3e piste du jour donne le bonus');
+  // quand le quota d'XP du jour est atteint (1 250), plus aucun bonus : c'est aussi un garde-fou santé
+  r = await call('POST', '/xp/earn', { kind: 'duel', units: 1, claimId: 'dx' }, auth(token));
+  assert.equal(r.json.reason, 'daily_cap');
+  assert.deepEqual(r.json.bonuses, []);
+  // victoires au Défi House : 3 bonus par jour au maximum (autre compte, quota du jour intact)
+  const other = await call('POST', '/auth/register', { phone: '699000111', name: 'Autre', password: 'secret1' });
+  let rd;
+  for (const n of [1, 2, 3, 4]) rd = await call('POST', '/xp/earn', { kind: 'duel', units: 1, claimId: 'd' + n }, auth(other.json.token));
+  assert.equal(rd.json.account.bonuses.find((b) => b.id === 'duel').count, 3, 'victoires : 3 bonus par jour au maximum');
+  assert.equal(rd.json.account.bonusPct, 1.5);
+  assert.equal(rd.json.account.discountPct, 0, '1,5 % de bonus : pas encore de palier de remise');
+  r = await call('POST', '/perf/palier', { tier: 'Standard' }, auth(token));
+  assert.deepEqual(r.json.bonuses, [{ id: 'palier', pct: 5 }]);
+  r = await call('POST', '/perf/palier', { tier: 'Standard' }, auth(token));
+  assert.deepEqual(r.json.bonuses, [], 'un palier ne rapporte qu’une fois');
+  r = await call('POST', '/perf/palier', { tier: 'Inconnu' }, auth(token));
+  assert.equal(r.status, 400);
+  r = await call('POST', '/perf/palier', { tier: 'Pro' }, auth(token));
+  assert.deepEqual(r.json.bonuses, [{ id: 'palier', pct: 5 }], 'chaque palier différent compte');
+  r = await call('GET', '/me', undefined, auth(token));
+  // 0,5 (séance) + 2 (pompes) + 2 (pistes) + 5 + 5 (deux paliers) = 14,5 %  ->  remise appliquée 10 %  ->  4 500 FCFA
+  assert.equal(r.json.account.bonusPct, 14.5);
   assert.equal(r.json.account.discountPct, 10);
-  assert.equal(r.json.account.nextPrice, 4500, '1 250 XP ce mois = 10 % de remise');
+  assert.equal(r.json.account.nextPrice, 4500);
+  assert.ok(r.json.account.xp.last30 > 0, 'les XP restent la jauge');
 
   // ----- paiement : jeton obligatoire, prix décidé par le serveur -----
   r = await call('POST', '/pay', { phone: '670123456', email: 'a@b.cm' });
@@ -183,7 +214,7 @@ try {
   proxy = await start();
   r = await call('GET', '/me', undefined, auth(token));
   assert.equal(r.status, 200, 'la session survit au redémarrage');
-  assert.equal(r.json.account.xp.last30, 1250, 'les XP aussi');
+  assert.equal(r.json.account.bonusPct, 14.5, 'les bonus aussi');
   assert.equal(r.json.account.subscribed, true, 'et l’abonnement');
 
   r = await call('POST', '/auth/logout', {}, auth(token));

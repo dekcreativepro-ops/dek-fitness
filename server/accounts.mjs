@@ -6,7 +6,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DAILY_TOTAL_CAP, PERIOD_DAYS, dayKey, discountPct, priceFor, xpForClaim } from './economy.mjs';
+import { DAILY_TOTAL_CAP, PERFORMANCES, PERIOD_DAYS, TIERS, dayKey, discountPct, periodKey, priceFor, totalBonusPct, weekKey, xpForClaim } from './economy.mjs';
 
 const DAY = 86_400_000;
 
@@ -52,6 +52,41 @@ export function createAccounts(store, { now = () => Date.now() } = {}) {
 
   const byPhone = (phone) => Object.values(db.accounts).find((a) => a.phone === phone);
 
+  /** Accorde un bonus de performance si sa limite (jour / semaine / mois / une fois) n'est pas atteinte. */
+  function grant(acc, id, ref = '') {
+    const rule = PERFORMANCES[id];
+    if (!rule) return null;
+    const t = now();
+    const period = periodKey(rule.per, t, ref);
+    if (acc.bonuses.filter((b) => b.id === id && b.period === period).length >= rule.max) return null;
+    acc.bonuses.push({ id, pct: rule.pct, ts: t, period });
+    return { id, pct: rule.pct };
+  }
+
+  /** Performances déduites des efforts déclarés : le client ne réclame jamais un bonus lui-même. */
+  function derive(acc, kind) {
+    const t = now();
+    const today = dayKey(t);
+    const got = [];
+    const add = (r) => r && got.push(r);
+    const todays = (k) => acc.ledger.filter((e) => e.type === 'earn' && e.kind === k && dayKey(e.ts) === today);
+    if (kind === 'workout') {
+      add(grant(acc, 'seance'));
+      const wk = weekKey(today);
+      const days = new Set(acc.ledger.filter((e) => e.type === 'earn' && e.kind === 'workout' && weekKey(dayKey(e.ts)) === wk).map((e) => dayKey(e.ts)));
+      if (days.size >= 5) add(grant(acc, 'semaine'));
+    }
+    if (kind === 'pushups' && todays('pushups').reduce((s, e) => s + e.units, 0) >= 200) add(grant(acc, 'pompes200'));
+    if (kind === 'outdoor' && todays('outdoor').length >= 3) add(grant(acc, 'pistes3'));
+    if (kind === 'duel') add(grant(acc, 'duel'));
+    // 7 jours d'affilée avec au moins un effort compté
+    const active = new Set(acc.ledger.filter((e) => e.type === 'earn').map((e) => dayKey(e.ts)));
+    let streak = true;
+    for (let i = 0; i < 7; i++) if (!active.has(dayKey(t - i * DAY))) streak = false;
+    if (streak) add(grant(acc, 'serie7'));
+    return got;
+  }
+
   function earned30(acc, ts = now()) {
     return acc.ledger.filter((e) => e.type === 'earn' && e.ts > ts - PERIOD_DAYS * DAY).reduce((s, e) => s + e.xp, 0);
   }
@@ -70,6 +105,14 @@ export function createAccounts(store, { now = () => Date.now() } = {}) {
   function view(acc) {
     const t = now();
     const last30 = earned30(acc, t);
+    const bonusPct = totalBonusPct(acc.bonuses, t);
+    const recent = acc.bonuses.filter((b) => b.ts > t - PERIOD_DAYS * DAY);
+    const bonuses = Object.entries(PERFORMANCES)
+      .map(([id, r]) => {
+        const mine = recent.filter((b) => b.id === id);
+        return { id, label: r.label, count: mine.length, pct: Math.round(mine.reduce((s, b) => s + b.pct, 0) * 10) / 10 };
+      })
+      .filter((b) => b.count > 0);
     return {
       id: acc.id,
       name: acc.name,
@@ -85,8 +128,10 @@ export function createAccounts(store, { now = () => Date.now() } = {}) {
         today: earnedToday(acc, '', t).total,
         dailyCap: DAILY_TOTAL_CAP,
       },
-      discountPct: discountPct(last30),
-      nextPrice: priceFor(last30),
+      bonusPct, // somme des bonus de performance des 30 derniers jours
+      discountPct: discountPct(bonusPct), // remise appliquée (palier de 10 %)
+      nextPrice: priceFor(bonusPct),
+      bonuses,
     };
   }
 
@@ -118,6 +163,7 @@ export function createAccounts(store, { now = () => Date.now() } = {}) {
         createdAt: now(),
         paidUntil: null,
         ledger: [],
+        bonuses: [],
         claims: [],
       };
       db.accounts[acc.id] = acc;
@@ -163,10 +209,22 @@ export function createAccounts(store, { now = () => Date.now() } = {}) {
       const t = now();
       const res = xpForClaim(kind, Number(units), earnedToday(acc, kind, t));
       if (res.reason === 'unknown_kind' || res.reason === 'invalid_units') return { error: res.reason };
-      if (res.xp > 0) acc.ledger.push({ type: 'earn', kind, xp: res.xp, units: Number(units), ts: t });
+      let granted = [];
+      if (res.xp > 0) {
+        acc.ledger.push({ type: 'earn', kind, xp: res.xp, units: Number(units), ts: t });
+        granted = derive(acc, kind);
+      }
       if (claimId) acc.claims = [...acc.claims.slice(-499), claimId];
       save();
-      return { xp: res.xp, reason: res.reason, account: view(acc) };
+      return { xp: res.xp, reason: res.reason, bonuses: granted, account: view(acc) };
+    },
+
+    /** Passage de palier (Amateur, Standard…) : bonus unique par palier. */
+    palier(acc, { tier }) {
+      if (!TIERS.includes(tier) || tier === TIERS[0]) return { error: 'Palier invalide' };
+      const g = grant(acc, 'palier', tier);
+      save();
+      return { bonuses: g ? [g] : [], account: view(acc) };
     },
 
     /** Prolonge l'abonnement de 30 jours (une seule fois par référence de paiement). */

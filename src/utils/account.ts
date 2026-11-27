@@ -11,8 +11,12 @@ export interface DekAccount {
   paidUntil: number | null;
   subscribed: boolean;
   xp: { last30: number; total: number; purchased: number; today: number; dailyCap: number };
+  /** somme des bonus de performance des 30 derniers jours (%) */
+  bonusPct: number;
+  /** remise appliquée au prochain mois (palier de 10 %) */
   discountPct: number;
   nextPrice: number;
+  bonuses: { id: string; label: string; count: number; pct: number }[];
 }
 
 interface Session {
@@ -111,7 +115,19 @@ export async function refreshAccount(): Promise<void> {
   }
 }
 
-/** Déclare un effort au serveur, qui calcule lui-même les XP (quotas inclus). Sans compte : rien. */
+/** Passage de palier : bonus unique par palier. */
+export async function claimPalier(tier: string): Promise<void> {
+  const s = getSession();
+  if (!API || !s) return;
+  try {
+    const { status, json } = await post('/perf/palier', { tier }, s.token);
+    if (status === 200 && json.account) commit({ token: s.token, account: json.account as DekAccount });
+  } catch {
+    // hors ligne : bonus non compté
+  }
+}
+
+/** Déclare un effort au serveur, qui calcule lui-même les XP et les bonus de performance (quotas inclus). Sans compte : rien. */
 export async function claimXp(kind: 'workout' | 'outdoor' | 'pushups' | 'duel', units: number, claimId: string): Promise<void> {
   const s = getSession();
   if (!API || !s || !(units > 0)) return;

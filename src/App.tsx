@@ -16,7 +16,7 @@ import { ViewBoundary } from './components/ViewBoundary';
 import { DekNavContext, type DekNavValue, type OverlayEntry } from './context/DekNav';
 import { PremiumHost } from './components/premium/PremiumSheet';
 import { canOpenProgram, openPaywall } from './utils/premium';
-import { claimXp } from './utils/account';
+import { claimPalier, claimXp } from './utils/account';
 import { INITIAL_COACHS, INITIAL_FEED, INITIAL_USER } from './data/mockData';
 import {
   getProgram,
@@ -581,6 +581,7 @@ export default function App() {
     });
 
     if (promotedTo) {
+      void claimPalier(promotedTo);
       showToast(`Palier débloqué : tu passes en catégorie ${promotedTo}`);
     } else {
       showToast(`${modeLabel} réussie ! +${xpEarned} XP ajoutés.`);
@@ -628,6 +629,7 @@ export default function App() {
     modeLabel = '1v1 K.O. 60s',
   ) => {
     void claimXp('duel', 1, `duel:${Date.now()}`);
+    if (/pompe/i.test(exercise)) void claimXp('pushups', reps, `pushups:${Date.now()}`);
     commitProgress((u) => ({ ...u, xp: u.xp + xpEarned, houseWins: u.houseWins + 1 }), {
       session: true,
       kcal: 60,

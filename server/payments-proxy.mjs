@@ -8,7 +8,8 @@
 //   POST /auth/login    {phone, password}        -> { token, account }
 //   POST /auth/logout
 //   GET  /me                                     -> { account }  (abonnement, XP du mois, remise, prix du prochain mois)
-//   POST /xp/earn {kind, units, claimId}         -> { xp, reason, account }  (XP calculés ici, quotas journaliers)
+//   POST /xp/earn {kind, units, claimId}         -> { xp, reason, bonuses, account }  (XP et bonus de performance calculés ici)
+//   POST /perf/palier {tier}                     -> { bonuses, account }  (bonus unique par palier franchi)
 // Paiement (jeton obligatoire) :
 //   GET  /config           -> { provider, hostedCheckout, priceBase, priceLevels }
 //   POST /pay              -> { reference, price, checkoutUrl? }   (prix = prix remisé du compte, décidé ici)
@@ -195,6 +196,12 @@ export const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/xp/earn') {
       if (!acc) return send(res, 401, { error: 'Connecte-toi.' });
       const out = accounts.earn(acc, parseJson(await readBody(req)));
+      return send(res, out.error ? 400 : 200, out);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/perf/palier') {
+      if (!acc) return send(res, 401, { error: 'Connecte-toi.' });
+      const out = accounts.palier(acc, parseJson(await readBody(req)));
       return send(res, out.error ? 400 : 200, out);
     }
 
