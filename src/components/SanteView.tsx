@@ -868,6 +868,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
 
               {/* Vote MVP */}
               <Card>
+                <img src="/images/3d/terrain-mvp.jpg" alt="" loading="lazy" className="mb-3 h-28 w-full rounded-[18px] object-cover" />
                 <div className="mb-3 flex items-baseline justify-between">
                   <h3 className="text-[16px] font-bold leading-[22px] text-fg">Vote MVP du match</h3>
                   <span className="text-[12px] font-semibold text-lime">+50 XP bonus</span>

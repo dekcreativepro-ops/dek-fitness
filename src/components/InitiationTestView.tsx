@@ -27,6 +27,14 @@ interface InitiationTestViewProps {
 import { Slot3D } from './ui/Slot3D';
 import { Dumbbell, Fire, Heart, Sunrise, Trophy } from './DekIcons';
 
+const GOAL_IMG: Record<string, string> = {
+  perte_poids: 'objectif-perte',
+  prise_muscle: 'objectif-muscle',
+  endurance_5am: 'objectif-endurance',
+  foot_sante: 'objectif-foot',
+  remise_forme: 'objectif-forme',
+};
+
 const GOAL_ICONS: Record<string, React.ReactNode> = {
   perte_poids: <Fire />,
   prise_muscle: <Dumbbell />,
@@ -223,7 +231,7 @@ export function InitiationTestView({
                         active ? 'border-lime bg-card' : 'border-transparent'
                       }`}
                     >
-                      <Slot3D name={`objectif-${g.id}`} icon={GOAL_ICONS[g.id]} tone={active ? 'lime' : 'dark'} className="h-16 w-16" />
+                      <Slot3D name={GOAL_IMG[g.id]} icon={GOAL_ICONS[g.id]} tone={active ? 'lime' : 'dark'} className="h-16 w-16" />
                       <div className="min-w-0 flex-1">
                         <div className={`font-bold transition-all ${active ? 'text-[20px] leading-6 text-fg' : 'text-[17px] leading-6 text-faint'}`}>
                           {g.label}

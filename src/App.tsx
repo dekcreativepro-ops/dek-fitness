@@ -1033,6 +1033,7 @@ export default function App() {
                 onClick={() => setShowSplash(false)}
                 className="absolute inset-0 z-[800] flex cursor-pointer flex-col items-center justify-center bg-ink"
               >
+                <img src="/images/3d/ecran-demarrage.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { coachPortrait } from '../../data/coachPortraits';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from '../DekIcons';
 import { WORKOUT_PROGRAMS } from '../../data/workoutsData';
@@ -55,7 +56,7 @@ export function CoachProfileScreen({
   return (
     <div className="flex h-full flex-col bg-ink">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
-        <CinematicImage src={`/avatars/${preset}.jpg`} position="50% 25%" className="h-[340px]" intensity={0.6}>
+        <CinematicImage src={coachPortrait(coach.id) ?? `/avatars/${preset}.jpg`} position="50% 30%" className="h-[340px]" intensity={0.6}>
           <div className="absolute inset-0 bg-gradient-to-t from-ink via-black/10 to-black/30" />
           <div className="absolute left-4 top-4">
             <IconButton label="Retour" variant="glass" onClick={onBack}>

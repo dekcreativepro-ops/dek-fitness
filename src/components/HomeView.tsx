@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { coachPortrait } from '../data/coachPortraits';
 import { BowlFood, Compass, Sparkle, Dumbbell, Flag, NavigationArrow, Play, SlidersHorizontal, SoccerBall, Sword, Trophy } from './DekIcons';
 import { useDekNav } from '../context/DekNav';
 import { INITIAL_COACHS } from '../data/mockData';
@@ -297,13 +298,17 @@ export function HomeView({
         <ListRow
           onClick={() => nav.openCoach(coach.id)}
           leading={
-            coach.avatarPreset && (
+            coachPortrait(coach.id) ? (
+              <img src={coachPortrait(coach.id)} alt="" className="h-12 w-12 rounded-full object-cover" />
+            ) : (
+              coach.avatarPreset && (
               <UserAvatar
                 avatar={{ mode: 'preset', presetId: coach.avatarPreset, diceStyle: 'lorelei', seed: coach.name, bgColor: '0E0F12', auraColor: coach.accent }}
                 size="md"
                 ring={false}
                 className="!h-12 !w-12"
               />
+              )
             )
           }
           title={coach.name}

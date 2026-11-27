@@ -174,7 +174,8 @@ export function BonusSummary({ ledger }: { ledger: BonusLedger }) {
   return (
     <Card className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <div>
+        <img src="/images/3d/bonus-medaille.jpg" alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" />
+        <div className="flex-1">
           <div className="text-[12px] font-semibold text-mute">Fin de partie</div>
           <div className="text-[17px] font-bold leading-6 text-fg">Bonus ramassés</div>
         </div>

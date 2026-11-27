@@ -1237,6 +1237,22 @@ export function MissionsView({
   const zonesRun = Object.keys(zoneRecords).length;
   const bestZoneScore = Object.values(zoneRecords).reduce((m, z) => Math.max(m, z.best), 0);
   const zonesTotal = (2 * ZONE_RADIUS + 1) ** 2;
+  const trackImage =
+    discipline === 'velo'
+      ? 'outdoor-velo'
+      : discipline === 'marche'
+        ? 'outdoor-marche'
+        : gameMode === 'survie_checkpoint'
+          ? 'mission-survie'
+          : gameMode === 'relais_escouade'
+            ? 'mission-relais'
+            : gameMode === 'conquete_territoire'
+              ? 'mission-territoire'
+              : gameMode === 'fantome'
+                ? 'mission-fantome'
+                : selectedSlot < '08:00'
+                  ? 'mission-5h'
+                  : 'outdoor-course';
   // Légende de la piste : nom, description et difficulté calculés depuis le tracé
   const trackInfo = route
     ? describeTrack({
@@ -1858,6 +1874,7 @@ export function MissionsView({
 
       {/* Légende de la piste */}
       <Card className="space-y-3">
+        <img src={`/images/3d/${trackImage}.jpg`} alt="" loading="lazy" className="h-32 w-full rounded-[18px] object-cover" />
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="text-[12px] font-semibold text-mute">Légende de la piste</div>

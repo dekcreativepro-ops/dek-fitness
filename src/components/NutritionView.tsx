@@ -130,6 +130,7 @@ export function NutritionView({
 
       {/* Plan repas du jour */}
       <section>
+        <img src="/images/3d/nutrition-bandeau.jpg" alt="" loading="lazy" className="mb-3 h-36 w-full rounded-[28px] object-cover" />
         <SectionHeader title="Plan repas du jour" />
         <div className="space-y-2">
           {plan.meals.map((meal) => {

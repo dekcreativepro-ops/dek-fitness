@@ -8,10 +8,11 @@ interface ExerciseDemoCanvasProps {
 
 const DEMO_META: Record<
   DemoExercise,
-  { gifUrl: string; title: string; target: string; cue: string; loopSec: number }
+  { gifUrl: string; poster: string; title: string; target: string; cue: string; loopSec: number }
 > = {
   pompes: {
     gifUrl: '/demos/pompes.gif',
+    poster: '/images/3d/exo-pompes.jpg',
     title: 'Démo HD • Pompes',
     target: 'Pectoraux • Bras',
     cue: 'Descends contrôlé jusqu’en bas • Pousse fort',
@@ -19,6 +20,7 @@ const DEMO_META: Record<
   },
   squats: {
     gifUrl: '/demos/squats.gif',
+    poster: '/images/3d/exo-squats.jpg',
     title: 'Démo HD • Squats',
     target: 'Jambes • Fessiers',
     cue: 'Talons collés au sol • Dos droit à la montée',
@@ -26,6 +28,7 @@ const DEMO_META: Record<
   },
   gainage: {
     gifUrl: '/demos/gainage.gif',
+    poster: '/images/3d/exo-gainage.jpg',
     title: 'Démo HD • Gainage',
     target: 'Abdos • Ceinture',
     cue: 'Coudes sous les épaules • Garde la ligne droite',
@@ -33,6 +36,7 @@ const DEMO_META: Record<
   },
   jumping_jacks: {
     gifUrl: '/demos/jumping_jacks.gif',
+    poster: '/images/3d/exo-jumping-jacks.jpg',
     title: 'Démo HD • Jumping Jacks',
     target: 'Cardio • Épaules',
     cue: 'Bras hauts au-dessus de la tête • Réception souple',
@@ -40,6 +44,7 @@ const DEMO_META: Record<
   },
   corde: {
     gifUrl: '/demos/corde.gif',
+    poster: '/images/3d/exo-corde.jpg',
     title: 'Démo HD • Corde à sauter',
     target: 'Cardio • Mollets',
     cue: 'Petits rebonds sur l’avant-pied • Poignets fluides',
@@ -47,6 +52,7 @@ const DEMO_META: Record<
   },
   burpees: {
     gifUrl: '/demos/burpees.gif',
+    poster: '/images/3d/exo-burpees.jpg',
     title: 'Démo HD • Burpees',
     target: 'Full Body • Cardio',
     cue: 'Planche solide au sol • Saut explosif vers le haut',
@@ -60,6 +66,7 @@ export function ExerciseDemoCanvas({ exercise, compact = false }: ExerciseDemoCa
 
   return (
     <div className="rounded-[28px] bg-card p-4">
+      {!compact && <img src={meta.poster} alt="" loading="lazy" className="mb-3 h-32 w-full rounded-[20px] object-cover" />}
       <div className="mb-3">
         <div className="text-[15px] font-bold leading-5 text-fg">{meta.title}</div>
         <div className="text-[12px] font-medium leading-4 text-mute">{meta.target}</div>

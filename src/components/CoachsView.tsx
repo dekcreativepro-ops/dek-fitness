@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { coachPortrait } from '../data/coachPortraits';
 import { useDekNav } from '../context/DekNav';
 import { INITIAL_COACHS } from '../data/mockData';
 import { ChipTabs, ListRow } from './ui/kit';
@@ -58,7 +59,9 @@ export function CoachsView({ recommendedCoachId, onBookSession }: CoachsViewProp
               <ListRow
                 onClick={() => nav.openCoach(coach.id)}
                 leading={
-                  coach.avatarPreset ? (
+                  coachPortrait(coach.id) ? (
+                    <img src={coachPortrait(coach.id)} alt="" className="h-12 w-12 rounded-full object-cover" />
+                  ) : coach.avatarPreset ? (
                     <UserAvatar
                       avatar={{ mode: 'preset', presetId: coach.avatarPreset, diceStyle: 'lorelei', seed: coach.name, bgColor: '0E0F12', auraColor: coach.accent }}
                       size="md"

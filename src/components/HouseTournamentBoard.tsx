@@ -18,6 +18,7 @@ export function HouseTournamentBoard({
   return (
     <div className="space-y-3">
       <Card className="space-y-2">
+        <img src="/images/3d/bonus-fistbump.jpg" alt="" loading="lazy" className="mb-1 h-32 w-full rounded-[18px] object-cover" />
         <div className="flex items-center gap-2 text-[12px] font-semibold text-mute">
           <Star className="h-4 w-4 text-lime" /> Le plus fort du Tournoi
         </div>

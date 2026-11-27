@@ -6,7 +6,7 @@
 export type PhotoFormat = 'card' | 'detail' | 'wide';
 
 export const PHOTO_CATEGORIES = {
-  hero: ['runner'],
+  hero: ['3d-accueil-rang'],
   // séances guidées (une photo fixe par séance)
   pecs: ['s-pecs'],
   legs: ['s-legs'],
@@ -15,19 +15,19 @@ export const PHOTO_CATEGORIES = {
   hiit: ['s-hiit'],
   fullbody: ['s-fullbody'],
   // terrains
-  football: ['match'],
-  matchfoot: ['feet'],
-  basket: ['basket'],
-  raids: ['hand'],
+  football: ['3d-terrain-bandeau'],
+  matchfoot: ['3d-terrain-foot'],
+  basket: ['3d-terrain-basket'],
+  raids: ['3d-raids'],
   // Gym Buddy / Défi House
-  gym: ['rack', 'handrack'],
-  duo: ['curl'],
-  house: ['pushup2', 'pushup'],
+  gym: ['3d-gym-spot-1', '3d-gym-spot-2'],
+  duo: ['3d-gym-duo'],
+  house: ['3d-house-duel-1', '3d-house-duel-2'],
   // accueil de l'app
-  coach: ['coach'],
-  team: ['friends'],
-  action: ['dunk'],
-  auth: ['track'],
+  coach: ['3d-onboarding-coach'],
+  team: ['3d-onboarding-equipe'],
+  action: ['3d-onboarding-action'],
+  auth: ['3d-compte-auth'],
 } as const;
 
 export type PhotoCategory = keyof typeof PHOTO_CATEGORIES;
@@ -36,7 +36,8 @@ export type PhotoCategory = keyof typeof PHOTO_CATEGORIES;
 export const LIGHT_PHOTO_CATEGORIES: PhotoCategory[] = ['coach'];
 
 export function photoUrl(id: string, format: PhotoFormat): string {
-  // images 3D des séances (préfixe s-) : public/images/seance ; photos : public/images/ph
+  // images 3D (préfixe 3d-) : public/images/3d ; séances (préfixe s-) : public/images/seance ; photos : public/images/ph
+  if (id.startsWith('3d-')) return `/images/3d/${id.slice(3)}.jpg`;
   if (id.startsWith('s-')) return `/images/seance/${id.slice(2)}-${format}.jpg`;
   return `/images/ph/${id}-${format}.jpg`;
 }

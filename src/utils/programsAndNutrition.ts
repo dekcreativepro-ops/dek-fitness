@@ -208,7 +208,7 @@ function baseNutritionPlan(
           detail: '2 œufs brouillés, 1/2 avocat, pain complet & baies',
           kcal: 420,
           protein: 24,
-          imageUrl: '/images/meal-breakfast.jpg',
+          imageUrl: '/images/3d/repas-petit-dej.jpg',
         },
         {
           id: 'm2',
@@ -217,7 +217,7 @@ function baseNutritionPlan(
           detail: 'Poulet grillé, légumes verts & petite portion riz',
           kcal: 620,
           protein: 48,
-          imageUrl: '/images/meal-lunch.jpg',
+          imageUrl: '/images/3d/repas-dejeuner.jpg',
         },
         {
           id: 'm3',
@@ -226,7 +226,7 @@ function baseNutritionPlan(
           detail: 'Yaourt grec sans sucre + amandes & rondelles de banane',
           kcal: 240,
           protein: 14,
-          imageUrl: '/images/meal-snack.jpg',
+          imageUrl: '/images/3d/repas-collation.jpg',
         },
         {
           id: 'm4',
@@ -235,7 +235,7 @@ function baseNutritionPlan(
           detail: 'Filet de poisson aux herbes, salade fraîche & patate douce',
           kcal: 510,
           protein: 42,
-          imageUrl: '/images/meal-dinner.jpg',
+          imageUrl: '/images/3d/repas-diner.jpg',
         },
       ],
     };
@@ -258,7 +258,7 @@ function baseNutritionPlan(
           detail: '3 œufs complets, avocat, pain complet & fruits rouges',
           kcal: 650,
           protein: 32,
-          imageUrl: '/images/meal-breakfast.jpg',
+          imageUrl: '/images/3d/repas-petit-dej.jpg',
         },
         {
           id: 'm2',
@@ -267,7 +267,7 @@ function baseNutritionPlan(
           detail: 'Poulet grillé, attiéké ou riz basmati + haricots verts',
           kcal: 820,
           protein: 52,
-          imageUrl: '/images/meal-lunch.jpg',
+          imageUrl: '/images/3d/repas-dejeuner.jpg',
         },
         {
           id: 'm3',
@@ -276,7 +276,7 @@ function baseNutritionPlan(
           detail: 'Yaourt grec + banane fraîche, amandes & filet de miel',
           kcal: 420,
           protein: 28,
-          imageUrl: '/images/meal-snack.jpg',
+          imageUrl: '/images/3d/repas-collation.jpg',
         },
         {
           id: 'm4',
@@ -285,7 +285,7 @@ function baseNutritionPlan(
           detail: 'Poisson grillé, patate douce rôtie & salade croquante',
           kcal: 710,
           protein: 46,
-          imageUrl: '/images/meal-dinner.jpg',
+          imageUrl: '/images/3d/repas-diner.jpg',
         },
       ],
     };
@@ -310,7 +310,7 @@ function baseNutritionPlan(
         detail: '2 œufs, avocat, pain complet & baies fraîches',
         kcal: 490,
         protein: 24,
-        imageUrl: '/images/meal-breakfast.jpg',
+        imageUrl: '/images/3d/repas-petit-dej.jpg',
       },
       {
         id: 'm2',
@@ -319,7 +319,7 @@ function baseNutritionPlan(
         detail: 'Poulet grillé, attiéké ou riz basmati + haricots verts',
         kcal: 730,
         protein: 46,
-        imageUrl: '/images/meal-lunch.jpg',
+        imageUrl: '/images/3d/repas-dejeuner.jpg',
       },
       {
         id: 'm3',
@@ -328,7 +328,7 @@ function baseNutritionPlan(
         detail: 'Yaourt grec + banane, amandes & miel',
         kcal: 270,
         protein: 12,
-        imageUrl: '/images/meal-snack.jpg',
+        imageUrl: '/images/3d/repas-collation.jpg',
       },
       {
         id: 'm4',
@@ -337,7 +337,7 @@ function baseNutritionPlan(
         detail: 'Filet de poisson aux herbes, patate douce & salade',
         kcal: 580,
         protein: 40,
-        imageUrl: '/images/meal-dinner.jpg',
+        imageUrl: '/images/3d/repas-diner.jpg',
       },
     ],
   };

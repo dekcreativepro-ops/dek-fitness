@@ -224,3 +224,15 @@ tir en suspension, volée au padel, crawl dans un bassin, enchaînement de boxe 
 Autres disciplines (même principe, bannières 2:1 dans `public/images/3d/`) : `sport-danse.jpg` (pas de danse afro), `sport-zumba.jpg`,
 `sport-tabata.jpg` (fente sautée chronomètre en main), `sport-crossfit.jpg` (soulevé de barre), `sport-spinning.jpg`,
 `sport-street.jpg` (traction aux barres), `sport-pilates.jpg` (gainage sur tapis).
+
+## État au 27/11 : les 57 images sont reçues et intégrées
+Sources dans `images-source/` (noms du document) ; l'import se fait avec le script de la session vers `public/images/3d/`.
+**Attention : les 51 nouvelles sources font 250 × 199 px** (elles viennent de planches d'aperçu). L'app les agrandit en douceur,
+ce qui suffit sur téléphone mais reste un peu flou sur les grandes bannières. Pour une netteté parfaite, dépose les versions
+d'origine (≥ 1024 px de large) avec les mêmes noms et je régénère. Les 6 images de séances sont restées en haute définition.
+
+Où elles servent : accueil (rang de saison), compte et onboarding (coach, équipe, action), terrains (bandeau, foot, basket, MVP),
+raids, Gym Buddy (duo, spot 1 et 2), Défi House (duel 1 et 2), tournoi et bonus, missions et Outdoor (course, marche, vélo,
+5h, fantôme, relais, survie, territoire), nutrition (bandeau et 4 repas), objectifs, portraits des 3 coachs, avatars,
+posters d'exercices (6 sur 8), écran de démarrage, icône d'application et image de partage.
+Pas encore utilisées : `exo-pompes-tempo`, `exo-squat-iso`, `bonus-shaker`, `repas-*` doublon, les 13 bannières `sport-*` (à générer).

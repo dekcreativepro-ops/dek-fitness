@@ -7,21 +7,21 @@ import { CinematicImage, Button } from './ui/kit';
 
 const SLIDES = [
   {
-    image: '/images/ph/coach-card.jpg',
+    image: '/images/3d/onboarding-coach.jpg',
     position: '50% 40%',
     line1: 'Rencontre ton coach,',
     line2: 'commence ton aventure',
     text: 'Un test d’initiation sans quota calibre ton niveau pour progresser sans te blesser.',
   },
   {
-    image: '/images/ph/friends-card.jpg',
-    position: '50% 55%',
+    image: '/images/3d/onboarding-equipe.jpg',
+    position: '50% 50%',
     line1: 'Défis IA, terrains,',
     line2: 'une vraie équipe',
     text: 'Missions GPS à 05h00, duels caméra IA, terrains collectifs, raids & pactes entre amis.',
   },
   {
-    image: '/images/ph/dunk-card.jpg',
+    image: '/images/3d/onboarding-action.jpg',
     position: '50% 45%',
     line1: 'L’action est la',
     line2: 'clé du succès',
