@@ -11,10 +11,12 @@
     "cap:sync": "npm run build && cap sync",
     "cap:android": "npm run build && cap sync android && cap open android",
     "cap:ios": "npm run build && cap sync ios && cap open ios",
-    "pay-server": "node server/payments-proxy.mjs"
+    "pay-server": "node server/payments-proxy.mjs",
+    "pay-test": "node server/payments-proxy.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.3",
+    "@capacitor/browser": "^8.0.5",
     "@capacitor/core": "^8.6.3",
     "@capacitor/ios": "^8.6.3",
     "@dicebear/adventurer": "^9.2.2",

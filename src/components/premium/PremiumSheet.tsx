@@ -12,7 +12,7 @@ import {
   usePremium,
   type PremiumFeature,
 } from '../../utils/premium';
-import { OPERATORS, PAYMENTS_LIVE, guessOperator, normalizePhone, payPremium, type Operator } from '../../utils/payments';
+import { OPERATORS, PAYMENTS_LIVE, getPaymentConfig, guessOperator, normalizePhone, payPremium, type Operator } from '../../utils/payments';
 
 const FIELD =
   'h-12 w-full rounded-2xl bg-tile px-4 text-[14px] font-medium text-fg outline-none placeholder:text-faint focus:ring-1 focus:ring-lime';
@@ -28,6 +28,9 @@ function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [demo, setDemo] = useState(false);
+  const [hosted, setHosted] = useState(false);
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
 
   const submit = async () => {
     const local = normalizePhone(phone);
@@ -35,9 +38,14 @@ function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
       setError('Numéro invalide : 9 chiffres commençant par 6 (ex. 6 70 12 34 56).');
       return;
     }
+    if (hosted && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Entre une adresse e-mail valide : elle sert au reçu de paiement.');
+      return;
+    }
     setError(null);
     setStep('wait');
-    const res = await payPremium({ operator, phone: local, amount: PREMIUM_PRICE_FCFA });
+    const [firstName, ...rest] = name.trim().split(/\s+/);
+    const res = await payPremium({ operator, phone: local, amount: PREMIUM_PRICE_FCFA, email: email.trim(), firstName: firstName || undefined, lastName: rest.join(' ') || undefined });
     if (res.ok) {
       activatePremium({ operator, reference: res.reference, demo: res.demo });
       setDemo(res.demo);
@@ -98,14 +106,20 @@ function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
       <div className="text-[12px] font-medium text-faint">Toujours gratuit : ton coach personnel, les séances guidées, le suivi, le classement et le Réseau.</div>
 
       {step === 'offer' && (
-        <Button fullWidth onClick={() => setStep('pay')}>
+        <Button
+          fullWidth
+          onClick={async () => {
+            setHosted((await getPaymentConfig()).hostedCheckout);
+            setStep('pay');
+          }}
+        >
           Passer Premium · {price}
         </Button>
       )}
 
       {(step === 'pay' || step === 'wait') && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Opérateur Mobile Money">
+          <div className={hosted ? 'hidden' : 'grid grid-cols-2 gap-2'} role="radiogroup" aria-label="Opérateur Mobile Money">
             {OPERATORS.map((o) => (
               <button
                 key={o.id}
@@ -134,16 +148,39 @@ function PaywallBody({ feature }: { feature: PremiumFeature | null }) {
             }}
             className={FIELD}
           />
+          {hosted && (
+            <>
+              <input
+                type="text"
+                autoComplete="name"
+                placeholder="Ton nom (facultatif)"
+                value={name}
+                disabled={step === 'wait'}
+                onChange={(e) => setName(e.target.value)}
+                className={FIELD}
+              />
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="Ton e-mail (pour le reçu)"
+                value={email}
+                disabled={step === 'wait'}
+                onChange={(e) => setEmail(e.target.value)}
+                className={FIELD}
+              />
+            </>
+          )}
           {error && (
             <div role="alert" className="flex items-start gap-2 text-[13px] font-medium text-danger">
               <Warning className="mt-0.5 h-4 w-4 shrink-0" /> {error}
             </div>
           )}
           <Button fullWidth disabled={step === 'wait'} onClick={() => void submit()}>
-            {step === 'wait' ? 'Valide sur ton téléphone…' : `Payer ${price}`}
+            {step === 'wait' ? (hosted ? 'Termine sur la page de paiement…' : 'Valide sur ton téléphone…') : hosted ? `Payer ${price} en ligne` : `Payer ${price}`}
           </Button>
           <div className="text-center text-[12px] font-medium text-faint">
-            {PAYMENTS_LIVE ? 'Tu vas recevoir une demande de validation sur ton téléphone (code secret).' : 'Mode démo : le paiement est simulé, aucun argent n’est débité.'}
+            {!PAYMENTS_LIVE ? 'Mode démo : le paiement est simulé, aucun argent n’est débité.' : hosted ? 'Une page de paiement sécurisée s’ouvre : choisis Mobile Money, paie, puis reviens ici.' : 'Tu vas recevoir une demande de validation sur ton téléphone (code secret).'}
           </div>
         </div>
       )}

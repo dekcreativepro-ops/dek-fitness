@@ -12,6 +12,12 @@ export const OPERATORS: { id: Operator; label: string; hint: string }[] = [
   { id: 'orange', label: 'Orange Money', hint: 'Numéros 69, 655–659, 640…' },
 ];
 
+export interface PaymentConfig {
+  /** true : le fournisseur a sa propre page de paiement (Chariow) ; false : demande envoyée directement au téléphone */
+  hostedCheckout: boolean;
+  provider: string;
+}
+
 export interface PaymentResult {
   ok: boolean;
   reference: string;
@@ -41,7 +47,42 @@ export function guessOperator(local: string): Operator | null {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function payPremium(opts: { operator: Operator; phone: string; amount: number }): Promise<PaymentResult> {
+/** Demande au serveur comment il encaisse (page hébergée ou non). Sans serveur : mode démo. */
+export async function getPaymentConfig(): Promise<PaymentConfig> {
+  if (!API) return { hostedCheckout: false, provider: 'demo' };
+  try {
+    const res = await fetch(`${API}/config`);
+    if (!res.ok) throw new Error('config');
+    const c = (await res.json()) as Partial<PaymentConfig>;
+    return { hostedCheckout: c.hostedCheckout === true, provider: String(c.provider ?? 'inconnu') };
+  } catch {
+    return { hostedCheckout: false, provider: 'inconnu' };
+  }
+}
+
+/** Ouvre la page de paiement : navigateur intégré dans l'application mobile, nouvel onglet sur le web. */
+async function openCheckout(url: string): Promise<void> {
+  try {
+    const { Capacitor } = await import('@capacitor/core');
+    if (Capacitor.isNativePlatform()) {
+      const { Browser } = await import('@capacitor/browser');
+      await Browser.open({ url });
+      return;
+    }
+  } catch {
+    // on retombe sur l'ouverture classique
+  }
+  window.open(url, '_blank', 'noopener');
+}
+
+export async function payPremium(opts: {
+  operator: Operator;
+  phone: string;
+  amount: number;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<PaymentResult> {
   const phone = normalizePhone(opts.phone);
   if (!phone) return { ok: false, reference: '', demo: !API, message: 'Numéro invalide : 9 chiffres commençant par 6.' };
 
@@ -55,13 +96,15 @@ export async function payPremium(opts: { operator: Operator; phone: string; amou
     const res = await fetch(`${API}/pay`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ operator: opts.operator, phone, amount: opts.amount, currency: 'XAF', plan: 'premium-monthly' }),
+      body: JSON.stringify({ operator: opts.operator, phone, email: opts.email, firstName: opts.firstName, lastName: opts.lastName, plan: 'premium-monthly' }),
     });
-    if (!res.ok) throw new Error('Paiement refusé par le serveur.');
-    const { reference } = (await res.json()) as { reference: string };
+    const out = (await res.json().catch(() => ({}))) as { reference?: string; checkoutUrl?: string | null; error?: string };
+    if (!res.ok || !out.reference) throw new Error(out.error ?? 'Paiement refusé par le serveur.');
+    const { reference } = out as { reference: string };
+    if (out.checkoutUrl) await openCheckout(out.checkoutUrl);
 
-    // Le client valide sur son téléphone (code secret) : on interroge le serveur jusqu'à 2 minutes.
-    for (let i = 0; i < 40; i++) {
+    // Le client valide (page de paiement ou code secret sur son téléphone) : on interroge le serveur jusqu'à 10 minutes.
+    for (let i = 0; i < 200; i++) {
       await sleep(3000);
       const st = await fetch(`${API}/status/${encodeURIComponent(reference)}`);
       if (!st.ok) continue;
@@ -69,7 +112,7 @@ export async function payPremium(opts: { operator: Operator; phone: string; amou
       if (status === 'success') return { ok: true, reference, demo: false };
       if (status === 'failed') return { ok: false, reference, demo: false, message: 'Paiement refusé ou annulé.' };
     }
-    return { ok: false, reference, demo: false, message: 'Délai dépassé : valide le paiement sur ton téléphone puis réessaie.' };
+    return { ok: false, reference, demo: false, message: 'Délai dépassé : si tu as payé, rouvre cet écran dans quelques minutes ; sinon réessaie.' };
   } catch (err) {
     return { ok: false, reference: '', demo: false, message: err instanceof Error ? err.message : 'Paiement impossible pour le moment.' };
   }
