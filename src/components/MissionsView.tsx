@@ -47,10 +47,10 @@ interface MissionsViewProps {
 }
 
 const PRESET_CITIES = [
-  { name: 'Abidjan', lat: 5.3484, lng: -3.9985 },
-  { name: 'Paris', lat: 48.8675, lng: 2.3638 },
-  { name: 'Dakar', lat: 14.6928, lng: -17.4667 },
-  { name: 'Lyon', lat: 45.7772, lng: 4.8552 },
+  { name: 'Douala', lat: 4.0511, lng: 9.7679 },
+  { name: 'Yaoundé', lat: 3.848, lng: 11.5021 },
+  { name: 'Bafoussam', lat: 5.4737, lng: 10.4179 },
+  { name: 'Kribi', lat: 2.94, lng: 9.91 },
 ];
 
 const TIME_SLOTS = ['05:00', '06:00', '07:00', '18:30', '20:00'];

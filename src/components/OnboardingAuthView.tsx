@@ -22,8 +22,8 @@ const PROVIDERS: { id: AuthProvider; label: string }[] = [
   { id: 'email', label: 'Autre / Email' },
 ];
 
-const COUNTRY_CODES = ['+225', '+33', '+221', '+237', '+212'];
-const CITIES = ['Abidjan', 'Paris', 'Dakar', 'Lyon', 'Autre'];
+const COUNTRY_CODES = ['+237', '+33', '+225', '+221', '+212'];
+const CITIES = ['Douala', 'Yaoundé', 'Bafoussam', 'Kribi', 'Autre'];
 
 const FIELD = 'h-11 w-full border-b border-rim bg-transparent text-[15px] font-medium text-fg outline-none transition-colors placeholder:text-faint focus:border-lime';
 const LABEL = 'block text-[12px] font-medium leading-4 text-mute';
@@ -32,11 +32,11 @@ export function OnboardingAuthView({ onAuthComplete }: OnboardingAuthViewProps) 
   const authPhoto = usePhoto('auth', 'detail');
   const [provider, setProvider] = useState<AuthProvider>('gmail');
   const [gmailInput, setGmailInput] = useState('');
-  const [countryCode, setCountryCode] = useState('+225');
+  const [countryCode, setCountryCode] = useState('+237');
   const [phoneInput, setPhoneInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
   const [name, setName] = useState('');
-  const [city, setCity] = useState('Abidjan');
+  const [city, setCity] = useState('Douala');
   const [avatar, setAvatar] = useState<UserAvatarConfig>({
     mode: 'preset',
     presetId: 'manga-sprint',
@@ -51,7 +51,7 @@ export function OnboardingAuthView({ onAuthComplete }: OnboardingAuthViewProps) 
   const handleQuickFill = () => {
     setErrorMsg(null);
     setName('Karim_DEK');
-    setCity('Abidjan');
+    setCity('Douala');
     if (provider === 'gmail') {
       setGmailInput('karim.dek@gmail.com');
     } else if (provider === 'whatsapp') {

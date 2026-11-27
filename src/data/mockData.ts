@@ -11,7 +11,7 @@ import type {
 export const INITIAL_USER: UserProfile = {
   name: 'DEK Athlète',
   handle: '@dek_captain',
-  city: 'Abidjan',
+  city: 'Douala',
   rank: 'Recrue',
   xp: 0,
   nextRankXp: 500,
@@ -91,7 +91,7 @@ export const INITIAL_RUNNERS: LobbyRunner[] = [
   {
     id: 'r1',
     name: 'Koffi_Sprint',
-    city: 'Abidjan',
+    city: 'Douala',
     disciplineScore: 98,
     rank: 'Élite I',
     progressKm: 0,
@@ -101,7 +101,7 @@ export const INITIAL_RUNNERS: LobbyRunner[] = [
   {
     id: 'r2',
     name: 'Sarah_5h',
-    city: 'Paris 11e',
+    city: 'Yaoundé',
     disciplineScore: 96,
     rank: 'Pro III',
     progressKm: 0,
@@ -111,7 +111,7 @@ export const INITIAL_RUNNERS: LobbyRunner[] = [
   {
     id: 'r3',
     name: 'Moussa_Iron',
-    city: 'Dakar',
+    city: 'Bafoussam',
     disciplineScore: 91,
     rank: 'Pro I',
     progressKm: 0,
@@ -121,7 +121,7 @@ export const INITIAL_RUNNERS: LobbyRunner[] = [
   {
     id: 'r4',
     name: 'Lucas_Pace',
-    city: 'Lyon',
+    city: 'Kribi',
     disciplineScore: 87,
     rank: 'Challenger III',
     progressKm: 0,
@@ -135,12 +135,12 @@ export const INITIAL_SANTE_MATCHES: SanteMatch[] = [
     id: 's1',
     title: 'La Santé du Samedi Matin',
     sport: 'Football 7v7',
-    location: 'Complexe Urban / Terrain Cocody',
+    location: 'Complexe Urban / Terrain Akwa',
     city: 'Proximité (2.1 km)',
     dateLabel: 'Samedi',
     time: '07h30',
     teamA: 'DEK Warriors',
-    teamB: 'FC Riviera',
+    teamB: 'FC Bonapriso',
     playersJoined: 12,
     playersMax: 14,
     level: 'Compétitif',
@@ -180,8 +180,8 @@ export const INITIAL_SANTE_MATCHES: SanteMatch[] = [
 
 export const INITIAL_TOURNAMENT: TournamentMatch[] = [
   { id: 't1', round: 'Quarts', teamA: 'DEK Warriors', teamB: 'Titan FC', scoreA: 4, scoreB: 2, status: 'termine' },
-  { id: 't2', round: 'Quarts', teamA: 'FC Riviera', teamB: 'Zone 4 United', scoreA: 3, scoreB: 3, status: 'termine' },
-  { id: 't3', round: 'Demies', teamA: 'DEK Warriors', teamB: 'FC Riviera', scoreA: 2, scoreB: 1, status: 'en_cours' },
+  { id: 't2', round: 'Quarts', teamA: 'FC Bonapriso', teamB: 'Zone 4 United', scoreA: 3, scoreB: 3, status: 'termine' },
+  { id: 't3', round: 'Demies', teamA: 'DEK Warriors', teamB: 'FC Bonapriso', scoreA: 2, scoreB: 1, status: 'en_cours' },
   { id: 't4', round: 'Demies', teamA: 'Black Panthers', teamB: 'Team 5h', status: 'a_venir' },
   { id: 't5', round: 'Finale', teamA: 'Vainqueur D1', teamB: 'Vainqueur D2', status: 'a_venir' },
 ];
@@ -302,7 +302,7 @@ export const INITIAL_FEED: FeedPost[] = [
     timeAgo: 'Il y a 3 h',
     type: 'sante',
     badge: 'LA SANTÉ • VICTOIRE',
-    content: 'Gros match 7v7 ce matin ! Merci à FC Riviera pour l’intensité. Rendez-vous en demi-finale du Tournoi DEK.',
+    content: 'Gros match 7v7 ce matin ! Merci à FC Bonapriso pour l’intensité. Rendez-vous en demi-finale du Tournoi DEK.',
     stats: [
       { label: 'Score', value: '4 - 2' },
       { label: 'MVP', value: 'Moussa_Iron' },

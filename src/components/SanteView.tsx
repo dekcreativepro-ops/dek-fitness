@@ -352,7 +352,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
         <input
           type="text"
           required
-          placeholder="Terrain / Complexe (ex: Urban Five Cocody)"
+          placeholder="Terrain / Complexe (ex: Urban Five Akwa)"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           className={FIELD}
@@ -576,7 +576,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
           {phase === 2 && (
             <div className="space-y-4">
               <Card>
-                <div className="text-[12px] font-medium text-mute">Pointage sur place · Terrain Cocody</div>
+                <div className="text-[12px] font-medium text-mute">Pointage sur place · Terrain Akwa</div>
                 <div className="mt-1 flex items-end justify-between gap-2">
                   <div className="num text-[40px] font-extrabold leading-none text-fg">
                     {presentCount}

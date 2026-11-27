@@ -146,6 +146,8 @@ function loadSavedUser(): UserProfile {
       bodyAsked: parsed.bodyAsked === true,
       lastActiveDay: typeof parsed.lastActiveDay === 'string' ? parsed.lastActiveDay : '',
       avatar: { ...INITIAL_USER.avatar, ...(parsed.avatar ?? {}) },
+      // anciens profils créés avec la ville de démo (Abidjan) : on passe au Cameroun
+      city: parsed.city === 'Abidjan' ? INITIAL_USER.city : parsed.city ?? INITIAL_USER.city,
     });
   } catch {
     return normalizeUser(INITIAL_USER);

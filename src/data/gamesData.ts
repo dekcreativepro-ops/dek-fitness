@@ -11,7 +11,7 @@ import type {
 export const INITIAL_TERRITORIES: TerritoryZone[] = [
   {
     id: 'z1',
-    name: 'Zone Cocody',
+    name: 'Zone Akwa',
     ownerClub: 'DEK Warriors',
     points: 820,
     targetPoints: 1000,
@@ -19,7 +19,7 @@ export const INITIAL_TERRITORIES: TerritoryZone[] = [
   },
   {
     id: 'z2',
-    name: 'Zone Plateau',
+    name: 'Zone Bonanjo',
     ownerClub: 'Team 5h',
     points: 910,
     targetPoints: 1000,
@@ -27,15 +27,15 @@ export const INITIAL_TERRITORIES: TerritoryZone[] = [
   },
   {
     id: 'z3',
-    name: 'Zone Riviera',
-    ownerClub: 'FC Riviera',
+    name: 'Zone Bonapriso',
+    ownerClub: 'FC Bonapriso',
     points: 740,
     targetPoints: 1000,
     color: '#FF8A00',
   },
   {
     id: 'z4',
-    name: 'Zone Marcory',
+    name: 'Zone Bonamoussadi',
     ownerClub: 'Shadow Runners',
     points: 680,
     targetPoints: 1000,
@@ -52,7 +52,7 @@ export const INITIAL_THURSDAY_PLAYERS: ThursdayPlayer[] = [
   { id: 'p6', name: 'Lucas_7', category: 'Standard', team: 'B', paid: true, checkedIn: true, goals: 0, assists: 0 },
   { id: 'p7', name: 'Sidy_Goal', category: 'Standard', team: 'B', paid: false, checkedIn: true, goals: 0, assists: 0 },
   { id: 'p8', name: 'Awa_Speed', category: 'Amateur', team: 'B', paid: true, checkedIn: false, goals: 0, assists: 0 },
-  { id: 'p9', name: 'Drogba_Jr', category: 'Pro', team: 'C', paid: true, checkedIn: true, goals: 0, assists: 0 },
+  { id: 'p9', name: 'Eto_Jr', category: 'Pro', team: 'C', paid: true, checkedIn: true, goals: 0, assists: 0 },
   { id: 'p10', name: 'Tarek_9', category: 'Standard', team: 'C', paid: true, checkedIn: true, goals: 0, assists: 0 },
   { id: 'p11', name: 'Cédric_K', category: 'Amateur', team: 'C', paid: false, checkedIn: true, goals: 0, assists: 0 },
   { id: 'p12', name: 'Oumar_W', category: 'Standard', team: 'waitlist', paid: false, checkedIn: true, goals: 0, assists: 0 },
@@ -61,15 +61,15 @@ export const INITIAL_THURSDAY_PLAYERS: ThursdayPlayer[] = [
 
 export const TOURNAMENT_GROUP_TABLE = [
   { team: 'DEK Warriors', played: 3, diff: '+5', pts: 9 },
-  { team: 'FC Riviera', played: 3, diff: '+2', pts: 6 },
+  { team: 'FC Bonapriso', played: 3, diff: '+2', pts: 6 },
   { team: 'Team 5h', played: 3, diff: '-1', pts: 3 },
   { team: 'Titan FC', played: 3, diff: '-6', pts: 0 },
 ];
 
 export const TOURNAMENT_TOP_SCORERS = [
   { name: 'Koffi_Sprint', team: 'DEK Warriors', goals: 6 },
-  { name: 'Ibrahim_Cap', team: 'FC Riviera', goals: 5 },
-  { name: 'Drogba_Jr', team: 'Team 5h', goals: 4 },
+  { name: 'Ibrahim_Cap', team: 'FC Bonapriso', goals: 5 },
+  { name: 'Eto_Jr', team: 'Team 5h', goals: 4 },
 ];
 
 export const INITIAL_GYM_CALLS: GymSpotCall[] = [
