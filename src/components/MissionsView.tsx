@@ -138,8 +138,8 @@ const MAP_TOGGLES: { key: Exclude<keyof MapOpts, 'detail'>; label: string; hint:
 const BONUS_LIMIT_SEC = 30;
 const BONUS_KINDS = {
   xp: { label: 'Lion · Puissance', base: 10, id: 'lion' as BonusId },
-  turbo: { label: 'Guépard · Éclair', base: 20, id: 'guepard' as BonusId },
-  star: { label: 'Faucon · Précision', base: 35, id: 'faucon' as BonusId },
+  turbo: { label: 'Tigre · Éclair', base: 20, id: 'guepard' as BonusId },
+  star: { label: 'Aigle · Précision', base: 35, id: 'faucon' as BonusId },
 } as const;
 type BonusKind = keyof typeof BONUS_KINDS;
 interface Bonus {
@@ -902,7 +902,7 @@ export function MissionsView({
     // runnersRef : classement réel (avant, la closure figée renvoyait toujours #1)
     const myRank =
       runnersRef.current.filter((r) => r.progressKm >= effectiveDistanceKm).length + 1;
-    // Bonus de fin : Éléphant (endurance, selon la distance) et Panthère (dynamisme, si plusieurs bonus pris)
+    // Bonus de fin : Éléphant (endurance, selon la distance) et Loup (dynamisme, si plusieurs bonus pris)
     const pickups = Object.values(bonusLedgerRef.current).reduce((n, e) => n + (e?.count ?? 0), 0);
     const enduranceXp = Math.round(effectiveDistanceKm * 8);
     const dynamismXp = pickups >= 2 ? 15 + 5 * (pickups - 2) : 0;

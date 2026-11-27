@@ -11,11 +11,11 @@ export interface BonusMeta {
 }
 
 export const BONUS_SET: Record<BonusId, BonusMeta> = {
-  guepard: { animal: 'Guépard', capacity: 'Vitesse', color: '#FF9F45', desc: 'Réflexes et enchaînements rapides' },
-  faucon: { animal: 'Faucon', capacity: 'Précision', color: '#5BD6FF', desc: 'Rythme régulier et geste propre' },
+  guepard: { animal: 'Tigre', capacity: 'Vitesse', color: '#FF9F45', desc: 'Réflexes et enchaînements rapides' },
+  faucon: { animal: 'Aigle', capacity: 'Précision', color: '#5BD6FF', desc: 'Rythme régulier et geste propre' },
   lion: { animal: 'Lion', capacity: 'Puissance', color: '#F5C542', desc: 'Défis chrono relevés' },
   elephant: { animal: 'Éléphant', capacity: 'Endurance', color: '#7DDC6B', desc: 'Aller au bout de l’effort' },
-  panthere: { animal: 'Panthère', capacity: 'Dynamisme', color: '#FF4D5E', desc: 'Combos et victoires enchaînées' },
+  panthere: { animal: 'Loup', capacity: 'Dynamisme', color: '#FF4D5E', desc: 'Combos et victoires enchaînées' },
 };
 
 export const BONUS_ORDER: BonusId[] = ['guepard', 'faucon', 'lion', 'elephant', 'panthere'];

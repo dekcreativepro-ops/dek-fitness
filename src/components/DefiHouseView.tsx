@@ -497,7 +497,7 @@ export function DefiHouseView({
     const baseXp = isTournoi ? ch.rewardXp + ch.level * 40 : modeObj.xpReward;
     const newStreak = loadStreak('house') + 1;
     const mult = (prefsRef.current.streak ? streakMultiplier(newStreak) : 1) * (prefsRef.current.hardcore ? 1.25 : 1);
-    // Bonus de fin : Éléphant (endurance, selon les reps) et Panthère (dynamisme : victoires enchaînées, plusieurs défis chrono)
+    // Bonus de fin : Éléphant (endurance, selon les reps) et Loup (dynamisme : victoires enchaînées, plusieurs défis chrono)
     const endXp = 10 + Math.floor(myRepsRef.current / 10) * 5;
     const dynXp = (newStreak >= 2 ? 15 : 0) + ((ledgerRef.current.lion?.count ?? 0) >= 2 ? 15 : 0);
     let led = addBonus(ledgerRef.current, 'elephant', endXp);

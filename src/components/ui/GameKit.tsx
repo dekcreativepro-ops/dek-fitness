@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CaretRight, Lightning, SlidersHorizontal } from '../DekIcons';
 import { LEVEL_COLORS, type GameLevel, type GamePrefs } from '../../utils/gameFx';
 import { Card, StatTiles } from './kit';
+import { BonusIcon } from './BonusIcons';
 import { BONUS_ORDER, BONUS_SET, bonusLevel, bonusMedal, ledgerTotal, type BonusLedger, type BonusMedal } from '../../utils/bonusSet';
 
 /** Halo vert autour de l'écran (portail sur #dek-overlay-root). */
@@ -189,10 +190,10 @@ export function BonusSummary({ ledger }: { ledger: BonusLedger }) {
           return (
             <div key={id} className={`flex items-center gap-3 rounded-[18px] bg-tile px-3 py-2.5 ${entry ? '' : 'opacity-50'}`}>
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-extrabold text-ink"
-                style={{ backgroundColor: entry ? meta.color : '#3A3B42' }}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${entry ? 'text-ink' : 'text-faint'}`}
+                style={{ backgroundColor: entry ? meta.color : '#2E2F35' }}
               >
-                {meta.animal.slice(0, 1)}
+                <BonusIcon id={id} className="h-6 w-6" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[14px] font-bold text-fg">
@@ -221,6 +222,7 @@ export function BonusSummary({ ledger }: { ledger: BonusLedger }) {
           );
         })}
       </div>
+      <p className="text-[10px] font-medium text-faint">Icônes : Game-icons.net (CC BY 3.0)</p>
     </Card>
   );
 }

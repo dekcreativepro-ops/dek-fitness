@@ -197,6 +197,7 @@ function medalElement(score: number, runs: number): HTMLElement {
   const c = medalColor(score);
   const wrap = document.createElement('div');
   wrap.innerHTML = `<div class="dek-medal" title="Meilleur score : ${score} pts (${runs} course${runs > 1 ? 's' : ''})">
+    <svg class="dek-arrows" viewBox="0 0 24 22" width="22" height="20" aria-hidden="true" fill="none" stroke="#C8FF00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3 12 10 19 3"/><path d="M5 11 12 18 19 11"/></svg>
     <svg viewBox="0 0 48 60" width="40" height="50" aria-hidden="true">
       <path d="M14 0 L24 22 L34 0 Z" fill="#C8FF00"/><path d="M14 0 L20 0 L28 20 L24 22Z" fill="#8DB800"/>
       <circle cx="24" cy="36" r="17" fill="${c.rim}"/><circle cx="24" cy="36" r="14" fill="${c.face}"/>

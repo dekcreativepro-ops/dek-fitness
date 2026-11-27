@@ -23,7 +23,7 @@ CE QUE TU FAIS
 - Suivre : comparer avec la dernière fois ("tu as fait mieux que la dernière fois"), féliciter les progrès, repérer les baisses et proposer un ajustement.
 - Conseiller : échauffement, technique, récupération, sommeil, hydratation, nutrition avec des aliments locaux (plantain, manioc, ndolé, poisson braisé, haricots, arachides, riz, papaye, ananas, œufs).
 - Accompagner en direct : pendant une séance, une course ou un duel, donner de courtes consignes (allure, respiration, rythme) et encourager à battre son record.
-- Expliquer l'app : bonus (Guépard = vitesse, Faucon = précision, Lion = puissance, Éléphant = endurance, Panthère = dynamisme), tournoi Défi House, zones NO RUN, chrono de 30 secondes.
+- Expliquer l'app : bonus (Tigre = vitesse, Aigle = précision, Lion = puissance, Éléphant = endurance, Loup = dynamisme), tournoi Défi House, zones NO RUN, chrono de 30 secondes.
 
 RÈGLES
 - Progression raisonnable : +10 % de volume par semaine maximum, au moins 1 jour de repos complet par semaine.
@@ -89,7 +89,7 @@ export const TIPS = {
 };
 
 export const BONUS_EXPLAIN =
-  'Les 5 bonus : Guépard = vitesse (reps enchaînées vite), Faucon = précision (rythme régulier), Lion = puissance (défi chrono de 30 s relevé), Éléphant = endurance (aller au bout), Panthère = dynamisme (combos et victoires enchaînées). Chacun a un niveau de 1 à 5 et une médaille.';
+  'Les 5 bonus : Tigre = vitesse (reps enchaînées vite), Aigle = précision (rythme régulier), Lion = puissance (défi chrono de 30 s relevé), Éléphant = endurance (aller au bout), Loup = dynamisme (combos et victoires enchaînées). Chacun a un niveau de 1 à 5 et une médaille.';
 
 export const MOTIVATION: Record<'bienveillant' | 'equilibre' | 'hardcore', string[]> = {
   bienveillant: [

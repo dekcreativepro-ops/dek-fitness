@@ -108,7 +108,7 @@ export function answerLocal(input: string, ctx: CoachContext, coach: CoachProfil
     text = TIPS.blessure;
     suggestions = ['Échauffement', 'Récupération', 'Mon programme du jour'];
   } else if (has(t, ['bonus', 'guepard', 'faucon', 'lion', 'elephant', 'panthere'])) {
-    text = BONUS_EXPLAIN + '\nAstuce : enchaîne les reps vite (Guépard) puis régulier (Faucon), et relève le chrono de 30 s (Lion).';
+    text = BONUS_EXPLAIN + '\nAstuce : enchaîne les reps vite (Tigre) puis régulier (Aigle), et relève le chrono de 30 s (Lion).';
   } else if (has(t, ['programme', 'seance', 'entrain', 'aujourd', 'quoi faire', 'workout'])) {
     const p = getRecommendedProgram(ctx.goal, Math.max(0, getTierIndex(ctx.tier as never)));
     text = `Pour ton objectif (${GOAL_LABEL[goal]}) et ton niveau ${ctx.tier}, je te propose « ${p.title} » : ${p.durationMin} min, ${p.level}.\nCommence par 5 minutes d’échauffement, garde la technique propre, et note ton ressenti après.`;
@@ -148,7 +148,7 @@ export function answerLocal(input: string, ctx: CoachContext, coach: CoachProfil
   } else if (has(t, ['force', 'muscle', 'pompes', 'squat', 'traction', 'masse'])) {
     text = `${TIPS.force}\n${TIPS.proteines}`;
   } else if (has(t, ['defi house', 'duel', 'tournoi', 'chrono', 'rythme', 'rapidite'])) {
-    text = 'Défi House : enchaîne tes reps à rythme régulier (Faucon), accélère par rafales de 5 (Guépard), relève le défi chrono de 30 s (Lion). Pour prendre un titre du Tournoi, vise le score du champion + 1 et garde de l’énergie pour les 10 dernières secondes.';
+    text = 'Défi House : enchaîne tes reps à rythme régulier (Aigle), accélère par rafales de 5 (Tigre), relève le défi chrono de 30 s (Lion). Pour prendre un titre du Tournoi, vise le score du champion + 1 et garde de l’énergie pour les 10 dernières secondes.';
   } else if (has(t, ['debut', 'commenc', 'novice', 'jamais fait'])) {
     text = TIPS.debutant;
   } else if (has(t, ['salut', 'bonjour', 'hello', 'coucou', 'bonsoir', 'ca va'])) {
