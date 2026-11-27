@@ -28,6 +28,14 @@ const POI_COLOR: unknown[] = [
   '#A1A1AA',
 ];
 
+/** Seuls ces types de lieux sont affichés : carte lisible, pas une forêt de points. */
+const POI_CLASSES = [
+  'hospital', 'pharmacy', 'clinic', 'school', 'college', 'university', 'place_of_worship', 'stadium', 'pitch',
+  'sports_centre', 'swimming', 'park', 'police', 'fire_station', 'townhall', 'bank', 'bus', 'railway', 'airport',
+  'library', 'marketplace', 'supermarket', 'fuel',
+];
+const POI_FILTER = ['all', ['has', 'name'], ['in', ['get', 'class'], ['literal', POI_CLASSES]], ['<=', ['coalesce', ['get', 'rank'], 99], 25]];
+
 /** Rues, eau et parcs éclaircis (le style d'origine les rend quasi noirs sur noir). */
 const BASE_COLORS: Record<string, ['fill-color' | 'line-color', string]> = {
   water: ['fill-color', '#12303F'],
@@ -84,8 +92,8 @@ export function enhanceMapLabels(map: MapLibreMap): void {
     type: 'circle',
     source: vectorSourceId,
     'source-layer': 'poi',
-    minzoom: 14,
-    filter: ['has', 'name'],
+    minzoom: 14.5,
+    filter: POI_FILTER as never,
     paint: {
       'circle-radius': ['interpolate', ['linear'], ['zoom'], 14, 3, 17, 5],
       'circle-color': POI_COLOR as never,
@@ -99,8 +107,8 @@ export function enhanceMapLabels(map: MapLibreMap): void {
     type: 'symbol',
     source: vectorSourceId,
     'source-layer': 'poi',
-    minzoom: 14.6,
-    filter: ['has', 'name'],
+    minzoom: 15.4,
+    filter: POI_FILTER as never,
     layout: {
       'text-field': ['coalesce', ['get', 'name:latin'], ['get', 'name']],
       'text-font': FONT,
@@ -108,6 +116,7 @@ export function enhanceMapLabels(map: MapLibreMap): void {
       'text-anchor': 'top',
       'text-offset': [0, 0.7],
       'text-max-width': 7,
+      'text-optional': true,
       'symbol-sort-key': ['coalesce', ['get', 'rank'], 99],
     },
     paint: {

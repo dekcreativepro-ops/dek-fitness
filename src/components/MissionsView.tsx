@@ -11,8 +11,11 @@ import {
   Compass,
   Lightning,
   Lock,
+  MagnifyingGlass,
   Microphone,
   MicrophoneSlash,
+  Minus,
+  Plus,
   SlidersHorizontal,
   Warning,
 } from './DekIcons';
@@ -28,6 +31,23 @@ import type {
 import { CAMEROON_CITIES, CAMEROON_REGIONS } from '../data/cities';
 import { getTierIndex, TIER_COLORS, TIER_REQUIREMENTS } from '../utils/categorization';
 import { enhanceMapLabels } from '../utils/mapLabels';
+import { searchPlaces, type PlaceResult } from '../utils/placeSearch';
+import { syncRouteMarkers } from '../utils/routeMarkers';
+import {
+  addZoneLabels,
+  addZoneLayers,
+  loadZoneRecords,
+  readPlaceNames,
+  recordRun,
+  saveZoneRecords,
+  syncMedals,
+  updateZoneSource,
+  ZONE_RADIUS,
+  zonesOfRoute,
+  type PlaceName,
+  type ZoneRecords,
+} from '../utils/zones';
+import { dayKey } from '../utils/progression';
 import { generateLoopRoute, type GeneratedRoute } from '../utils/routeGenerator';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { CheckDraw } from './ui/AnimatedIcons';
@@ -143,6 +163,18 @@ export function MissionsView({
   const [checkpointIdx, setCheckpointIdx] = useState(1); // 1..4
   const [cpTimer, setCpTimer] = useState(CP_WINDOW_SEC);
   const [mapNotice, setMapNotice] = useState<string | null>(null);
+  // Zones courues (NO RUN / médailles), repères du tracé et recherche de lieu
+  const [zoneRecords, setZoneRecords] = useState<ZoneRecords>(() => loadZoneRecords());
+  const [mapReady, setMapReady] = useState(false);
+  const [placesVersion, setPlacesVersion] = useState(0);
+  const placesRef = useRef<PlaceName[]>([]);
+  const medalsRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const routeMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const zoneRecordsRef = useRef(zoneRecords);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
+  const [searchState, setSearchState] = useState<'idle' | 'loading' | 'error'>('idle');
   // Résultat figé au moment de l'arrivée (le palier peut changer juste après une promotion)
   const [lastResult, setLastResult] = useState<{ rank: number; km: number; xp: number } | null>(
     null,
@@ -236,6 +268,7 @@ export function MissionsView({
     if (source) {
       source.setData(geojson);
     }
+    routeMarkersRef.current = syncRouteMarkers(map, routeMarkersRef.current, r);
 
     if (lngLatCoords.length >= 2) {
       const start = lngLatCoords[0];
@@ -389,13 +422,32 @@ export function MissionsView({
       }
 
       try {
+        addZoneLayers(map);
         enhanceMapLabels(map);
+        addZoneLabels(map);
       } catch {
         // Les repères sont un plus : la carte reste utilisable sans
       }
+      setMapReady(true);
 
       if (routeRef.current) {
         applyRouteToMap(map, routeRef.current);
+      }
+    });
+
+    // Noms de quartiers pour nommer les zones, lus quand les tuiles sont chargées
+    let lastPlaces = 0;
+    map.on('idle', () => {
+      if (!mapLoadedRef.current) return;
+      try {
+        const found = readPlaceNames(map);
+        if (found.length !== lastPlaces) {
+          lastPlaces = found.length;
+          placesRef.current = found;
+          setPlacesVersion((v) => v + 1);
+        }
+      } catch {
+        // sans noms, les zones restent identifiables par leur statut
       }
     });
 
@@ -416,6 +468,12 @@ export function MissionsView({
       mapLoadedRef.current = false;
       arrowMarkerRef.current?.remove();
       ghostMarkerRef.current?.remove();
+      routeMarkersRef.current.forEach((m) => m.remove());
+      routeMarkersRef.current = [];
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      medalsRef.current.forEach((m) => m.remove());
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      medalsRef.current.clear();
       map.remove();
       mapRef.current = null;
     };
@@ -487,6 +545,58 @@ export function MissionsView({
     }
   }, [myProgressKm, ghostProgressKm, route, effectiveDistanceKm, phase, is3D, gameMode]);
 
+  useEffect(() => {
+    zoneRecordsRef.current = zoneRecords;
+    saveZoneRecords(zoneRecords);
+  }, [zoneRecords]);
+
+  // Zones « NO RUN » / courues et médailles autour du point de départ
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    updateZoneSource(map, coords[0], coords[1], zoneRecords, placesRef.current);
+    syncMedals(map, medalsRef.current, zoneRecords, coords[0], coords[1]);
+  }, [coords, zoneRecords, mapReady, placesVersion]);
+
+  // Recherche de lieu (envoi différé pour ne pas interroger le service à chaque lettre)
+  useEffect(() => {
+    if (!searchOpen) return;
+    const q = searchQuery.trim();
+    if (q.length < 3) return;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      setSearchState('loading');
+      searchPlaces(q, ctrl.signal)
+        .then((r) => {
+          setSearchResults(r);
+          setSearchState('idle');
+        })
+        .catch((e: unknown) => {
+          if ((e as { name?: string })?.name !== 'AbortError') setSearchState('error');
+        });
+    }, 500);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [searchQuery, searchOpen]);
+
+  const pickPlace = (r: PlaceResult) => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setCoords([r.lat, r.lng]);
+    flashNotice(`Départ : ${r.label.split(',')[0]}`);
+  };
+
+  /** Mémorise les zones traversées par le tracé avec le score de la course. */
+  const recordZonesRun = (score: number) => {
+    const ids = zonesOfRoute(routeRef.current?.coordinates ?? [coords]);
+    const fresh = ids.filter((id) => !zoneRecordsRef.current[id]).length;
+    setZoneRecords((prev) => recordRun(prev, ids, score, dayKey()));
+    flashNotice(fresh > 0 ? `${fresh} nouvelle${fresh > 1 ? 's' : ''} zone${fresh > 1 ? 's' : ''} courue${fresh > 1 ? 's' : ''} · médaille ${score} pts` : `Score de zone : ${score} pts`);
+  };
+
   const toggle3D = () => {
     const next = !is3D;
     setIs3D(next);
@@ -504,6 +614,7 @@ export function MissionsView({
       runnersRef.current.filter((r) => r.progressKm >= effectiveDistanceKm).length + 1;
     const xpEarned = tierObj.xpReward + (gameMode === 'survie_checkpoint' ? 100 : 0);
     setLastResult({ rank: myRank, km: effectiveDistanceKm, xp: xpEarned });
+    recordZonesRun(xpEarned + Math.max(0, 5 - myRank) * 10);
 
     callbacksRef.current.onMissionComplete(
       xpEarned,
@@ -782,6 +893,25 @@ export function MissionsView({
   const ghostDeltaMeters = Math.round((myProgressKm - ghostProgressKm) * 1000);
 
 
+  // Guidage tournant par tournant : prochaine consigne du tracé, selon la distance déjà parcourue
+  const routeTotalM = (route?.distanceKm ?? effectiveDistanceKm) * 1000;
+  const progressM = progressRatio * routeTotalM;
+  const upcoming = route?.steps.find((st) => st.atM > progressM + 5);
+  const toNextM = upcoming ? Math.round(upcoming.atM - progressM) : 0;
+  const nextStepLabel = upcoming
+    ? toNextM <= 30
+      ? `Maintenant · ${upcoming.text}`
+      : `Dans ${Math.round(toNextM / 10) * 10} m · ${upcoming.text}`
+    : route && route.steps.length > 0
+      ? 'Dernière ligne droite • Garde l’allure'
+      : 'Suis le tracé vert • Garde l’allure';
+  const speedKmh = 10.8 * discObj.speedMult;
+  const remainingKm = Math.max(0, effectiveDistanceKm - myProgressKm);
+  const etaMin = Math.max(1, Math.round((remainingKm / speedKmh) * 60));
+  const zonesRun = Object.keys(zoneRecords).length;
+  const bestZoneScore = Object.values(zoneRecords).reduce((m, z) => Math.max(m, z.best), 0);
+  const zonesTotal = (2 * ZONE_RADIUS + 1) ** 2;
+
   const guidanceLabel = mapNotice
     ? mapNotice
     : phase === 'running'
@@ -793,9 +923,7 @@ export function MissionsView({
             : `${ghostDeltaMeters} m derrière le Fantôme`
           : gameMode === 'relais_escouade'
             ? 'Relais #2 en cours • Passe le témoin à Estelle !'
-            : progressRatio < 0.5
-              ? 'Dans 250 m • Tourne à droite'
-              : 'Dernière ligne droite • Garde l’allure'
+            : nextStepLabel
       : gameMode === 'conquete_territoire'
         ? `${selectedZone.name} • Détenu par ${selectedZone.ownerClub}`
         : `Boucle 3D ${effectiveDistanceKm} km • ${discObj.label}`;
@@ -805,6 +933,38 @@ export function MissionsView({
   const glassBtn = 'bg-black/50 text-fg backdrop-blur-md';
   const glassPill =
     'flex h-10 items-center gap-2 rounded-full bg-black/50 px-4 text-[13px] font-semibold text-fg backdrop-blur-md';
+
+  const queryReady = searchQuery.trim().length >= 3;
+  const searchBottomSheet = (
+    <BottomSheet open={searchOpen} onClose={() => setSearchOpen(false)} title="Rechercher un lieu">
+      <input
+        type="search"
+        autoFocus
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Quartier, rue, stade, école… (Cameroun)"
+        className="h-12 w-full rounded-full bg-tile px-5 text-[15px] font-medium text-fg outline-none placeholder:text-faint"
+      />
+      <div className="mt-3 flex flex-col gap-1.5">
+        {queryReady && searchState === 'loading' && <div className="px-2 py-3 text-[13px] text-mute">Recherche…</div>}
+        {queryReady && searchState === 'error' && <div className="px-2 py-3 text-[13px] text-danger">Recherche indisponible, réessaie.</div>}
+        {queryReady && searchState === 'idle' && searchResults.length === 0 && (
+          <div className="px-2 py-3 text-[13px] text-mute">Aucun lieu trouvé.</div>
+        )}
+        {(queryReady ? searchResults : []).map((r) => (
+          <button
+            key={`${r.lat}-${r.lng}`}
+            type="button"
+            onClick={() => pickPlace(r)}
+            className="flex items-center gap-3 rounded-[18px] bg-tile px-4 py-3 text-left transition active:scale-[0.98]"
+          >
+            <MagnifyingGlass className="h-4 w-4 shrink-0 text-lime" />
+            <span className="text-[14px] font-medium leading-5 text-fg">{r.label}</span>
+          </button>
+        ))}
+      </div>
+    </BottomSheet>
+  );
 
   const voiceBottomSheet = (
     <BottomSheet
@@ -1015,6 +1175,32 @@ export function MissionsView({
           </div>
         </div>
 
+        {/* Légende des zones */}
+        <div className="pointer-events-none absolute left-3 top-14 z-20 flex flex-col gap-1.5">
+          <span className="pointer-events-auto inline-flex h-7 items-center gap-1.5 rounded-full bg-ink/80 px-3 text-[11px] font-semibold text-mute backdrop-blur-md">
+            <span className="h-2.5 w-2.5 rounded-[3px] border border-dashed border-faint bg-black/60" /> NO RUN
+            <span className="ml-1 h-2.5 w-2.5 rounded-[3px] border border-lime bg-lime/25" /> Courue
+            <span className="num ml-1 text-fg">
+              {zonesRun}/{zonesTotal}
+            </span>
+          </span>
+          {bestZoneScore > 0 && (
+            <span className="pointer-events-auto inline-flex h-7 items-center rounded-full bg-ink/80 px-3 text-[11px] font-semibold text-lime backdrop-blur-md">
+              Record de zone · {bestZoneScore} pts
+            </span>
+          )}
+        </div>
+
+        {/* Zoom */}
+        <div className="absolute left-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-2">
+          <IconButton label="Zoomer" onClick={() => mapRef.current?.zoomIn({ duration: 250 })} size={40} className={glassBtn}>
+            <Plus className="h-5 w-5" />
+          </IconButton>
+          <IconButton label="Dézoomer" onClick={() => mapRef.current?.zoomOut({ duration: 250 })} size={40} className={glassBtn}>
+            <Minus className="h-5 w-5" />
+          </IconButton>
+        </div>
+
         {/* Contrôles flottants */}
         <div className="absolute right-3 top-3 z-20 flex flex-col gap-2">
           <IconButton label={is3D ? 'Passer en 2D' : 'Passer en 3D'} onClick={toggle3D} size={40} className={glassBtn}>
@@ -1059,6 +1245,10 @@ export function MissionsView({
               ))}
             </select>
 
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Rechercher un lieu" className={glassPill}>
+              <MagnifyingGlass className="h-4 w-4" />
+            </button>
+
             <button type="button" onClick={() => setVoiceSheetOpen(true)} className={glassPill}>
               <Microphone className="h-4 w-4" /> Vocal ({runners.length + 1})
             </button>
@@ -1087,6 +1277,10 @@ export function MissionsView({
                 </span>
               </div>
               <ProgressBar value={progressRatio * 100} className="mt-3" />
+              <div className="mt-2 flex justify-between text-[12px] font-medium text-mute">
+                <span>Reste {remainingKm.toFixed(1)} km</span>
+                <span>Arrivée dans ~{etaMin} min</span>
+              </div>
               <div className="mt-3 grid grid-cols-4 gap-1 text-center">
                 <div>
                   <div className="text-[12px] font-medium text-mute">Temps</div>
@@ -1445,6 +1639,7 @@ export function MissionsView({
       </div>
 
       {voiceBottomSheet}
+      {searchBottomSheet}
       {detailsBottomSheet}
       {lockedSheet}
     </div>

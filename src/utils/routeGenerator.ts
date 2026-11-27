@@ -1,8 +1,57 @@
+/** Consigne de guidage : se déclenche à `atM` mètres du départ le long du tracé. */
+export interface RouteStep {
+  atM: number;
+  text: string;
+}
+
 export interface GeneratedRoute {
   coordinates: [number, number][]; // [lat, lng]
   distanceKm: number;
   source: 'osrm' | 'fallback';
   safetyScore: number;
+  steps: RouteStep[];
+}
+
+interface OsrmStep {
+  distance: number;
+  name?: string;
+  maneuver: { type: string; modifier?: string };
+}
+
+const MODIFIER_FR: Record<string, string> = {
+  left: 'Tourne à gauche',
+  right: 'Tourne à droite',
+  'slight left': 'Tourne légèrement à gauche',
+  'slight right': 'Tourne légèrement à droite',
+  'sharp left': 'Tourne franchement à gauche',
+  'sharp right': 'Tourne franchement à droite',
+  straight: 'Continue tout droit',
+  uturn: 'Fais demi-tour',
+};
+
+function stepText(step: OsrmStep): string | null {
+  const { type, modifier } = step.maneuver;
+  if (type === 'depart' || type === 'arrive') return null;
+  const street = step.name ? ` sur ${step.name}` : '';
+  if (type === 'roundabout' || type === 'rotary' || type === 'roundabout turn') return `Au rond-point, prends la sortie${street}`;
+  const base = (modifier && MODIFIER_FR[modifier]) || 'Continue';
+  return `${base}${street}`;
+}
+
+/** Transforme les étapes OSRM en consignes à distance cumulée (continuations tout droit ignorées). */
+function buildSteps(legs: { steps?: OsrmStep[] }[]): RouteStep[] {
+  const out: RouteStep[] = [];
+  let cum = 0;
+  for (const leg of legs) {
+    for (const step of leg.steps ?? []) {
+      const text = stepText(step);
+      const straightContinue =
+        (step.maneuver.type === 'continue' || step.maneuver.type === 'new name') && step.maneuver.modifier === 'straight';
+      if (text && !straightContinue && cum > 0) out.push({ atM: cum, text });
+      cum += step.distance;
+    }
+  }
+  return out;
 }
 
 function offsetLatLng(lat: number, lng: number, distKm: number, bearingDeg: number): [number, number] {
@@ -69,7 +118,7 @@ export async function generateLoopRoute(
   ];
 
   const coordStr = waypoints.map(([la, ln]) => `${ln.toFixed(5)},${la.toFixed(5)}`).join(';');
-  const url = `https://router.project-osrm.org/route/v1/foot/${coordStr}?overview=full&geometries=geojson`;
+  const url = `https://router.project-osrm.org/route/v1/foot/${coordStr}?overview=full&geometries=geojson&steps=true`;
 
   try {
     const controller = new AbortController();
@@ -92,6 +141,7 @@ export async function generateLoopRoute(
       distanceKm: distKm,
       source: 'osrm',
       safetyScore: 92 + (seedAngle % 7),
+      steps: buildSteps(route.legs ?? []),
     };
   } catch {
     return {
@@ -99,6 +149,7 @@ export async function generateLoopRoute(
       distanceKm: targetKm,
       source: 'fallback',
       safetyScore: 95,
+      steps: [],
     };
   }
 }
