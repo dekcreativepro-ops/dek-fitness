@@ -36,6 +36,8 @@ import { CAMEROON_CITIES, CAMEROON_REGIONS } from '../data/cities';
 import { getTierIndex, TIER_COLORS, TIER_REQUIREMENTS } from '../utils/categorization';
 import { enhanceMapLabels } from '../utils/mapLabels';
 import { say } from '../utils/gameVoice';
+import { addBonus, ledgerTotal, type BonusId, type BonusLedger } from '../utils/bonusSet';
+import { BonusSummary } from './ui/GameKit';
 import { searchPlaces, type PlaceResult } from '../utils/placeSearch';
 import { syncRouteMarkers } from '../utils/routeMarkers';
 import {
@@ -132,9 +134,9 @@ const MAP_TOGGLES: { key: Exclude<keyof MapOpts, 'detail'>; label: string; hint:
 /** Bonus de jeu : chrono de 30 s pour pousser tes limites ; le temps restant s'ajoute à l'XP du bonus. */
 const BONUS_LIMIT_SEC = 30;
 const BONUS_KINDS = {
-  xp: { label: 'Bonus', base: 10 },
-  turbo: { label: 'Turbo', base: 20 },
-  star: { label: 'Étoile', base: 35 },
+  xp: { label: 'Lion · Puissance', base: 10, id: 'lion' as BonusId },
+  turbo: { label: 'Guépard · Éclair', base: 20, id: 'guepard' as BonusId },
+  star: { label: 'Faucon · Précision', base: 35, id: 'faucon' as BonusId },
 } as const;
 type BonusKind = keyof typeof BONUS_KINDS;
 interface Bonus {
@@ -243,6 +245,8 @@ export function MissionsView({
   const approachedRef = useRef<Set<number>>(new Set());
   const [bonuses, setBonuses] = useState<Bonus[]>([]);
   const [bonusXp, setBonusXp] = useState(0);
+  const bonusLedgerRef = useRef<BonusLedger>({});
+  const [finalLedger, setFinalLedger] = useState<BonusLedger | null>(null);
   const [nowMs, setNowMs] = useState(0);
   const bonusesRef = useRef<Bonus[]>([]);
   const bonusSeqRef = useRef(0);
@@ -784,6 +788,7 @@ export function MissionsView({
     setBonuses([...bonusesRef.current]);
     lastBonusEndRef.current = Date.now();
     bonusXpRef.current += gain;
+    bonusLedgerRef.current = addBonus(bonusLedgerRef.current, BONUS_KINDS[b.kind].id, gain);
     setBonusXp(bonusXpRef.current);
     playHit();
     say('bonus', 'hype', mapOptsRef.current.voice);
@@ -889,7 +894,14 @@ export function MissionsView({
     // runnersRef : classement réel (avant, la closure figée renvoyait toujours #1)
     const myRank =
       runnersRef.current.filter((r) => r.progressKm >= effectiveDistanceKm).length + 1;
-    const xpEarned = tierObj.xpReward + (gameMode === 'survie_checkpoint' ? 100 : 0) + bonusXpRef.current;
+    // Bonus de fin : Éléphant (endurance, selon la distance) et Panthère (dynamisme, si plusieurs bonus pris)
+    const pickups = Object.values(bonusLedgerRef.current).reduce((n, e) => n + (e?.count ?? 0), 0);
+    const enduranceXp = Math.round(effectiveDistanceKm * 8);
+    const dynamismXp = pickups >= 2 ? 15 + 5 * (pickups - 2) : 0;
+    let ledger = addBonus(bonusLedgerRef.current, 'elephant', enduranceXp);
+    if (dynamismXp > 0) ledger = addBonus(ledger, 'panthere', dynamismXp);
+    setFinalLedger(ledger);
+    const xpEarned = tierObj.xpReward + (gameMode === 'survie_checkpoint' ? 100 : 0) + ledgerTotal(ledger);
     clearBonuses();
     setLastResult({ rank: myRank, km: effectiveDistanceKm, xp: xpEarned });
     recordZonesRun(xpEarned + Math.max(0, 5 - myRank) * 10);
@@ -1107,6 +1119,8 @@ export function MissionsView({
   };
 
   const resetRunRefs = () => {
+    bonusLedgerRef.current = {};
+    setFinalLedger(null);
     finishAlertRef.current = false;
     approachedRef.current.clear();
     bonusXpRef.current = 0;
@@ -1847,6 +1861,8 @@ export function MissionsView({
           <p className="text-[13px] font-medium text-mute">Génération du parcours sur les vraies rues…</p>
         )}
       </Card>
+
+      {phase === 'completed' && finalLedger && <BonusSummary ledger={finalLedger} />}
 
       {/* Bloc métriques */}
       <Card className="space-y-4">

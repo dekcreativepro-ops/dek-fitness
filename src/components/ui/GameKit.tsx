@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CaretRight, Lightning, SlidersHorizontal } from '../DekIcons';
 import { LEVEL_COLORS, type GameLevel, type GamePrefs } from '../../utils/gameFx';
 import { Card, StatTiles } from './kit';
+import { BONUS_ORDER, BONUS_SET, bonusLevel, bonusMedal, ledgerTotal, type BonusLedger, type BonusMedal } from '../../utils/bonusSet';
 
 /** Halo vert autour de l'écran (portail sur #dek-overlay-root). */
 export function AlertGlow({ glowKey, glowOn }: { glowKey: number; glowOn: boolean }) {
@@ -162,6 +163,64 @@ export function GameOptionsCard({
           </motion.div>
         )}
       </AnimatePresence>
+    </Card>
+  );
+}
+
+const MEDAL_COLORS: Record<BonusMedal, string> = { bronze: '#D58A4A', argent: '#D5DAE3', or: '#F5C542' };
+
+/** Fin de partie : les 5 bonus avec animal, capacité, niveau et médaille ; ceux non gagnés restent grisés. */
+export function BonusSummary({ ledger }: { ledger: BonusLedger }) {
+  const total = ledgerTotal(ledger);
+  return (
+    <Card className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[12px] font-semibold text-mute">Fin de partie</div>
+          <div className="text-[17px] font-bold leading-6 text-fg">Bonus ramassés</div>
+        </div>
+        <span className="num rounded-full bg-lime px-3 py-1 text-[14px] font-extrabold text-on-lime">+{total} XP</span>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {BONUS_ORDER.map((id) => {
+          const meta = BONUS_SET[id];
+          const entry = ledger[id];
+          const level = entry ? bonusLevel(entry.xp) : 0;
+          return (
+            <div key={id} className={`flex items-center gap-3 rounded-[18px] bg-tile px-3 py-2.5 ${entry ? '' : 'opacity-50'}`}>
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-extrabold text-ink"
+                style={{ backgroundColor: entry ? meta.color : '#3A3B42' }}
+              >
+                {meta.animal.slice(0, 1)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14px] font-bold text-fg">
+                  {meta.animal} · {meta.capacity}
+                </div>
+                <div className="truncate text-[12px] font-medium text-mute">
+                  {entry ? `${entry.count} ramassé${entry.count > 1 ? 's' : ''} · niveau ${level}/5` : `Non débloqué · ${meta.desc}`}
+                </div>
+                {entry && (
+                  <div className="mt-1 flex gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <span key={n} className="h-1.5 w-5 rounded-full" style={{ backgroundColor: n <= level ? meta.color : '#3A3B42' }} />
+                    ))}
+                  </div>
+                )}
+              </div>
+              {entry && (
+                <div className="shrink-0 text-right">
+                  <div className="num text-[14px] font-extrabold text-lime">+{entry.xp}</div>
+                  <div className="text-[11px] font-bold" style={{ color: MEDAL_COLORS[bonusMedal(entry.xp)] }}>
+                    {bonusMedal(entry.xp)}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </Card>
   );
 }

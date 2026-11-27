@@ -22,6 +22,8 @@ import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
 import { levelFromScore, loadGameRecord, loadStreak, saveGameRecord, saveStreak, streakMultiplier, vibrate } from '../utils/gameFx';
 import { HouseTournamentBoard } from './HouseTournamentBoard';
 import { say } from '../utils/gameVoice';
+import { addBonus, ledgerTotal, type BonusId, type BonusLedger } from '../utils/bonusSet';
+import { BonusSummary } from './ui/GameKit';
 import { loadChallenges, winChallenge, type HouseChallenge } from '../utils/houseTournament';
 
 interface DefiHouseViewProps {
@@ -266,6 +268,12 @@ export function DefiHouseView({
   const sinceRhythmRef = useRef(5);
   const skillXpRef = useRef(0);
   const [skillXp, setSkillXp] = useState(0);
+  const ledgerRef = useRef<BonusLedger>({});
+  const [ledger, setLedger] = useState<BonusLedger>({});
+  const addLedger = (id: BonusId, xp: number) => {
+    ledgerRef.current = addBonus(ledgerRef.current, id, xp);
+    setLedger(ledgerRef.current);
+  };
   const [speedStreak, setSpeedStreak] = useState(0);
   const [recordTick, setRecordTick] = useState(0);
   const adaptiveBest = prefs.adaptive ? (loadGameRecord(`house:${gameMode}:${exercise}`)?.best ?? 0) : 0;
@@ -282,6 +290,7 @@ export function DefiHouseView({
       spawnPopup(`Bonus +${xp} XP`, 'opp');
       if (prefs.alerts) vibrate(60);
       say('bonus', prefs.hardcore ? 'hardcore' : 'hype', prefs.voice);
+      addLedger('lion', xp);
     },
     onMiss: () => spawnPopup('Bonus raté', 'me'),
     onNear: () => alert('near'),
@@ -368,8 +377,9 @@ export function DefiHouseView({
       const arr = repTimesRef.current;
       arr.push(t);
       if (arr.length > 6) arr.shift();
-      const award = (label: string, xp: number) => {
+      const award = (label: string, xp: number, id: BonusId) => {
         skillXpRef.current += xp;
+        addLedger(id, xp);
         setSkillXp(skillXpRef.current);
         spawnPopup(`${label} +${xp} XP`, 'opp');
         if (prefsRef.current.alerts) vibrate(40);
@@ -378,7 +388,7 @@ export function DefiHouseView({
       if (gap > 0 && gap <= 1400) {
         speedStreakRef.current += 1;
         if (speedStreakRef.current % 5 === 0) {
-          award('Rapidité', 10);
+          award('Rapidité', 10, 'guepard');
           say('speed', 'hype', prefsRef.current.voice);
         }
       } else if (gap > 3000) {
@@ -391,7 +401,7 @@ export function DefiHouseView({
         const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
         if (mean >= 700 && mean <= 3500 && gaps.every((g) => Math.abs(g - mean) <= mean * 0.25)) {
           sinceRhythmRef.current = 0;
-          award('Rythme parfait', 12);
+          award('Rythme parfait', 12, 'faucon');
           say('rhythm', 'hype', prefsRef.current.voice);
         }
       }
@@ -482,13 +492,20 @@ export function DefiHouseView({
     const baseXp = isTournoi ? ch.rewardXp + ch.level * 40 : modeObj.xpReward;
     const newStreak = loadStreak('house') + 1;
     const mult = (prefsRef.current.streak ? streakMultiplier(newStreak) : 1) * (prefsRef.current.hardcore ? 1.25 : 1);
-    const totalXp = Math.round((baseXp + info.getBonusXp() + skillXpRef.current) * mult);
+    // Bonus de fin : Éléphant (endurance, selon les reps) et Panthère (dynamisme : victoires enchaînées, plusieurs défis chrono)
+    const endXp = 10 + Math.floor(myRepsRef.current / 10) * 5;
+    const dynXp = (newStreak >= 2 ? 15 : 0) + ((ledgerRef.current.lion?.count ?? 0) >= 2 ? 15 : 0);
+    let led = addBonus(ledgerRef.current, 'elephant', endXp);
+    if (dynXp > 0) led = addBonus(led, 'panthere', dynXp);
+    ledgerRef.current = led;
+    const totalXp = Math.round((baseXp + info.getBonusXp() + skillXpRef.current + endXp + dynXp) * mult);
     const label = isTournoi ? `Tournoi Défi House · ${ch.zone}` : modeObj.label;
     info.onWinDuel(totalXp, exLabel, myRepsRef.current, label);
     say(isTournoi ? 'title' : 'victory', prefsRef.current.hardcore ? 'hardcore' : 'hype', prefsRef.current.voice);
     saveGameRecord(`house:${info.gameMode}:${info.exercise}`, myRepsRef.current);
     saveStreak('house', newStreak);
     window.setTimeout(() => {
+      setLedger(ledgerRef.current);
       setRecordTick((t) => t + 1);
       setStreak(newStreak);
       if (isTournoi) setChallenges((list) => winChallenge(list, ch.id, myRepsRef.current, 'Toi'));
@@ -852,6 +869,8 @@ export function DefiHouseView({
     speedStreakRef.current = 0;
     sinceRhythmRef.current = 5;
     skillXpRef.current = 0;
+    ledgerRef.current = {};
+    setLedger({});
     setSkillXp(0);
     setSpeedStreak(0);
     updateCue('C’est parti !');
@@ -1174,9 +1193,9 @@ export function DefiHouseView({
                   <p className="mt-1 text-[13px] font-medium">
                     {endReason || `${myReps} ${activeEx.label}`} •{' '}
                     <strong className="font-bold">
-                      +{Math.round(((gameMode === 'tournoi' && activeChallenge ? activeChallenge.rewardXp + activeChallenge.level * 40 : activeMode.xpReward) + chrono.totalXp + skillXp) * (prefs.streak ? streakMultiplier(streak) : 1) * (prefs.hardcore ? 1.25 : 1))} XP
+                      +{Math.round(((gameMode === 'tournoi' && activeChallenge ? activeChallenge.rewardXp + activeChallenge.level * 40 : activeMode.xpReward) + ledgerTotal(ledger)) * (prefs.streak ? streakMultiplier(streak) : 1) * (prefs.hardcore ? 1.25 : 1))} XP
                     </strong>
-                    {(chrono.totalXp > 0 || skillXp > 0) && ` (dont ${chrono.totalXp + skillXp} de bonus)`}
+                    {ledgerTotal(ledger) > 0 && ` (dont ${ledgerTotal(ledger)} de bonus)`}
                   </p>
                   <div className="mt-4">
                     <Button variant="secondary" fullWidth onClick={startDuel}>
@@ -1256,6 +1275,8 @@ export function DefiHouseView({
           Duel ({activeMode.label}) enregistré sur ta Carte Athlète.
         </p>
       )}
+
+      {matchState === 'win' && <BonusSummary ledger={ledger} />}
 
       <GameLegend
         title={`${activeMode.label} · ${activeEx.label}`}
