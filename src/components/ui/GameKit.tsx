@@ -80,9 +80,7 @@ export function BestMedal({ score, goal, unit, runs }: { score: number | null; g
   return (
     <div className="flex items-center gap-3 rounded-[18px] bg-tile px-4 py-3">
       <div className="dek-medal">
-        <svg viewBox="0 0 48 60" width="34" height="42" aria-hidden="true">
-          <path d="M14 0 L24 22 L34 0 Z" fill="#C8FF00" />
-          <path d="M14 0 L20 0 L28 20 L24 22Z" fill="#8DB800" />
+        <svg viewBox="4 16 40 40" width="34" height="34" aria-hidden="true">
           <circle cx="24" cy="36" r="17" fill={c.rim} />
           <circle cx="24" cy="36" r="14" fill={c.face} />
           <path d="M24 26 l3 6.4 7 .8-5.2 4.8 1.4 6.9-6.2-3.5-6.2 3.5 1.4-6.9-5.2-4.8 7-.8z" fill={c.rim} opacity=".85" />
