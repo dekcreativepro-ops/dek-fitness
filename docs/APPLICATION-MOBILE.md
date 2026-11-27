@@ -3,7 +3,7 @@
 L'app web est emballée avec **Capacitor** : les dossiers `android/` et `ios/` sont de vrais projets natifs qui chargent le build web (`dist/`). Identifiant : `com.dek.fitness` (`capacitor.config.ts`, à changer avant publication si besoin).
 
 ## Android (APK)
-**Sans rien installer** (après avoir activé les workflows : voir `docs/github-workflows/LISEZ-MOI.md`) : sur GitHub, onglet *Actions* → « Build Android APK » → *Run workflow*. À la fin, télécharge l'artefact `dek-fitness-debug-apk` (fichier `app-debug.apk`) et installe-le sur ton téléphone (autoriser les sources inconnues). Ce workflow se lance aussi à chaque push.
+**Sans rien installer** : sur GitHub, onglet *Actions* → « Build Android APK » → *Run workflow*. À la fin, télécharge l'artefact `dek-fitness-debug-apk` (fichier `app-debug.apk`) et installe-le sur ton téléphone (autoriser les sources inconnues). Ce workflow se lance aussi à chaque push.
 
 **En local** (il faut Android Studio, qui contient le SDK et Java) :
 ```powershell
@@ -24,3 +24,10 @@ Apple impose un **Mac avec Xcode** et un compte **Apple Developer** (99 $/an) po
 - **Serveurs** : `VITE_PAYMENT_API_URL` et `VITE_COACH_API_URL` doivent pointer vers des serveurs hébergés en HTTPS (pas `localhost`), à renseigner comme secrets GitHub pour le build.
 - **Test sur vrais téléphones** : GPS en mouvement, caméra du Défi House, vibration, mode paysage de la carte.
 - **Boutiques** : voir « Règles des boutiques » dans `docs/ABONNEMENT.md`.
+
+## Compiler l'APK sur ton PC (sans GitHub)
+Java 21 et l'Android SDK sont installés dans `C:\Users\DEK Creative Pro\dek-tools` (raccourci `C:\dektools`). Le projet est aussi accessible par `C:\dekapp` (chemin court, nécessaire pour Gradle).
+```powershell
+$env:JAVA_HOME = 'C:\dektools\jdk21'; $env:ANDROID_HOME = 'C:\dektools\android-sdk'; cd C:\dekapp; npm run cap:sync; cd android; .\gradlew.bat assembleDebug
+```
+L'APK sort dans `android\app\build\outputs\apk\debug\app-debug.apk`. La première compilation prend environ 12 minutes, les suivantes moins.

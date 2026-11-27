@@ -24,3 +24,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# APK compilés en local
+releases/
+android/local.properties
