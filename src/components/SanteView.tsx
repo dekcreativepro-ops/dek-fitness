@@ -12,6 +12,9 @@ import { getTierIndex, TIER_COLORS } from '../utils/categorization';
 import { usePhoto } from '../utils/usePhoto';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { LEVEL_COLORS, levelFromScore } from '../utils/gameFx';
+import { SPORTS, SPORT_GROUPS, sportMeta, type SportGroup } from '../data/sports';
+import { Slot3D } from './ui/Slot3D';
+import { HandBall, Sword, Swim, Trophy, Volley, Yoga } from './DekIcons';
 
 interface SanteViewProps {
   onJoinSante: (matchTitle: string) => void;
@@ -56,6 +59,28 @@ function formatClock(totalSec: number) {
 }
 
 /** Photo d'un match : basket ou football (le hook vit ici pour pouvoir servir dans une liste). */
+const GROUP_ICON: Record<SportGroup, React.ReactNode> = {
+  Foot: null,
+  Basket: null,
+  Volley: <Volley />,
+  Hand: <HandBall />,
+  Padel: <Trophy />,
+  Natation: <Swim />,
+  Combat: <Sword />,
+  'Bien-être': <Yoga />,
+};
+
+function SportBanner({ sport }: { sport: SanteMatch['sport'] }) {
+  const meta = sportMeta(sport);
+  if (meta.group === 'Foot' || meta.group === 'Basket') return <SportPhoto basket={meta.group === 'Basket'} />;
+  return (
+    <div className="relative h-full w-full">
+      <Slot3D name={`sport-${meta.slug}`} icon={GROUP_ICON[meta.group]} className="h-full w-full" rounded="rounded-none" />
+      <span className="absolute bottom-2 left-3 rounded-full bg-black/55 px-3 py-1 text-[12px] font-bold text-lime">{meta.label}</span>
+    </div>
+  );
+}
+
 function SportPhoto({ basket }: { basket: boolean }) {
   const src = usePhoto(basket ? 'basket' : 'matchfoot', 'wide');
   return <img src={src} alt="" loading="lazy" draggable={false} className="h-full w-full select-none object-cover" />;
@@ -63,12 +88,12 @@ function SportPhoto({ basket }: { basket: boolean }) {
 
 /** Légende d'un match : difficulté selon le niveau et la taille du terrain, description courte. */
 function matchInfo(m: SanteMatch) {
-  const size = m.sport.includes('11v11') ? 11 : m.sport.includes('7v7') ? 7 : m.sport.includes('5v5') ? 5 : 3;
+  const meta = sportMeta(m.sport);
   const base = m.level === 'Intensif' ? 6 : m.level === 'Compétitif' ? 4 : 2;
-  const score = base + (size >= 11 ? 3 : size >= 7 ? 1.5 : 0.5);
+  const score = base + meta.intensity;
   const level = levelFromScore(score, [2.5, 4.5, 6.5]);
   const left = Math.max(0, m.playersMax - m.playersJoined);
-  const description = `${m.sport} ${m.level.toLowerCase()} · ${m.playersMax} joueurs sur ${size >= 11 ? 'grand terrain' : size >= 7 ? 'terrain moyen' : 'terrain réduit'} · ${left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'complet'}.`;
+  const description = `${m.sport} ${m.level.toLowerCase()} · ${m.playersMax} ${meta.unit} · ${meta.place} · ${left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'complet'}.`;
   return { level, description };
 }
 
@@ -114,6 +139,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState('');
   const [sport, setSport] = useState<SanteMatch['sport']>('Football 7v7');
+  const [sportGroup, setSportGroup] = useState<'Tous' | SportGroup>('Tous');
   const [location, setLocation] = useState('');
   const [time, setTime] = useState('19h00');
   const [matchDay, setMatchDay] = useState('Ce soir');
@@ -289,12 +315,6 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
   const handleCreateMatch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !location.trim()) return;
-    const maxMap: Record<SanteMatch['sport'], number> = {
-      'Football 5v5': 10,
-      'Football 7v7': 14,
-      'Football 11v11': 22,
-      'Basket 3v3': 6,
-    };
     const created: SanteMatch = {
       id: 's_' + Date.now(),
       title: title.trim(),
@@ -306,7 +326,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
       teamA: teamA.trim() || 'Équipe A',
       teamB: teamB.trim() || 'Équipe B',
       playersJoined: 1,
-      playersMax: maxMap[sport],
+      playersMax: sportMeta(sport).max,
       level: 'Compétitif',
       feeLabel: '1 500 F / joueur',
       isJoined: true,
@@ -341,10 +361,11 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
             onChange={(e) => setSport(e.target.value as SanteMatch['sport'])}
             className={FIELD}
           >
-            <option value="Football 5v5">Foot 5v5</option>
-            <option value="Football 7v7">Foot 7v7</option>
-            <option value="Football 11v11">Foot 11v11</option>
-            <option value="Basket 3v3">Basket 3v3</option>
+            {SPORTS.map((sp) => (
+              <option key={sp.id} value={sp.id}>
+                {sp.label}
+              </option>
+            ))}
           </select>
           <select value={matchDay} onChange={(e) => setMatchDay(e.target.value)} className={FIELD} aria-label="Jour du match">
             {['Ce soir', 'Demain', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((d) => (
@@ -909,11 +930,32 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
       {/* ================== ONGLET 2 : MATCHS LA SANTÉ ================== */}
       {subTab === 'matchs' && (
         <div className="space-y-4">
-          {matches.map((m) => (
+          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Discipline">
+            {SPORT_GROUPS.map((g) => (
+              <button
+                key={g}
+                type="button"
+                role="tab"
+                aria-selected={sportGroup === g}
+                onClick={() => setSportGroup(g)}
+                className={`h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${sportGroup === g ? 'bg-lime text-on-lime' : 'bg-tile text-mute'}`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+          {matches.filter((m) => sportGroup === 'Tous' || sportMeta(m.sport).group === sportGroup).length === 0 && (
+            <p className="rounded-[20px] bg-card px-4 py-6 text-center text-[13px] font-medium text-mute">
+              Aucun match dans cette discipline : crée le premier avec le bouton « Créer ».
+            </p>
+          )}
+          {matches
+            .filter((m) => sportGroup === 'Tous' || sportMeta(m.sport).group === sportGroup)
+            .map((m) => (
             <Card key={m.id}>
               {/* Photo adaptée au sport : basket en noir et blanc, football en couleur */}
               <div className="-mx-5 -mt-5 mb-4 h-32 overflow-hidden rounded-t-[28px]">
-                <SportPhoto basket={m.sport === 'Basket 3v3'} />
+                <SportBanner sport={m.sport} />
               </div>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

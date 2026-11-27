@@ -141,7 +141,17 @@ export type MuscleGroup =
 export interface SanteMatch {
   id: string;
   title: string;
-  sport: 'Football 5v5' | 'Football 7v7' | 'Football 11v11' | 'Basket 3v3';
+  sport:
+    | 'Football 5v5'
+    | 'Football 7v7'
+    | 'Football 11v11'
+    | 'Basket 3v3'
+    | 'Volley-ball 6v6'
+    | 'Handball 7v7'
+    | 'Padel 2v2'
+    | 'Natation'
+    | 'Boxe fitness'
+    | 'Yoga & mobilité';
   location: string;
   city: string;
   dateLabel: string;

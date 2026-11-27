@@ -215,3 +215,8 @@ Pas besoin d'image pour : les icônes (déjà vectorielles), les emblèmes de ra
 Les cartes d'objectifs de l'onboarding (section 7) utilisent `Slot3D` : tant que l'image n'existe pas, un visuel provisoire
 (dégradé + icône) s'affiche ; dès que `public/images/3d/objectif-<id>.jpg` existe, il le remplace. Identifiants :
 `objectif-perte_poids`, `objectif-prise_muscle`, `objectif-endurance_5am`, `objectif-foot_sante`, `objectif-remise_forme`.
+
+### Disciplines de « Terrains & Santé » (visuel provisoire déjà en place)
+Bannière 2:1 par discipline, à déposer dans `public/images/3d/` : `sport-volley.jpg`, `sport-hand.jpg`, `sport-padel.jpg`,
+`sport-natation.jpg`, `sport-boxe.jpg`, `sport-yoga.jpg` (le foot et le basket gardent leurs photos). Actions : smash au filet,
+tir en suspension, volée au padel, crawl dans un bassin, enchaînement de boxe sur sac, posture de yoga au lever du jour.

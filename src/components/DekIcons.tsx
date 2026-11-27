@@ -2,6 +2,10 @@ import type { ComponentType } from 'react';
 import {
   AlertTriangle,
   Award,
+  Flower2 as LucideFlower2,
+  Hand as LucideHand,
+  Volleyball as LucideVolleyball,
+  Waves as LucideWaves,
   Heart as LucideHeart,
   Sunrise as LucideSunrise,
   Bell as LucideBell,
@@ -185,4 +189,8 @@ export const Maximize = makeLine(LucideMaximize);
 export const Minimize = makeLine(LucideMinimize);
 export const Wifi = makeLine(LucideWifi);
 export const Heart = makeLine(LucideHeart);
+export const Volley = makeLine(LucideVolleyball);
+export const Swim = makeLine(LucideWaves);
+export const Yoga = makeLine(LucideFlower2);
+export const HandBall = makeLine(LucideHand);
 export const Sunrise = makeLine(LucideSunrise);
