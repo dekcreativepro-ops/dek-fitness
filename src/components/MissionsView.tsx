@@ -7,6 +7,7 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowsClockwise,
+  CaretRight,
   Check,
   Compass,
   Lightning,
@@ -221,6 +222,7 @@ export function MissionsView({
   const zoneRecordsRef = useRef(zoneRecords);
   const [mapOpts, setMapOpts] = useState<MapOpts>(() => loadMapOpts());
   const [isFull, setIsFull] = useState(false);
+  const [optsOpen, setOptsOpen] = useState(false);
   const [tallMap, setTallMap] = useState(false);
   const mapWrapRef = useRef<HTMLDivElement | null>(null);
   // Bonus chrono (jeu)
@@ -1822,14 +1824,36 @@ export function MissionsView({
       </Card>
 
       {/* Réglages de la carte */}
-      <Card className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-[15px] font-bold text-fg">Réglages de la carte</div>
-            <div className="text-[12px] font-medium text-mute">Léger pour la fluidité, Large pour tous les détails</div>
+      <Card>
+        <button
+          type="button"
+          onClick={() => setOptsOpen((o) => !o)}
+          aria-expanded={optsOpen}
+          aria-controls="map-settings"
+          className="flex w-full items-center justify-between gap-3 text-left"
+        >
+          <div className="flex items-center gap-3">
+            <SlidersHorizontal className="h-5 w-5 text-lime" />
+            <div>
+              <div className="text-[15px] font-bold text-fg">Réglages de la carte</div>
+              <div className="text-[12px] font-medium text-mute">
+                {mapOpts.detail === 'leger' ? 'Mode Léger' : 'Mode Large'} · touche pour {optsOpen ? 'replier' : 'déplier'}
+              </div>
+            </div>
           </div>
-          <SlidersHorizontal className="h-5 w-5 text-mute" />
-        </div>
+          <CaretRight className={`h-5 w-5 shrink-0 text-mute transition-transform duration-200 ${optsOpen ? 'rotate-90' : ''}`} />
+        </button>
+        <AnimatePresence initial={false}>
+          {optsOpen && (
+            <motion.div
+              id="map-settings"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-3 pt-4">
         <ChipTabs
           items={[
             { id: 'leger', label: 'Léger' },
@@ -1862,6 +1886,10 @@ export function MissionsView({
         <Button fullWidth variant="secondary" onClick={toggleFullscreen}>
           <Maximize className="h-4 w-4" /> Carte en plein écran (horizontal)
         </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
 
       {/* Conquête de territoire */}
