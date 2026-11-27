@@ -9,7 +9,8 @@ export type OverlayEntry =
   | { kind: 'player'; id: string }
   | { kind: 'coach'; id: string }
   | { kind: 'leaderboard' }
-  | { kind: 'trophies' };
+  | { kind: 'trophies' }
+  | { kind: 'coachai' };
 
 export interface DekNavValue {
   openWorkout: (id: string) => void;
@@ -17,6 +18,7 @@ export interface DekNavValue {
   openCoach: (id: string) => void;
   openLeaderboard: () => void;
   openTrophies: () => void;
+  openCoachAI: () => void;
   editBodyProfile: () => void;
   closeOverlay: () => void;
   closeAllOverlays: () => void;
@@ -31,6 +33,7 @@ export const DekNavContext = createContext<DekNavValue>({
   openCoach: noop,
   openLeaderboard: noop,
   openTrophies: noop,
+  openCoachAI: noop,
   editBodyProfile: noop,
   closeOverlay: noop,
   closeAllOverlays: noop,

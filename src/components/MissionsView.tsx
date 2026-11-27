@@ -36,6 +36,9 @@ import { CAMEROON_CITIES, CAMEROON_REGIONS } from '../data/cities';
 import { getTierIndex, TIER_COLORS, TIER_REQUIREMENTS } from '../utils/categorization';
 import { enhanceMapLabels } from '../utils/mapLabels';
 import { say } from '../utils/gameVoice';
+import { CoachBubble } from './coach/CoachBubble';
+import { useCoachLive } from './coach/coachHooks';
+import { loadPerf, savePerf } from '../utils/coachProfile';
 import { addBonus, ledgerTotal, type BonusId, type BonusLedger } from '../utils/bonusSet';
 import { BonusSummary } from './ui/GameKit';
 import { searchPlaces, type PlaceResult } from '../utils/placeSearch';
@@ -245,6 +248,9 @@ export function MissionsView({
   const approachedRef = useRef<Set<number>>(new Set());
   const [bonuses, setBonuses] = useState<Bonus[]>([]);
   const [bonusXp, setBonusXp] = useState(0);
+  // Coach en direct : bulle + voix, comparaison avec ta dernière course
+  const { coach, line: coachLine, say: coachSay } = useCoachLive();
+  const coachMilestonesRef = useRef<Set<number>>(new Set());
   const bonusLedgerRef = useRef<BonusLedger>({});
   const [finalLedger, setFinalLedger] = useState<BonusLedger | null>(null);
   const [nowMs, setNowMs] = useState(0);
@@ -889,6 +895,8 @@ export function MissionsView({
     finishedRef.current = true;
     playVictory();
     say('complete', 'hype', mapOptsRef.current.voice);
+    const perf = savePerf(`outdoor:${selectedTier}:${discipline}:${gameMode}`, elapsedSec, 'lower');
+    window.setTimeout(() => coachSay(perf.previous && perf.isRecord ? 'record' : perf.previous && perf.improved ? 'better' : 'finish'), 1800);
     setPhase('completed');
     const modeLabel = OUTDOOR_MODES.find((m) => m.id === gameMode)?.label ?? 'Mission 05h';
     // runnersRef : classement réel (avant, la closure figée renvoyait toujours #1)
@@ -954,6 +962,18 @@ export function MissionsView({
     );
     myProgressRef.current = next;
     setMyProgressKm(next);
+
+    // Coach : encouragements à 25 / 50 / 75 % et comparaison avec la dernière course
+    const perfKey = `outdoor:${selectedTier}:${discipline}:${gameMode}`;
+    for (const m of [0.25, 0.5, 0.75]) {
+      if (!coachMilestonesRef.current.has(m) && next / effectiveDistanceKm >= m) {
+        coachMilestonesRef.current.add(m);
+        const last = loadPerf(perfKey)?.last;
+        if (last && m >= 0.5) coachSay(elapsedSec <= last * m ? 'ahead' : 'behind');
+        else if (m === 0.25) coachSay('quarter');
+        else if (m === 0.5) coachSay('half');
+      }
+    }
 
     // Approche de l'arrivée (moins de 250 m ou 8 % du parcours)
     if (!finishAlertRef.current && next < effectiveDistanceKm && effectiveDistanceKm - next <= Math.max(0.25, effectiveDistanceKm * 0.08)) {
@@ -1119,6 +1139,7 @@ export function MissionsView({
   };
 
   const resetRunRefs = () => {
+    coachMilestonesRef.current = new Set();
     bonusLedgerRef.current = {};
     setFinalLedger(null);
     finishAlertRef.current = false;
@@ -1514,6 +1535,11 @@ export function MissionsView({
           )}
         </div>
         )}
+
+        {/* Coach en direct */}
+        <div className="pointer-events-none absolute left-3 right-16 top-[136px] z-20">
+          <CoachBubble coach={coach} line={coachLine} />
+        </div>
 
         {/* Bonus chrono en cours */}
         {phase === 'running' && (bonuses.length > 0 || bonusXp > 0) && (

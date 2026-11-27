@@ -22,6 +22,8 @@ import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
 import { levelFromScore, loadGameRecord, loadStreak, saveGameRecord, saveStreak, streakMultiplier, vibrate } from '../utils/gameFx';
 import { HouseTournamentBoard } from './HouseTournamentBoard';
 import { say } from '../utils/gameVoice';
+import { CoachBubble } from './coach/CoachBubble';
+import { useCoachLive } from './coach/coachHooks';
 import { addBonus, ledgerTotal, type BonusId, type BonusLedger } from '../utils/bonusSet';
 import { BonusSummary } from './ui/GameKit';
 import { loadChallenges, winChallenge, type HouseChallenge } from '../utils/houseTournament';
@@ -247,6 +249,7 @@ export function DefiHouseView({
 
   // Jeu : réglages, alertes (vibration + halo), bonus chrono et records
   const [prefs, setPrefs] = useGamePrefs('house');
+  const { coach, line: coachLine, say: coachSay } = useCoachLive();
   const { glowKey, glowOn, alert } = useAlertGlow(prefs.alerts);
   const alertFlagsRef = useRef({ win: false, time: false, stamina: false, half: false, ten: false });
   const updateCueRef = useRef<(cue: string) => void>(() => {});
@@ -318,15 +321,17 @@ export function DefiHouseView({
     if (prefsRef.current.coach) {
       if (timeLeft === 30 && !f.half) {
         f.half = true;
+        const best = loadGameRecord(`house:${gameMode}:${exercise}`)?.best;
         updateCueRef.current('Mi-parcours ! Pousse à fond');
         alert('near');
-        say('half', prefsRef.current.hardcore ? 'hardcore' : 'hype', prefsRef.current.voice);
+        if (best) coachSay(myReps * 2 >= best ? 'ahead' : 'behind');
+        else coachSay('half');
       }
       if (timeLeft === 10 && !f.ten) {
         f.ten = true;
         updateCueRef.current(oppReps > myReps ? '10 secondes : il te dépasse, accélère !' : '10 secondes : sors tout, garde l’avance !');
         alert('near');
-        say('ten', prefsRef.current.hardcore ? 'hardcore' : 'hype', prefsRef.current.voice);
+        coachSay('ten');
       }
     }
     if (gameMode === 'survie_maison') {
@@ -338,7 +343,7 @@ export function DefiHouseView({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchState, gameMode, oppHp, myReps, mySquadReps, timeLeft, staminaMs, alert, oppReps]);
+  }, [matchState, gameMode, oppHp, myReps, mySquadReps, timeLeft, staminaMs, alert, oppReps, coachSay, exercise]);
 
   /** Limite les re-rendus : on ne met à jour la jauge / le conseil que s'ils changent. */
   const updateDepth = (pct: number) => {
@@ -502,6 +507,9 @@ export function DefiHouseView({
     const label = isTournoi ? `Tournoi Défi House · ${ch.zone}` : modeObj.label;
     info.onWinDuel(totalXp, exLabel, myRepsRef.current, label);
     say(isTournoi ? 'title' : 'victory', prefsRef.current.hardcore ? 'hardcore' : 'hype', prefsRef.current.voice);
+    const prevBest = loadGameRecord(`house:${info.gameMode}:${info.exercise}`)?.best;
+    const repsDone = myRepsRef.current;
+    window.setTimeout(() => coachSay(prevBest !== undefined && repsDone > prevBest ? 'record' : prevBest !== undefined ? 'better' : 'finish'), 1800);
     saveGameRecord(`house:${info.gameMode}:${info.exercise}`, myRepsRef.current);
     saveStreak('house', newStreak);
     window.setTimeout(() => {
@@ -510,6 +518,8 @@ export function DefiHouseView({
       setStreak(newStreak);
       if (isTournoi) setChallenges((list) => winChallenge(list, ch.id, myRepsRef.current, 'Toi'));
     }, 0);
+    // l'effet ne doit réagir qu'au passage en 'win' : coachSay est stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchState]);
 
   // Cadence du champion en tournoi : ses reps répartis sur les 60 s
@@ -1027,6 +1037,7 @@ export function DefiHouseView({
 
       {!(view === 'tournoi' && matchState === 'idle') && (
         <>
+          {fighting && <CoachBubble coach={coach} line={coachLine} />}
       {/* Scène caméra : grande carte média */}
       <div className="relative flex h-[440px] w-full flex-col justify-between overflow-hidden rounded-[28px] bg-card">
         {!cameraActive && (

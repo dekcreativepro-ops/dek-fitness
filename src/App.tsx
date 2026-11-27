@@ -2,7 +2,8 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { setVoiceGender } from './utils/gameVoice';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { BodyProfileView } from './components/BodyProfileView';
-import { ArrowRight, Compass, House, PaperPlaneRight, Play, SoccerBall, Sword, UsersThree } from './components/DekIcons';
+import { ArrowRight, Compass, House, PaperPlaneRight, Play, Sparkle, SoccerBall, Sword, UsersThree } from './components/DekIcons';
+import { useCoach } from './components/coach/coachHooks';
 import { HomeView } from './components/HomeView';
 import type { NetworkSubTab } from './components/NetworkHubView';
 import { OnboardingAuthView } from './components/OnboardingAuthView';
@@ -73,6 +74,9 @@ const CoachProfileScreen = lazy(() =>
 );
 const TrophiesScreen = lazy(() =>
   import('./components/TrophiesScreen').then((m) => ({ default: m.TrophiesScreen })),
+);
+const CoachAIScreen = lazy(() =>
+  import('./components/coach/CoachAIScreen').then((m) => ({ default: m.CoachAIScreen })),
 );
 const LeaderboardScreen = lazy(() =>
   import('./components/LeaderboardScreen').then((m) => ({ default: m.LeaderboardScreen })),
@@ -190,9 +194,12 @@ export default function App() {
   });
   const [user, setUser] = useState<UserProfile>(loadSavedUser);
   // Annonceur vocal : voix féminine pour les joueuses (profil corporel), masculine sinon
+  const coachProfile = useCoach();
   useEffect(() => {
-    setVoiceGender(user.body?.sex === 'femme' ? 'female' : 'male');
-  }, [user.body?.sex]);
+    // la voix de l'annonceur suit le genre du coach choisi (sinon le profil corporel)
+    const female = coachProfile.setupDone ? coachProfile.gender === 'femme' : user.body?.sex === 'femme';
+    setVoiceGender(female ? 'female' : 'male');
+  }, [user.body?.sex, coachProfile.gender, coachProfile.setupDone]);
   const [isRetakingInitiation, setIsRetakingInitiation] = useState(false);
   const [feed, setFeed] = useState<FeedPost[]>(loadSavedFeed);
   const [toast, setToast] = useState<string | null>(null);
@@ -892,6 +899,7 @@ export default function App() {
     openCoach: (id) => pushOverlay({ kind: 'coach', id }),
     openLeaderboard: () => pushOverlay({ kind: 'leaderboard' }),
     openTrophies: () => pushOverlay({ kind: 'trophies' }),
+    openCoachAI: () => pushOverlay({ kind: 'coachai' }),
     editBodyProfile: () => setIsEditingBody(true),
     closeOverlay,
     closeAllOverlays,
@@ -937,12 +945,14 @@ export default function App() {
       );
     }
     if (entry.kind === 'trophies') return <TrophiesScreen user={userView} onBack={closeOverlay} />;
+    if (entry.kind === 'coachai') return <CoachAIScreen user={userView} onBack={closeOverlay} />;
     return <LeaderboardScreen user={userView} onBack={closeOverlay} />;
   };
 
   const todayProgram = getRecommendedProgram(user.goals[0], getTierIndex(user.category));
-  type QuickId = 'today' | 'library' | 'outdoor' | 'house' | 'water' | 'thursday' | 'ladder' | 'post';
+  type QuickId = 'coachai' | 'today' | 'library' | 'outdoor' | 'house' | 'water' | 'thursday' | 'ladder' | 'post';
   const QUICK_ACTIONS: { id: QuickId; label: string; sub: string; icon: React.ReactNode }[] = [
+    { id: 'coachai', label: `Coach ${coachProfile.name}`, sub: 'Conseils & suivi IA', icon: <Sparkle className="h-5 w-5" /> },
     { id: 'today', label: 'Séance du jour', sub: `${todayProgram.durationMin} min • ${todayProgram.level}`, icon: <Play className="h-5 w-5" /> },
     { id: 'library', label: 'Séances guidées', sub: '6 programmes', icon: <DumbbellLift className="h-5 w-5" /> },
     { id: 'outdoor', label: 'Mission Outdoor', sub: 'Carte 3D & GPS', icon: <Compass className="h-5 w-5" /> },
@@ -955,6 +965,10 @@ export default function App() {
 
   const runQuickAction = (id: QuickId) => {
     switch (id) {
+      case 'coachai':
+        setQuickOpen(false);
+        pushOverlay({ kind: 'coachai' });
+        break;
       case 'today':
         pushOverlay({ kind: 'player', id: todayProgram.id });
         break;

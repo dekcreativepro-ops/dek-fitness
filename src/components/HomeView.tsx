@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BowlFood, Compass, Dumbbell, Flag, NavigationArrow, Play, SlidersHorizontal, SoccerBall, Sword, Trophy } from './DekIcons';
+import { BowlFood, Compass, Sparkle, Dumbbell, Flag, NavigationArrow, Play, SlidersHorizontal, SoccerBall, Sword, Trophy } from './DekIcons';
 import { useDekNav } from '../context/DekNav';
 import { INITIAL_COACHS } from '../data/mockData';
 import { getProgram, getRecommendedProgram, WORKOUT_PROGRAMS } from '../data/workoutsData';
@@ -13,6 +13,7 @@ import { fadeUpItem, staggerContainer } from './ui/motion';
 import { UserAvatar } from './UserAvatar';
 import { usePhoto } from '../utils/usePhoto';
 import { ProgramPhoto } from './workouts/ProgramPhoto';
+import { useCoach } from './coach/coachHooks';
 import { ResumeCard } from './workouts/ResumeCard';
 import { WorkoutCard } from './workouts/WorkoutCard';
 
@@ -43,6 +44,7 @@ export function HomeView({
   onToggleSaveWorkout,
 }: HomeViewProps) {
   const nav = useDekNav();
+  const coachName = useCoach().name;
   const adventure = getAdventurePlan(user.goals, user.category);
   const coach = INITIAL_COACHS.find((c) => c.id === adventure.recommendedCoachId) ?? INITIAL_COACHS[0];
   const heroPhoto = usePhoto('hero', 'card');
@@ -232,6 +234,20 @@ export function HomeView({
             </div>
           ))}
         </div>
+      </motion.section>
+
+      {/* Coach IA */}
+      <motion.section variants={fadeUpItem}>
+        <ListRow
+          onClick={nav.openCoachAI}
+          leading={
+            <IconBadge tone="lime">
+              <Sparkle className="h-5 w-5" />
+            </IconBadge>
+          }
+          title={`Coach IA · ${coachName}`}
+          subtitle="Programme, conseils, bilan et motivation, à tout moment"
+        />
       </motion.section>
 
       {/* Activités */}
