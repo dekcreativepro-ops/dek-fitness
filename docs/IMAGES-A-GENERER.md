@@ -236,3 +236,6 @@ raids, Gym Buddy (duo, spot 1 et 2), Défi House (duel 1 et 2), tournoi et bonus
 5h, fantôme, relais, survie, territoire), nutrition (bandeau et 4 repas), objectifs, portraits des 3 coachs, avatars,
 posters d'exercices (6 sur 8), écran de démarrage, icône d'application et image de partage.
 Pas encore utilisées : `exo-pompes-tempo`, `exo-squat-iso`, `bonus-shaker`, `repas-*` doublon, les 13 bannières `sport-*` (à générer).
+
+Mise à jour : les 51 images de 250 px ont été agrandies x4 par IA locale (Real-ESRGAN anime 6B), puis importées en 1000 px de large.
+C'est bien plus net, mais l'IA lisse un peu les détails : des originaux en grande taille restent préférables si tu les as.
