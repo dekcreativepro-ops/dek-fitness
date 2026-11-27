@@ -1,18 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowsClockwise, Calendar, Check, CheckCircle, Clock, MapPin, Play, Plus, QrCode, Warning } from './DekIcons';
 import { BottomSheet, Button, Card, ChipTabs, IconButton, StatTiles } from './ui/kit';
-import {
-  INITIAL_THURSDAY_PLAYERS,
-  TOURNAMENT_GROUP_TABLE,
-  TOURNAMENT_TOP_SCORERS,
-} from '../data/gamesData';
-import { INITIAL_SANTE_MATCHES, INITIAL_TOURNAMENT } from '../data/mockData';
+import { INITIAL_THURSDAY_PLAYERS } from '../data/gamesData';
+import { INITIAL_SANTE_MATCHES } from '../data/mockData';
 import type { SanteMatch, ThursdayFormat, ThursdayPlayer } from '../types/dek';
 import { getTierIndex, TIER_COLORS } from '../utils/categorization';
 import { usePhoto } from '../utils/usePhoto';
 import { playGo, playHit, playTick, playVictory } from '../utils/soundFx';
 import { LEVEL_COLORS, levelFromScore } from '../utils/gameFx';
 import { SPORTS, SPORT_GROUPS, sportMeta, type SportGroup } from '../data/sports';
+import { getTournament } from '../data/tournaments';
 import { Slot3D } from './ui/Slot3D';
 import { Bike, Dumbbell, HandBall, Music, Sword, Swim, Timer, Trophy, Volley, Yoga } from './DekIcons';
 
@@ -144,6 +141,8 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
   const [title, setTitle] = useState('');
   const [sport, setSport] = useState<SanteMatch['sport']>('Football 7v7');
   const [sportGroup, setSportGroup] = useState<'Tous' | SportGroup>('Tous');
+  const [tourGroup, setTourGroup] = useState<SportGroup>('Foot');
+  const tournament = getTournament(tourGroup);
   const [location, setLocation] = useState('');
   const [time, setTime] = useState('19h00');
   const [matchDay, setMatchDay] = useState('Ce soir');
@@ -1015,9 +1014,25 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
       {/* ================== ONGLET 3 : TOURNOI (POULES + TABLEAU FINAL + BUTEURS) ================== */}
       {subTab === 'tournoi' && (
         <div className="space-y-4">
+          {/* Une coupe par discipline */}
+          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Discipline du tournoi">
+            {SPORT_GROUPS.filter((g): g is SportGroup => g !== 'Tous').map((g) => (
+              <button
+                key={g}
+                type="button"
+                role="tab"
+                aria-selected={tourGroup === g}
+                onClick={() => setTourGroup(g)}
+                className={`h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors ${tourGroup === g ? 'bg-lime text-on-lime' : 'bg-tile text-mute'}`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+
           {/* Poule A */}
           <Card>
-            <h3 className="text-[16px] font-bold leading-[22px] text-fg">Phase de poules · Groupe A</h3>
+            <h3 className="text-[16px] font-bold leading-[22px] text-fg">{tournament.title} · Phase de poules</h3>
             <div className="mt-3">
               <div className="grid grid-cols-12 border-b border-rim pb-2 text-[12px] font-medium text-mute">
                 <span className="col-span-6">Équipe</span>
@@ -1025,7 +1040,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
                 <span className="col-span-2 text-center">Diff</span>
                 <span className="col-span-2 text-right">Pts</span>
               </div>
-              {TOURNAMENT_GROUP_TABLE.map((row, idx) => (
+              {tournament.table.map((row, idx) => (
                 <div
                   key={row.team}
                   className="grid grid-cols-12 items-center border-b border-rim py-2.5 text-[14px] last:border-0 last:pb-0"
@@ -1044,12 +1059,12 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
 
           {/* Tableau final */}
           <Card>
-            <h3 className="text-[16px] font-bold leading-[22px] text-fg">Coupe DEK · Tableau final</h3>
+            <h3 className="text-[16px] font-bold leading-[22px] text-fg">Tableau final</h3>
             <div className="mt-3 space-y-5">
               {(['Quarts', 'Demies', 'Finale'] as const).map((round) => (
                 <div key={round}>
                   <div className="mb-1 text-[12px] font-semibold text-mute">{round}</div>
-                  {INITIAL_TOURNAMENT.filter((t) => t.round === round).map((tm) => (
+                  {tournament.bracket.filter((t) => t.round === round).map((tm) => (
                     <div key={tm.id} className="border-b border-rim py-3 last:border-0">
                       <div className="flex items-center justify-between text-[12px] font-medium">
                         <span
@@ -1077,18 +1092,20 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
             </div>
           </Card>
 
-          {/* Top buteurs */}
+          {/* Meilleurs performeurs */}
           <div className="space-y-2">
-            <h3 className="px-1 text-[18px] font-bold leading-6 text-fg">Top buteurs du tournoi</h3>
-            {TOURNAMENT_TOP_SCORERS.map((s, idx) => (
-              <div key={s.name} className="flex items-center gap-3 rounded-[24px] bg-card p-3">
+            <h3 className="px-1 text-[18px] font-bold leading-6 text-fg">{tournament.topTitle} du tournoi</h3>
+            {tournament.top.map((p, idx) => (
+              <div key={p.name} className="flex items-center gap-3 rounded-[24px] bg-card p-3">
                 <span className="num w-6 text-center text-[16px] font-extrabold text-mute">{idx + 1}</span>
-                <Initials name={s.name} />
+                <Initials name={p.name} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[15px] font-bold leading-5 text-fg">{s.name}</div>
-                  <div className="truncate text-[12px] font-medium text-mute">{s.team}</div>
+                  <div className="truncate text-[15px] font-bold leading-5 text-fg">{p.name}</div>
+                  <div className="truncate text-[12px] font-medium text-mute">{p.team}</div>
                 </div>
-                <span className="num text-[15px] font-extrabold text-lime">{s.goals} buts</span>
+                <span className="num text-[15px] font-extrabold text-lime">
+                  {p.value} {tournament.unit}
+                </span>
               </div>
             ))}
           </div>
