@@ -42,6 +42,7 @@ import { loadPerf, savePerf } from '../utils/coachProfile';
 import { addBonus, ledgerTotal, type BonusId, type BonusLedger } from '../utils/bonusSet';
 import { BonusSummary } from './ui/GameKit';
 import { searchPlaces, type PlaceResult } from '../utils/placeSearch';
+import { isPremiumActive, openPaywall } from '../utils/premium';
 import { syncRouteMarkers } from '../utils/routeMarkers';
 import {
   addZoneLabels,
@@ -1513,7 +1514,13 @@ export function MissionsView({
           <ChipTabs
             items={OUTDOOR_MODES.map((m) => ({ id: m.id, label: m.short }))}
             value={gameMode}
-            onChange={setGameMode}
+            onChange={(m) => {
+              if (m !== 'mission_5am' && !isPremiumActive()) {
+                openPaywall('modes');
+                return;
+              }
+              setGameMode(m);
+            }}
             layoutId="outdoor-mode"
           />
         </div>
@@ -1606,7 +1613,13 @@ export function MissionsView({
           </IconButton>
           <IconButton
             label="Générer un nouveau tracé"
-            onClick={() => void loadNewRoute(coords[0], coords[1], effectiveDistanceKm)}
+            onClick={() => {
+              if (!isPremiumActive()) {
+                openPaywall('pistes');
+                return;
+              }
+              void loadNewRoute(coords[0], coords[1], effectiveDistanceKm);
+            }}
             disabled={isLoadingRoute || phase !== 'lobby'}
             size={40}
             className={glassBtn}
@@ -1621,6 +1634,10 @@ export function MissionsView({
               aria-label="Ville"
               value={cityIdx}
               onChange={(e) => {
+                if (!isPremiumActive()) {
+                  openPaywall('pistes');
+                  return;
+                }
                 const idx = Number(e.target.value);
                 setCityIdx(idx);
                 setCoords([PRESET_CITIES[idx].lat, PRESET_CITIES[idx].lng]);
@@ -1640,7 +1657,7 @@ export function MissionsView({
               ))}
             </select>
 
-            <button type="button" onClick={() => { leaveFullscreen(); setSearchOpen(true); }} aria-label="Rechercher un lieu" className={glassPill}>
+            <button type="button" onClick={() => { leaveFullscreen(); if (!isPremiumActive()) { openPaywall('pistes'); return; } setSearchOpen(true); }} aria-label="Rechercher un lieu" className={glassPill}>
               <MagnifyingGlass className="h-4 w-4" />
             </button>
 

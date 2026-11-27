@@ -11,6 +11,8 @@ import { isSoundEnabled, setSoundEnabled, subscribeSound } from '../utils/soundF
 import { AvatarStudio } from './AvatarStudio';
 import { BottomSheet, Button, Card, ProgressBar, StatTiles } from './ui/kit';
 import { ImagePicker } from './ui/ImagePicker';
+import { Crown } from './DekIcons';
+import { PREMIUM_PRICE_FCFA, cancelPremium, openPaywall, usePremium } from '../utils/premium';
 import { ACCENTS, loadAccent, saveAccent } from '../utils/theme';
 import { getHeroImage, setHeroImage, subscribeHeroImage } from '../utils/customImage';
 import { UserAvatar } from './UserAvatar';
@@ -88,6 +90,7 @@ export function ProfilFeedView({
   const nav = useDekNav();
   const customHero = useSyncExternalStore(subscribeHeroImage, getHeroImage, getHeroImage);
   const [accent, setAccent] = useState(loadAccent);
+  const premium = usePremium();
   const earnedCount = getEarnedAchievementIds(user).length;
 
   const handlePublish = (e: React.FormEvent) => {
@@ -150,6 +153,33 @@ export function ProfilFeedView({
               Encore <span className="num text-fg">{rankInfo.nextRankXp - user.xp}</span> XP pour passer{' '}
               {rankInfo.nextRank} · Série <span className="num text-fg">{user.streakDays}</span> j
             </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Abonnement */}
+      <Card className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${premium.active ? 'bg-lime text-on-lime' : 'bg-tile text-mute'}`}>
+            <Crown className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[16px] font-bold leading-[22px] text-fg">{premium.active ? 'DEK Premium actif' : 'Formule gratuite'}</div>
+            <div className="text-[12px] font-medium text-mute">
+              {premium.active
+                ? `${premium.days} jour${premium.days > 1 ? 's' : ''} restant${premium.days > 1 ? 's' : ''}${premium.state.demo ? ' · mode démo' : ''}`
+                : `Tournois, pistes et modes spéciaux : ${PREMIUM_PRICE_FCFA.toLocaleString('fr-FR')} FCFA / mois`}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button fullWidth onClick={() => openPaywall(null)}>
+            {premium.active ? 'Prolonger d’un mois' : 'Passer Premium'}
+          </Button>
+          {premium.active && premium.state.demo && (
+            <Button variant="secondary" onClick={cancelPremium}>
+              Quitter
+            </Button>
           )}
         </div>
       </Card>

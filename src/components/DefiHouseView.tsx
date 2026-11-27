@@ -21,6 +21,7 @@ import { AlertGlow, BestMedal, BonusPill, GameLegend, GameOptionsCard } from './
 import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
 import { levelFromScore, loadGameRecord, loadStreak, saveGameRecord, saveStreak, streakMultiplier, vibrate } from '../utils/gameFx';
 import { HouseTournamentBoard } from './HouseTournamentBoard';
+import { isPremiumActive, openPaywall } from '../utils/premium';
 import { say } from '../utils/gameVoice';
 import { CoachBubble } from './coach/CoachBubble';
 import { useCoachLive } from './coach/coachHooks';
@@ -903,6 +904,10 @@ export function DefiHouseView({
 
   const switchView = (v: 'duel' | 'tournoi') => {
     if (fightingNow) return;
+    if (v === 'tournoi' && !isPremiumActive()) {
+      openPaywall('defi_tournoi');
+      return;
+    }
     setView(v);
     setActiveChallenge(null);
     setMatchState('idle');

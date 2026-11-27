@@ -12,6 +12,7 @@ import { SPORTS, SPORT_GROUPS, sportMeta, type SportGroup } from '../data/sports
 import { getTournament } from '../data/tournaments';
 import { Slot3D } from './ui/Slot3D';
 import { ImagePicker } from './ui/ImagePicker';
+import { PremiumGate } from './premium/PremiumSheet';
 import { Bike, Dumbbell, HandBall, Music, Sword, Swim, Timer, Trophy, Volley, Yoga } from './DekIcons';
 
 interface SanteViewProps {
@@ -1037,6 +1038,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
 
       {/* ================== ONGLET 3 : TOURNOI (POULES + TABLEAU FINAL + BUTEURS) ================== */}
       {subTab === 'tournoi' && (
+        <PremiumGate feature="tournois" title="Tournois par discipline">
         <div className="space-y-4">
           {/* Une coupe par discipline */}
           <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Discipline du tournoi">
@@ -1134,6 +1136,7 @@ export function SanteView({ onJoinSante, onCompleteThursday }: SanteViewProps) {
             ))}
           </div>
         </div>
+        </PremiumGate>
       )}
 
       {createSheet}

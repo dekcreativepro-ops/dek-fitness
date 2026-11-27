@@ -14,6 +14,7 @@ import { BottomSheet, ScreenHeader } from './components/ui/kit';
 import { pushScreen, riseScreen } from './components/ui/motion';
 import { ViewBoundary } from './components/ViewBoundary';
 import { DekNavContext, type DekNavValue, type OverlayEntry } from './context/DekNav';
+import { PremiumHost } from './components/premium/PremiumSheet';
 import { INITIAL_COACHS, INITIAL_FEED, INITIAL_USER } from './data/mockData';
 import {
   getProgram,
@@ -1085,6 +1086,7 @@ export default function App() {
           ) : (
             <DekNavContext.Provider value={navValue}>
               <div id="dek-overlay-root" className="pointer-events-none absolute inset-0 z-[750]" />
+              <PremiumHost />
 
               <main className="safe-top relative min-h-0 flex-1 overflow-y-auto no-scrollbar bg-transparent px-5 pb-6 pt-4">
                 <AnimatePresence mode="wait">
