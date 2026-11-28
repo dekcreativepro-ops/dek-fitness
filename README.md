@@ -1,5 +1,8 @@
 # DEK FITNESS — Application Mobile Sport Social Gamifié
 
+> **État du projet et reprise** : voir [`docs/SUIVI-PROJET.md`](./docs/SUIVI-PROJET.md) (fait / reste à faire / environnement) et [`docs/ECONOMIE-DEK.md`](./docs/ECONOMIE-DEK.md) (abonnement et remise par performances).
+
+
 Application mobile-first (**React 19 + TypeScript + Vite + Tailwind CSS v4 + MapLibre 3D + MediaPipe IA**) regroupant **5 univers sportifs**, un **Test d'Initiation santé sans quota**, un module **Nutrition**, des **Coachs**, un **Studio Avatars Manga/Fantaisie** et un **Réseau Social sportif**.
 
 ---

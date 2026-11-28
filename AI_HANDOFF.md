@@ -1,5 +1,7 @@
 # DEK FITNESS — Guide de Reprise Complet pour IA (`AI_HANDOFF.md`)
 
+> **ÉTAT ACTUEL DU PROJET : lis d'abord [`docs/SUIVI-PROJET.md`](./docs/SUIVI-PROJET.md)** (ce qui est fait, ce qui reste, pièges, environnement du PC, préférences du fondateur). Ce fichier-ci décrit surtout les règles techniques du code ; certaines parties sont plus anciennes (par exemple : il existe maintenant un serveur `server/`, des comptes, un abonnement, des vidéos d'exercices et des projets `android/` et `ios/`).
+
 > **Note à l'IA qui reprend ce projet** :
 > Tu reprends le développement de **DEK FITNESS**, une application mobile-first (React + Vite + TypeScript + Tailwind CSS v4, prévue pour être empaquetée en **APK Android via Capacitor**) de **sport social gamifié** organisée autour de **5 univers de jeux**, d'un **Test d'Initiation santé sans quota**, d'un module **Nutrition**, de **Coachs**, d'un **Studio Avatars Manga/Fantaisie** et d'un **Réseau Social sportif**.
 >
