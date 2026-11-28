@@ -1,6 +1,6 @@
 # Économie DEK : abonnement + rabais en XP (cahier des charges, à valider)
 
-Statut : **version simplifiée du 27/11/2026. Construit : comptes, registre d'XP, bonus de performance et remise, essai de 15 jours, limites de la version gratuite, paiement par Chariow (testé en démo et contre un faux Chariow). Pas encore construit : produits Chariow à 6 prix, espace coaching, XP achetables pour les tournois.** Remplace les versions précédentes (jauge, monnaie, retrait en argent, séquestre des coachs : tout cela est **abandonné**).
+Statut : **version simplifiée du 27/11/2026. Construit : comptes, registre d'XP, bonus de performance et remise, essai de 7 jours, limites de la version gratuite, paiement par Chariow (testé en démo et contre un faux Chariow). Pas encore construit : produits Chariow à 6 prix, espace coaching, XP achetables pour les tournois.** Remplace les versions précédentes (jauge, monnaie, retrait en argent, séquestre des coachs : tout cela est **abandonné**).
 
 ## 1. Le principe
 - Un **abonnement mensuel à 5 000 FCFA** (30 jours), payé en Mobile Money.
@@ -57,7 +57,7 @@ Le serveur déduit les performances des efforts déclarés par l'app (le client 
 - Les paiements passent par **Chariow** (déjà branché). Chariow n'a pas de prélèvement récurrent : le client repaie chaque mois.
 - Prix variable (remise) : six produits Chariow à prix fixes (5 000 / 4 500 / 4 000 / 3 500 / 3 000 / 2 500), le serveur choisit celui qui correspond à la remise de performance du mois. L'espace coaching est un produit séparé.
 - **Comptes utilisateurs + registre sur le serveur** nécessaires : date de fin d'abonnement, XP du mois, remise calculée. Sans cela, tout est modifiable dans le téléphone.
-- Le code déjà écrit pour l'essai de 15 jours et les limites (3 pistes, 3 séances, 5 messages coach par jour) existe dans le projet, **non commité** ; à garder ou non selon la décision ci-dessous.
+- Le code déjà écrit pour l'essai de 7 jours et les limites (3 pistes, 3 séances, 5 messages coach par jour) existe dans le projet, **non commité** ; à garder ou non selon la décision ci-dessous.
 
 ## 8. Aspects légaux
 - Un abonnement avec remise de fidélité est beaucoup plus simple juridiquement qu'une monnaie échangeable.
@@ -65,11 +65,11 @@ Le serveur déduit les performances des efforts déclarés par l'app (le client 
 
 ## 9. Questions ouvertes
 1. ~~Plafond de la remise~~ : **50 %**, tranché.
-2. Garde-t-on l'**essai gratuit de 15 jours** pour les clients (déjà codé) ?
+2. Garde-t-on l'**essai gratuit de 7 jours** pour les clients (déjà codé) ?
 3. Valide-t-on **500 XP = 1 heure** et le barème ci-dessus ?
 4. Quels **paliers** sont libres ?
 
 ## 10. Ce qui est construit (27/11/2026)
 - **Serveur** (`server/`, `npm run pay-server`, tests : `npm run pay-test`) : comptes (numéro + mot de passe, mot de passe jamais stocké en clair), sessions, registre d'XP **calculé par le serveur** avec quotas (par type et total par jour), bonus de performance (table ci-dessus) additionnés en remise 0-50 %, prix du mois, abonnement de 30 jours activé uniquement par une confirmation de paiement, données dans un fichier JSON (`DEK_DB`).
-- **App** : création de compte / connexion dans l'écran d'abonnement, abonnement lu depuis le serveur, séances / pistes / Défi House / coach IA déclarés au serveur, essai gratuit de 15 jours, limites après l'essai (3 pistes, 3 séances, mode KO 60 s, 5 questions de coach par jour).
+- **App** : création de compte / connexion dans l'écran d'abonnement, abonnement lu depuis le serveur, séances / pistes / Défi House / coach IA déclarés au serveur, essai gratuit de 7 jours, limites après l'essai (3 pistes, 3 séances, mode KO 60 s, 5 questions de coach par jour).
 - **À faire** : créer les 5 produits Chariow manquants (4 500 / 4 000 / 3 500 / 3 000 / 2 500) et renseigner `CHARIOW_PRODUCT_IDS`, héberger le serveur en HTTPS, espace coaching, sauvegarde de la base (ou passage à PostgreSQL), mot de passe oublié (réinitialisation par SMS).

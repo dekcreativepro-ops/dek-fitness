@@ -21,7 +21,7 @@ import { AlertGlow, BestMedal, BonusPill, GameLegend, GameOptionsCard } from './
 import { useAlertGlow, useChronoBonus, useGamePrefs } from './ui/gameHooks';
 import { levelFromScore, loadGameRecord, loadStreak, saveGameRecord, saveStreak, streakMultiplier, vibrate } from '../utils/gameFx';
 import { HouseTournamentBoard } from './HouseTournamentBoard';
-import { FREE_HOUSE_MODE, isPremiumActive, openPaywall } from '../utils/premium';
+import { FREE_HOUSE_EXERCISE, FREE_HOUSE_MODE, isPremiumActive, openPaywall } from '../utils/premium';
 import { say } from '../utils/gameVoice';
 import { CoachBubble } from './coach/CoachBubble';
 import { useCoachLive } from './coach/coachHooks';
@@ -1016,7 +1016,13 @@ export function DefiHouseView({
                 <button
                   key={ex.id}
                   disabled={fighting}
-                  onClick={() => setExercise(ex.id)}
+                  onClick={() => {
+                    if (ex.id !== FREE_HOUSE_EXERCISE && !isPremiumActive()) {
+                      openPaywall('defi_modes');
+                      return;
+                    }
+                    setExercise(ex.id);
+                  }}
                   className={`h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
                     active ? 'bg-fg text-ink' : 'bg-tile text-mute'
                   }`}

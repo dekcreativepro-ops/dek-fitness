@@ -11,7 +11,7 @@ Application mobile de sport social (Cameroun, FCFA) : séances guidées, Outdoor
 **Mobile** : projets `android/` et `ios/` (Capacitor, identifiant `com.dek.fitness`). **Un APK de test a été compilé sur le PC du fondateur** (avant les comptes et le paiement réel : à recompiler). Voir `docs/APPLICATION-MOBILE.md`.
 
 **Abonnement et économie** (nouveau, `docs/ECONOMIE-DEK.md`) :
-- Abonnement **5 000 FCFA / 30 jours**, essai gratuit de **15 jours** (stocké dans le téléphone pour l'instant), puis version gratuite limitée : **3 pistes Outdoor, 3 séances, Défi House mode KO 60 s seulement, 5 questions de coach IA par jour** (`src/utils/premium.ts`).
+- Abonnement **5 000 FCFA / 30 jours**, essai gratuit de **7 jours** (stocké dans le téléphone pour l'instant), puis version gratuite limitée : **3 pistes Outdoor, 3 séances, Défi House mode KO 60 s seulement, 5 questions de coach IA par jour** (`src/utils/premium.ts`).
 - **La remise (0 à 50 %, prix minimum 2 500 FCFA) vient des bonus de performance additionnés sur 30 jours** (séance, 200 pompes, 3 pistes, duel, semaine parfaite, série de 7 jours, palier). **Les XP ne calculent pas le prix : ils sont la jauge.** Barème dans `server/economy.mjs` (`PERFORMANCES`).
 - **Serveur** (`server/`, Node sans dépendance) : comptes (numéro + mot de passe), sessions, registre d'XP et de bonus calculés côté serveur avec quotas, prix remisé, abonnement activé uniquement par une confirmation de paiement, base JSON (`DEK_DB`). Tests : `npm run pay-test` (doivent tous passer).
 - **Paiement via Chariow** (page de paiement hébergée, Orange Money et MTN Mobile Money confirmés pour le Cameroun, devise XAF). Chariow n'a pas de prélèvement récurrent : le client repaie chaque mois. Voir `docs/ABONNEMENT.md`.
@@ -21,12 +21,40 @@ Application mobile de sport social (Cameroun, FCFA) : séances guidées, Outdoor
 1. **Chariow** : créer les 5 produits manquants (**4 500 / 4 000 / 3 500 / 3 000 / 2 500 FCFA**, type licence, 30 jours), mettre le principal à 5 000 sans promo ; renseigner `CHARIOW_PRODUCT_IDS` (`{"5000":"prd_6jdmeofl","4500":"prd_…",…}`).
 2. **Héberger le serveur** (guide `docs/DEPLOIEMENT.md`, `render.yaml` et `server/Dockerfile` prêts, **Dockerfile non testé**, Docker absent du PC) : compte Render à créer par le fondateur ; ensuite créer le **Pulse** Chariow (webhook `/webhook/chariow`, secret `whsec_…`) et lancer **un vrai paiement de test** (par exemple produit à 100 FCFA).
 3. **Recompiler l'APK** avec `VITE_PAYMENT_API_URL=<adresse du serveur>` (guide dans `docs/APPLICATION-MOBILE.md`).
-4. **Mot de passe oublié** (aujourd'hui aucune réinitialisation), **essai gratuit lié au compte** (réinstaller redonne 15 jours), petit **panneau d'administration** (comptes, paiements, offrir un abonnement), **suivi des paliers côté serveur** (le bonus « palier » est déclaré par l'app : triche possible, 15 % maximum), **rapport d'erreurs**.
+4. **Mot de passe oublié** (aujourd'hui aucune réinitialisation), **essai gratuit lié au compte** (réinstaller redonne l'essai de 7 jours), petit **panneau d'administration** (comptes, paiements, offrir un abonnement), **suivi des paliers côté serveur** (le bonus « palier » est déclaré par l'app : triche possible, 15 % maximum), **rapport d'erreurs**.
 5. **Pages légales** (confidentialité, conditions, avertissement santé), **marquer « démo »** les données simulées (tournois, classements, matchs, fil, coachs : tout est factice).
 6. **Tester sur de vrais téléphones Android** (GPS en mouvement, caméra Défi House, vibration, carte en paysage, vidéos) : **rien n'a été testé sur un appareil**.
 7. Plus tard : **espace coaching** (coach : 1er mois gratuit puis 5 000 FCFA/mois ; le coach est payé **sur place** par ses élèves, rien dans l'app), **XP achetables** pour accéder à des tournois (solde séparé, jamais dans la remise, jamais retirable), rappels d'expiration, iOS (Mac + compte Apple Developer requis), 13 bannières de disciplines, voix de studio.
 
-**Décisions en attente du fondateur** : garder l'essai de 15 jours ? quels paliers sont d'accès libre ? barème exact des bonus.
+**Décisions en attente du fondateur** : essai gratuit : 7 jours (le fondateur a hésité entre 5, 7 et 10) ? quels paliers sont d'accès libre ? barème exact des bonus.
+
+## 3 bis. Retours du fondateur après le premier test sur téléphone (28/11/2026)
+Le fondateur a installé l'APK de test sur son téléphone. Ses remarques, dans l'ordre :
+
+**Déjà traité**
+- **Version déverrouillée** demandée pour tester tout l'abonnement : `scripts/build-apks.ps1` compile **deux** applications installables ensemble : `DEK-FITNESS-verrouille.apk` (`com.dek.fitness`, comme un vrai utilisateur) et `DEK-TEST-deverrouille.apk` (`com.dek.fitness.test`, nom « DEK TEST », tout ouvert, build avec `VITE_UNLOCKED=true`). Sans serveur, le paiement de la version verrouillée est **simulé** (mode démo).
+- **Essai gratuit réduit de 15 à 7 jours** (« une semaine gratuite »).
+- **Défi House** : seul l'exercice **Pompes** est gratuit ; squats, jumping jacks, corde, gainage et burpees demandent Premium (en plus du verrou des modes autres que KO 60 s).
+- Il trouve que la **limitation des pistes Outdoor** est bien.
+
+**À faire (rien n'est construit)**
+1. **Images floues** : les images agrandies par IA (parties de sources très petites) donnent un rendu « bizarre ». Solution réelle : regénérer ou redemander les images en **haute résolution (1024 px ou plus)**, surtout les cartes de séance et les mascottes ; lister celles qui posent problème sur téléphone.
+2. **Défis en attente (Défi House asynchrone)** : si personne n'est en ligne, un joueur **publie un défi** (« qui fait des pompes ? ») ; quand un autre ouvre l'application, il voit la **notification**, accepte, et le défi **se lance en synchronisé** pour les deux. Demande : serveur de défis (comptes déjà là), notifications push (Firebase Cloud Messaging), synchronisation en temps réel (WebSocket) ; version simple possible d'abord : duel **différé** (chacun fait son score, comparaison).
+3. **Programmes et horaires** : les joueurs **planifient des défis à une date et une heure** ; ceux qui choisissent le même créneau peuvent le rejoindre. (Le fondateur a aussi dit « normalement on doit acheter les programmes » : **à clarifier**, programmes payants ou simple planning ?)
+4. **Lieux de gym** : ajout des salles de sport par **un espace administrateur** (une fiche par salle).
+5. **« Bio Live »** (probablement **« Match live »** de Terrains & Santé) : à **verrouiller derrière Premium**. À confirmer le nom exact avant de coder.
+6. **Street workout / sport de rue en groupe** : « pas bien développé ». Le fondateur veut : un groupe de personnes se retrouve **dans la rue** et fait du sport ensemble. À construire : créer / rejoindre un groupe de rue, point de rendez-vous sur la carte, séance collective, progression et classement du groupe. (Les disciplines « Street » existent déjà dans Terrains & Santé, mais pas cette fonction de groupe.)
+
+## 3 ter. Retours du fondateur, suite (28/11/2026) : à construire plus tard
+Le fondateur a confirmé que le **rendu Street / week-end** convient. Nouvelles demandes, **rien n'est construit** :
+
+1. **Images : très mauvaise impression sur téléphone** (« elles font peur »). Les originaux sont beaux, c'est l'**agrandissement par IA d'images trop petites** qui les abîme. Priorité haute : redemander / regénérer les images en haute résolution (1024 px ou plus) et **ne plus agrandir des sources minuscules** ; en attendant, mieux vaut un visuel net plus petit qu'un agrandissement flou. Lister les images concernées après un test sur téléphone.
+2. **« Scan d'événements »** : un bouton qui **scanne tous les événements** (tournois, matchs, séances collectives, défis, sorties de rue, pas seulement les terrains) **programmés ou en cours**, et propose un **programme complet avec les horaires**. L'utilisateur qui n'a pas le temps de chercher voit ce qui lui plaît et **s'y inscrit à l'heure voulue**.
+3. **Renommer « Match live »** (le nom est trop étroit : plusieurs familles de sports sont concernées) et **réorganiser l'onglet Réseau en 3 ou 4 interfaces** : *Terrains & Santé*, *Street fitness*, *Danse*, puis un onglet « Sport live » en bas. Même fonctionnement qu'aujourd'hui, avec **3 exemples** par interface ; le bouton **« Créer » devient « Sport select »** (ou un nom qui dit qu'on y choisit parmi plusieurs sports). **Mise en avant automatique** : plus une activité est programmée, plus elle apparaît en haut ; moins elle l'est, moins elle s'affiche. **3 bannières** pour ces mises en avant.
+4. **Profil : niveaux (« levels »)** pour que les XP soient compris tout de suite : *Level 1 = 100 XP* (exemple de seuil), etc. Les XP existent déjà ; il faut les présenter en niveaux.
+5. **Bouton « Prochaine étape »** : donne un **programme propre pour monter de niveau**. Quand l'utilisateur appuie sur « Let's go », il remplit chaque discipline comme prévu : il **programme les heures de chaque discipline** et reçoit **un quota et une limite** (par exemple à faire en une semaine ou en deux jours). Tout remonte dans la progression.
+
+**Ordre conseillé** (après la bêta de paiement) : images nettes → niveaux dans le Profil (simple) → « Prochaine étape » → réorganisation Réseau → scan d'événements (demande un serveur d'événements) → défis en attente → groupes de rue.
 
 ## 4. Pièges et règles à connaître
 - **Droit** : pas de retrait d'argent des XP, pas de pari (licence LONACAM), pas de séquestre : abandonné volontairement. Un concours avec prix en argent demande un juriste. Sur Google Play / App Store, l'abonnement doit passer par leur paiement intégré ; l'APK direct permet le Mobile Money.

@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.6.3"),
-        .package(name: "CapacitorBrowser", path: "../../../node_modules/@capacitor/browser")
+        .package(name: "CapacitorBrowser", path: "../../../../Users/DEK Creative Pro/AppData/Local/Claude-Data/claude_pzs8sxrjxfjjc/scratch-workspaces/a08a0ec6-e564-421a-9509-eb821457c37f/2bff783f-d0d7-4bf6-8d65-1ed161db36cb/scratch-2026-11-26-6cf466/dek-fitness/node_modules/@capacitor/browser")
     ],
     targets: [
         .target(

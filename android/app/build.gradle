@@ -4,7 +4,10 @@ android {
     namespace = "com.dek.fitness"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.dek.fitness"
+        // Version de test déverrouillée : -PdekUnlocked=true -> autre identifiant et autre nom, donc installable à côté de la version normale
+        def unlocked = project.hasProperty("dekUnlocked")
+        applicationId unlocked ? "com.dek.fitness.test" : "com.dek.fitness"
+        resValue "string", "app_name", unlocked ? "DEK TEST (deverrouille)" : "DEK FITNESS"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

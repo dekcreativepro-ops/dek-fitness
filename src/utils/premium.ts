@@ -6,20 +6,25 @@ import { useSyncExternalStore } from 'react';
 
 export const PREMIUM_PRICE_FCFA = 5000;
 export const PREMIUM_PERIOD_DAYS = 30;
-export const TRIAL_DAYS = 15;
+export const TRIAL_DAYS = 7;
+
+/** Version de test déverrouillée (build avec VITE_UNLOCKED=true) : tout est ouvert, sans paiement. */
+export const UNLOCKED_BUILD = import.meta.env.VITE_UNLOCKED === 'true';
 
 /** Ce que la version gratuite (après l'essai) permet encore. */
 export const FREE_PISTES = 3;
 export const FREE_COACH_MESSAGES_PER_DAY = 5;
 export const FREE_PROGRAM_IDS = ['pecs-maison', 'jambes-explosives', 'cardio-5am'];
 export const FREE_HOUSE_MODE = 'ko_60s';
+/** Défi House gratuit : seulement les pompes. */
+export const FREE_HOUSE_EXERCISE = 'pompes';
 
 export type PremiumFeature = 'tournois' | 'pistes' | 'modes' | 'defi_tournoi' | 'defi_modes' | 'seances' | 'coach';
 
 /** Ce que le Premium débloque (texte affiché sur l'écran d'abonnement). */
 export const PREMIUM_BENEFITS: { id: PremiumFeature; title: string; desc: string }[] = [
   { id: 'tournois', title: 'Tournois de Terrains & Santé', desc: 'Poules, tableau final et classements dans chaque discipline.' },
-  { id: 'defi_tournoi', title: 'Défi House complet', desc: 'Tournoi, 1er à 20, Survie, Équipe 4v4 : tous les modes de combat.' },
+  { id: 'defi_tournoi', title: 'Défi House complet', desc: 'Tous les exercices (squats, jumping jacks, corde, gainage, burpees), tournoi, 1er à 20, Survie, Équipe 4v4. Gratuit : les pompes seulement.' },
   { id: 'pistes', title: 'Pistes Outdoor illimitées', desc: `Gratuit : ${FREE_PISTES} pistes seulement. Premium : autant de tracés et de villes que tu veux, recherche de lieu.` },
   { id: 'modes', title: 'Modes Outdoor spéciaux', desc: 'Survie Checkpoint, Relais Escouade, Conquête Territoire et Duel Fantôme.' },
   { id: 'seances', title: 'Toutes les séances guidées', desc: `Gratuit : ${FREE_PROGRAM_IDS.length} séances. Premium : les 10 programmes avec démos vidéo.` },
@@ -90,6 +95,7 @@ const DAY = 86_400_000;
 
 /** Abonnement payé en cours ? */
 export function isPaidActive(state: PremiumState = getPremium()): boolean {
+  if (UNLOCKED_BUILD) return true;
   return state.expiresAt !== null && state.expiresAt > Date.now();
 }
 
@@ -104,6 +110,7 @@ export function isPremiumActive(state: PremiumState = getPremium()): boolean {
 }
 
 export function daysLeft(state: PremiumState = getPremium()): number {
+  if (UNLOCKED_BUILD) return 99;
   if (!isPaidActive(state) || state.expiresAt === null) return 0;
   return Math.max(1, Math.ceil((state.expiresAt - Date.now()) / DAY));
 }
